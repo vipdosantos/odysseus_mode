@@ -1,0 +1,71 @@
+{
+  "name": "Bill",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o da conta"
+    },
+    "supplier": {
+      "type": "string",
+      "description": "Fornecedor"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Valor da conta"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de vencimento"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "pago",
+        "atrasado",
+        "cancelado"
+      ],
+      "default": "pendente"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "material",
+        "energia",
+        "aluguel",
+        "salario",
+        "imposto",
+        "manutencao",
+        "transporte",
+        "outros"
+      ],
+      "default": "outros"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "boleto",
+        "pix",
+        "transferencia",
+        "cartao",
+        "dinheiro"
+      ],
+      "default": "boleto"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "recurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Conta recorrente"
+    }
+  },
+  "required": [
+    "description",
+    "amount",
+    "due_date"
+  ]
+}

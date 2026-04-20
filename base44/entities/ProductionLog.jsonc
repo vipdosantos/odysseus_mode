@@ -1,0 +1,42 @@
+{
+  "name": "ProductionLog",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "description": "ID do pedido"
+    },
+    "order_number": {
+      "type": "string",
+      "description": "N\u00famero do pedido"
+    },
+    "item_index": {
+      "type": "number",
+      "description": "\u00cdndice do item no pedido"
+    },
+    "truss_size": {
+      "type": "string",
+      "description": "Tamanho da treli\u00e7a"
+    },
+    "quantity_produced": {
+      "type": "number",
+      "description": "Quantidade produzida neste registro"
+    },
+    "operator_email": {
+      "type": "string",
+      "description": "Email do operador"
+    },
+    "operator_name": {
+      "type": "string",
+      "description": "Nome do operador"
+    },
+    "scanned_qr": {
+      "type": "string",
+      "description": "QR Code escaneado"
+    }
+  },
+  "required": [
+    "order_id",
+    "truss_size"
+  ]
+}

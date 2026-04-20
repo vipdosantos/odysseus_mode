@@ -1,0 +1,83 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": {
+      "type": "string",
+      "description": "N\u00famero do pedido"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "client_phone": {
+      "type": "string",
+      "description": "Telefone do cliente"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "novo",
+        "em_producao",
+        "controle_qualidade",
+        "pronto",
+        "entregue"
+      ],
+      "default": "novo",
+      "description": "Status do pedido"
+    },
+    "items": {
+      "type": "array",
+      "description": "Itens do pedido (treli\u00e7as)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "size": {
+            "type": "string",
+            "description": "Tamanho da treli\u00e7a"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade"
+          },
+          "produced": {
+            "type": "number",
+            "description": "Quantidade produzida",
+            "default": 0
+          },
+          "qr_code_id": {
+            "type": "string",
+            "description": "ID do QR Code"
+          }
+        }
+      }
+    },
+    "delivery_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de entrega prevista"
+    },
+    "total_value": {
+      "type": "number",
+      "description": "Valor total do pedido"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "baixa",
+        "normal",
+        "alta",
+        "urgente"
+      ],
+      "default": "normal"
+    }
+  },
+  "required": [
+    "order_number",
+    "client_name"
+  ]
+}
