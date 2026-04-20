@@ -17,13 +17,19 @@
     "status": {
       "type": "string",
       "enum": [
-        "novo",
-        "em_producao",
-        "controle_qualidade",
-        "pronto",
-        "entregue"
+        "of_etiquetas",
+        "corte_vigas",
+        "producao",
+        "secagem",
+        "expedicao",
+        "aguardando_entrega",
+        "entrega",
+        "a_caminho",
+        "recebido",
+        "pagamento_pendente",
+        "finalizado"
       ],
-      "default": "novo",
+      "default": "of_etiquetas",
       "description": "Status do pedido"
     },
     "items": {

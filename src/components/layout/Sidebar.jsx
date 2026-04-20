@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, Factory, DollarSign, Users, 
-  ChevronLeft, ChevronRight, ScanLine, LogOut, Settings
+  ChevronLeft, ChevronRight, ScanLine, LogOut
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
+import ModelajesLogo from './ModelajesLogo';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'operador', 'financeiro', 'visualizador'] },
@@ -29,20 +30,8 @@ export default function Sidebar({ user }) {
       collapsed ? "w-16" : "w-64"
     )}>
       {/* Logo */}
-      <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Factory className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-lg tracking-tight">TreliçaPro</span>
-          </div>
-        )}
-        {collapsed && (
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
-            <Factory className="w-5 h-5 text-primary-foreground" />
-          </div>
-        )}
+      <div className="h-20 flex items-center px-3 border-b border-sidebar-border">
+        <ModelajesLogo collapsed={collapsed} />
       </div>
 
       {/* Navigation */}

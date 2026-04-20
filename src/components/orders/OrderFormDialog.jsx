@@ -14,7 +14,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     order_number: '',
     client_name: '',
     client_phone: '',
-    status: 'novo',
+    status: 'of_etiquetas',
     priority: 'normal',
     delivery_date: '',
     total_value: 0,
@@ -28,7 +28,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     } else {
       setForm({
         order_number: `PED-${Date.now().toString().slice(-6)}`,
-        client_name: '', client_phone: '', status: 'novo', priority: 'normal',
+        client_name: '', client_phone: '', status: 'of_etiquetas', priority: 'normal',
         delivery_date: '', total_value: 0, notes: '',
         items: [{ ...emptyItem }],
       });
@@ -103,11 +103,17 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
               <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="novo">Novo</SelectItem>
-                  <SelectItem value="em_producao">Em Produção</SelectItem>
-                  <SelectItem value="controle_qualidade">Controle de Qualidade</SelectItem>
-                  <SelectItem value="pronto">Pronto</SelectItem>
-                  <SelectItem value="entregue">Entregue</SelectItem>
+                  <SelectItem value="of_etiquetas">OF e Etiquetas</SelectItem>
+                  <SelectItem value="corte_vigas">Corte Vigas</SelectItem>
+                  <SelectItem value="producao">Produção</SelectItem>
+                  <SelectItem value="secagem">Secagem</SelectItem>
+                  <SelectItem value="expedicao">Expedição</SelectItem>
+                  <SelectItem value="aguardando_entrega">Aguardando Entrega</SelectItem>
+                  <SelectItem value="entrega">Entrega</SelectItem>
+                  <SelectItem value="a_caminho">A Caminho</SelectItem>
+                  <SelectItem value="recebido">Recebido</SelectItem>
+                  <SelectItem value="pagamento_pendente">Pagamento Pendente</SelectItem>
+                  <SelectItem value="finalizado">Finalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
