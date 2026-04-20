@@ -1,0 +1,37 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefone"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-mail"
+    },
+    "cpf_cnpj": {
+      "type": "string",
+      "description": "CPF / CNPJ"
+    },
+    "address": {
+      "type": "string",
+      "description": "Endere\u00e7o"
+    },
+    "city": {
+      "type": "string",
+      "description": "Cidade"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

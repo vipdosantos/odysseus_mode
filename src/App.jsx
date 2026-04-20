@@ -12,6 +12,7 @@ import Production from './pages/Production';
 import Scanner from './pages/Scanner';
 import Finance from './pages/Finance';
 import Users from './pages/Users';
+import Cadastros from './pages/Cadastros';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
         <Route path="/producao" element={<Production />} />
         <Route path="/scanner" element={<Scanner />} />
         <Route path="/financeiro" element={<Finance />} />
+        <Route path="/cadastros" element={<Cadastros />} />
         <Route path="/usuarios" element={<Users />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

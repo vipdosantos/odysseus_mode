@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, Factory, DollarSign, Users, 
-  ChevronLeft, ChevronRight, ScanLine, LogOut
+  ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ const navItems = [
   { path: '/producao', icon: Factory, label: 'Produção', roles: ['admin', 'operador'] },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR', roles: ['admin', 'operador'] },
   { path: '/financeiro', icon: DollarSign, label: 'Financeiro', roles: ['admin', 'financeiro'] },
+  { path: '/cadastros', icon: BookUser, label: 'Cadastros', roles: ['admin', 'operador'] },
   { path: '/usuarios', icon: Users, label: 'Usuários', roles: ['admin'] },
 ];
 

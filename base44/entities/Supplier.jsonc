@@ -1,0 +1,49 @@
+{
+  "name": "Supplier",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do fornecedor"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefone"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-mail"
+    },
+    "cnpj": {
+      "type": "string",
+      "description": "CNPJ"
+    },
+    "contact_person": {
+      "type": "string",
+      "description": "Pessoa de contato"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "material",
+        "servico",
+        "transporte",
+        "outros"
+      ],
+      "default": "material",
+      "description": "Categoria"
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Ativo",
+      "default": true
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
