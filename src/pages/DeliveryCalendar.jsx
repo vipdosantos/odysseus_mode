@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Package, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import OrderDetailDialog from '@/components/orders/OrderDetailDialog';
+import OrderFormDialog from '@/components/orders/OrderFormDialog';
+import { useAuth } from '@/lib/AuthContext';
 
 const PRIORITY_COLORS = {
   urgente: 'bg-red-500',
@@ -16,11 +19,45 @@ const PRIORITY_COLORS = {
 
 export default function DeliveryCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
     queryFn: () => base44.entities.Order.list('-delivery_date', 500),
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Order.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
+  });
+
+  const canEdit = user?.role === 'admin' || user?.role === 'operador';
+
+  const openOrder = (order) => {
+    setSelectedOrder(order);
+    setDetailOpen(true);
+  };
+
+  const handleStatusChange = (order, newStatus) => {
+    updateMutation.mutate({ id: order.id, data: { ...order, status: newStatus } });
+    setDetailOpen(false);
+  };
+
+  const handleEdit = (order) => {
+    setDetailOpen(false);
+    setEditOpen(true);
+  };
+
+  const handleSave = (data) => {
+    if (selectedOrder?.id) {
+      updateMutation.mutate({ id: selectedOrder.id, data });
+    }
+    setEditOpen(false);
+  };
 
   const ordersWithDate = orders.filter(o => o.delivery_date);
 
@@ -87,8 +124,9 @@ export default function DeliveryCalendar() {
                   {dayOrders.slice(0, 3).map(order => (
                     <div
                       key={order.id}
+                      onClick={() => openOrder(order)}
                       className={cn(
-                        "text-[10px] px-1.5 py-0.5 rounded text-white font-medium truncate flex items-center gap-1",
+                        "text-[10px] px-1.5 py-0.5 rounded text-white font-medium truncate flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity",
                         PRIORITY_COLORS[order.priority] || 'bg-blue-500'
                       )}
                       title={`#${order.order_number} - ${order.client_name}`}
@@ -118,7 +156,7 @@ export default function DeliveryCalendar() {
             </h3>
             <div className="space-y-2">
               {todayOrders.map(order => (
-                <div key={order.id} className="flex items-center gap-3 bg-card rounded-xl p-3 border">
+                <div key={order.id} onClick={() => openOrder(order)} className="flex items-center gap-3 bg-card rounded-xl p-3 border cursor-pointer hover:bg-muted/30 transition-colors">
                   <div className={cn("w-2 h-8 rounded-full shrink-0", PRIORITY_COLORS[order.priority] || 'bg-blue-500')} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">#{order.order_number} — {order.client_name}</p>
@@ -134,6 +172,22 @@ export default function DeliveryCalendar() {
           </div>
         );
       })()}
+
+      <OrderDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        order={selectedOrder}
+        onEdit={handleEdit}
+        canEdit={canEdit}
+        onStatusChange={handleStatusChange}
+      />
+
+      <OrderFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        order={selectedOrder}
+        onSave={handleSave}
+      />
     </div>
   );
 }
