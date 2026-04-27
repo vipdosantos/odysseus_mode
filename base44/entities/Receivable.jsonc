@@ -1,0 +1,62 @@
+{
+  "name": "Receivable",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Cliente"
+    },
+    "order_number": {
+      "type": "string",
+      "description": "N\u00ba do Pedido"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Valor"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Vencimento"
+    },
+    "received_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de recebimento"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "recebido",
+        "atrasado",
+        "cancelado"
+      ],
+      "default": "pendente"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "boleto",
+        "pix",
+        "transferencia",
+        "cartao",
+        "dinheiro",
+        "cheque"
+      ],
+      "default": "pix"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "description",
+    "amount",
+    "due_date"
+  ]
+}

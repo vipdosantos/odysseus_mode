@@ -1,0 +1,57 @@
+{
+  "name": "Supply",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do insumo"
+    },
+    "code": {
+      "type": "string",
+      "description": "C\u00f3digo"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unidade (kg, m, un...)",
+      "default": "un"
+    },
+    "stock": {
+      "type": "number",
+      "description": "Estoque atual",
+      "default": 0
+    },
+    "min_stock": {
+      "type": "number",
+      "description": "Estoque m\u00ednimo",
+      "default": 0
+    },
+    "cost_per_unit": {
+      "type": "number",
+      "description": "Custo por unidade",
+      "default": 0
+    },
+    "supplier_name": {
+      "type": "string",
+      "description": "Fornecedor"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "arame",
+        "madeira",
+        "prego",
+        "cola",
+        "tinta",
+        "outros"
+      ],
+      "default": "outros",
+      "description": "Categoria"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

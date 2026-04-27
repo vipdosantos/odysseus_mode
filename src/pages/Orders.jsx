@@ -61,7 +61,12 @@ export default function Orders() {
     setDetailOrder(null);
   };
 
-  const filtered = orders.filter(o =>
+  // Visualizadores só veem pedidos onde são o vendedor ou criador
+  const visibleOrders = user?.role === 'visualizador'
+    ? orders.filter(o => o.seller_name === user.full_name || o.created_by === user.email)
+    : orders;
+
+  const filtered = visibleOrders.filter(o =>
     !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
     o.client_name?.toLowerCase().includes(search.toLowerCase())
   );

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, Factory, DollarSign, Users, 
-  ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser
+  ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser,
+  TrendingUp, CalendarDays, ClipboardList, Wrench, FlaskConical
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,12 @@ const navItems = [
   { path: '/pedidos', icon: Package, label: 'Pedidos', roles: ['admin', 'operador', 'visualizador'] },
   { path: '/producao', icon: Factory, label: 'Produção', roles: ['admin', 'operador'] },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR', roles: ['admin', 'operador'] },
-  { path: '/financeiro', icon: DollarSign, label: 'Financeiro', roles: ['admin', 'financeiro'] },
+  { path: '/financeiro', icon: DollarSign, label: 'Contas a Pagar', roles: ['admin', 'financeiro'] },
+  { path: '/receber', icon: TrendingUp, label: 'Contas a Receber', roles: ['admin', 'financeiro'] },
+  { path: '/calendario', icon: CalendarDays, label: 'Calendário', roles: ['admin', 'operador', 'visualizador'] },
+  { path: '/insumos', icon: FlaskConical, label: 'Insumos', roles: ['admin', 'operador'] },
+  { path: '/patrimonio', icon: Wrench, label: 'Patrimônio', roles: ['admin'] },
+  { path: '/produtividade', icon: ClipboardList, label: 'Produtividade', roles: ['admin', 'operador'] },
   { path: '/cadastros', icon: BookUser, label: 'Cadastros', roles: ['admin', 'operador'] },
   { path: '/usuarios', icon: Users, label: 'Usuários', roles: ['admin'] },
 ];

@@ -13,6 +13,11 @@ import Scanner from './pages/Scanner';
 import Finance from './pages/Finance';
 import Users from './pages/Users';
 import Cadastros from './pages/Cadastros';
+import Receivables from './pages/Receivables';
+import DeliveryCalendar from './pages/DeliveryCalendar';
+import Productivity from './pages/Productivity';
+import Assets from './pages/Assets';
+import Supplies from './pages/Supplies';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,6 +52,11 @@ const AuthenticatedApp = () => {
         <Route path="/scanner" element={<Scanner />} />
         <Route path="/financeiro" element={<Finance />} />
         <Route path="/cadastros" element={<Cadastros />} />
+        <Route path="/receber" element={<Receivables />} />
+        <Route path="/calendario" element={<DeliveryCalendar />} />
+        <Route path="/produtividade" element={<Productivity />} />
+        <Route path="/patrimonio" element={<Assets />} />
+        <Route path="/insumos" element={<Supplies />} />
         <Route path="/usuarios" element={<Users />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

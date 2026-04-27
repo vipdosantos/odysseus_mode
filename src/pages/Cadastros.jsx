@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { base44 } from '@/api/base44Client';
 import CadastroTable from '@/components/cadastros/CadastroTable';
+import SellerPriceTables from '@/components/cadastros/SellerPriceTables';
 
 // ─── Clientes ───────────────────────────────────────────────
 const clientFields = [
@@ -110,11 +111,12 @@ export default function Cadastros() {
       </div>
 
       <Tabs defaultValue="clientes">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 flex-wrap h-auto">
           <TabsTrigger value="clientes">Clientes</TabsTrigger>
           <TabsTrigger value="vendedores">Vendedores</TabsTrigger>
           <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
+          <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
         </TabsList>
 
         <TabsContent value="clientes">
@@ -155,6 +157,10 @@ export default function Cadastros() {
             fields={productFields}
             columns={productColumns}
           />
+        </TabsContent>
+
+        <TabsContent value="tabelas">
+          <SellerPriceTables />
         </TabsContent>
       </Tabs>
     </div>

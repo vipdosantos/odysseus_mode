@@ -1,0 +1,36 @@
+{
+  "name": "SellerPriceTable",
+  "type": "object",
+  "properties": {
+    "seller_id": {
+      "type": "string",
+      "description": "ID do vendedor"
+    },
+    "seller_name": {
+      "type": "string",
+      "description": "Nome do vendedor"
+    },
+    "product_size": {
+      "type": "string",
+      "description": "Tamanho / produto"
+    },
+    "price": {
+      "type": "number",
+      "description": "Pre\u00e7o espec\u00edfico",
+      "default": 0
+    },
+    "discount_pct": {
+      "type": "number",
+      "description": "Desconto (%)",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "seller_id",
+    "product_size",
+    "price"
+  ]
+}
