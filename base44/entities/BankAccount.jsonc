@@ -1,0 +1,64 @@
+{
+  "name": "BankAccount",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "pix",
+        "conta_bancaria"
+      ],
+      "default": "pix",
+      "description": "Tipo de conta"
+    },
+    "label": {
+      "type": "string",
+      "description": "Nome / Apelido da conta"
+    },
+    "pix_key_type": {
+      "type": "string",
+      "enum": [
+        "cnpj",
+        "cpf",
+        "email",
+        "telefone",
+        "aleatoria"
+      ],
+      "default": "cnpj",
+      "description": "Tipo de chave PIX"
+    },
+    "pix_key": {
+      "type": "string",
+      "description": "Chave PIX"
+    },
+    "banco": {
+      "type": "string",
+      "description": "Nome do banco"
+    },
+    "agencia": {
+      "type": "string",
+      "description": "Ag\u00eancia"
+    },
+    "conta": {
+      "type": "string",
+      "description": "N\u00famero da conta"
+    },
+    "titular": {
+      "type": "string",
+      "description": "Titular da conta"
+    },
+    "cnpj_cpf": {
+      "type": "string",
+      "description": "CNPJ / CPF do titular"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Conta ativa"
+    }
+  },
+  "required": [
+    "label",
+    "type"
+  ]
+}

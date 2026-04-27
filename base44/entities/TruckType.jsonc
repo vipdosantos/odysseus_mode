@@ -1,0 +1,31 @@
+{
+  "name": "TruckType",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do tipo de caminh\u00e3o"
+    },
+    "code": {
+      "type": "string",
+      "description": "C\u00f3digo (ex: toco, truck, carreta)"
+    },
+    "capacity_kg": {
+      "type": "number",
+      "description": "Capacidade em kg",
+      "default": 0
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "code"
+  ]
+}

@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, Factory, DollarSign, Users, 
   ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser,
-  TrendingUp, CalendarDays, ClipboardList, Wrench, FlaskConical
+  TrendingUp, CalendarDays, ClipboardList, Wrench, FlaskConical,
+  Landmark, FileText
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,8 @@ const navItems = [
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR', roles: ['admin', 'operador'] },
   { path: '/financeiro', icon: DollarSign, label: 'Contas a Pagar', roles: ['admin', 'financeiro'] },
   { path: '/receber', icon: TrendingUp, label: 'Contas a Receber', roles: ['admin', 'financeiro'] },
+  { path: '/contas-bancarias', icon: Landmark, label: 'Contas Bancárias', roles: ['admin', 'financeiro'] },
+  { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais', roles: ['admin', 'financeiro'] },
   { path: '/calendario', icon: CalendarDays, label: 'Calendário', roles: ['admin', 'operador', 'visualizador'] },
   { path: '/insumos', icon: FlaskConical, label: 'Insumos', roles: ['admin', 'operador'] },
   { path: '/patrimonio', icon: Wrench, label: 'Patrimônio', roles: ['admin'] },

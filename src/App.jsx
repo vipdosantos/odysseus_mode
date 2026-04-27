@@ -18,6 +18,8 @@ import DeliveryCalendar from './pages/DeliveryCalendar';
 import Productivity from './pages/Productivity';
 import Assets from './pages/Assets';
 import Supplies from './pages/Supplies';
+import BankAccounts from './pages/BankAccounts';
+import FiscalNotes from './pages/FiscalNotes';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -57,6 +59,8 @@ const AuthenticatedApp = () => {
         <Route path="/produtividade" element={<Productivity />} />
         <Route path="/patrimonio" element={<Assets />} />
         <Route path="/insumos" element={<Supplies />} />
+        <Route path="/contas-bancarias" element={<BankAccounts />} />
+        <Route path="/notas-fiscais" element={<FiscalNotes />} />
         <Route path="/usuarios" element={<Users />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

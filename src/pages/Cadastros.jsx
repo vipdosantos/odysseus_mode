@@ -71,6 +71,25 @@ const supplierColumns = [
   )},
 ];
 
+// ─── Tipos de Caminhão ───────────────────────────────────────
+const truckFields = [
+  { key: 'name', label: 'Nome', fullWidth: true },
+  { key: 'code', label: 'Código (ex: toco, carreta)', default: '' },
+  { key: 'capacity_kg', label: 'Capacidade (kg)', type: 'number', default: 0 },
+  { key: 'active', label: 'Ativo', type: 'boolean', default: true },
+  { key: 'notes', label: 'Observações', fullWidth: true },
+];
+const truckColumns = [
+  { key: 'name', label: 'Nome' },
+  { key: 'code', label: 'Código' },
+  { key: 'capacity_kg', label: 'Capacidade', render: (v) => v ? `${Number(v).toLocaleString('pt-BR')} kg` : '—' },
+  { key: 'active', label: 'Ativo', render: (v) => (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${v !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      {v !== false ? 'Ativo' : 'Inativo'}
+    </span>
+  )},
+];
+
 // ─── Produtos ────────────────────────────────────────────────
 const productFields = [
   { key: 'name', label: 'Nome', fullWidth: true },
@@ -107,7 +126,7 @@ export default function Cadastros() {
     <div className="p-4 md:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Cadastros</h1>
-        <p className="text-sm text-muted-foreground">Gerencie clientes, vendedores, fornecedores e produtos</p>
+        <p className="text-sm text-muted-foreground">Gerencie clientes, vendedores, fornecedores, produtos e mais</p>
       </div>
 
       <Tabs defaultValue="clientes">
@@ -117,6 +136,7 @@ export default function Cadastros() {
           <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
           <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
+          <TabsTrigger value="caminhoes">Tipos de Caminhão</TabsTrigger>
         </TabsList>
 
         <TabsContent value="clientes">
@@ -161,6 +181,16 @@ export default function Cadastros() {
 
         <TabsContent value="tabelas">
           <SellerPriceTables />
+        </TabsContent>
+
+        <TabsContent value="caminhoes">
+          <CadastroTable
+            entity={base44.entities.TruckType}
+            entityKey="truck_types"
+            title="Tipo de Caminhão"
+            fields={truckFields}
+            columns={truckColumns}
+          />
         </TabsContent>
       </Tabs>
     </div>
