@@ -32,6 +32,11 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     queryFn: () => base44.entities.Seller.list('name', 200),
   });
 
+  const { data: products = [] } = useQuery({
+    queryKey: ['products-active'],
+    queryFn: () => base44.entities.Product.filter({ active: true }, 'name', 200),
+  });
+
   useEffect(() => {
     if (order) {
       setForm({
@@ -177,8 +182,21 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
               {form.items.map((item, idx) => (
                 <div key={idx} className="flex items-end gap-3 p-3 bg-muted/50 rounded-xl">
                   <div className="flex-1">
-                    <Label className="text-xs">Tamanho</Label>
-                    <Input value={item.size} onChange={e => updateItem(idx, 'size', e.target.value)} placeholder="Ex: 8cm x 3m" />
+                    <Label className="text-xs">Tamanho / Produto</Label>
+                    {products.length > 0 ? (
+                      <Select value={item.size} onValueChange={v => updateItem(idx, 'size', v)}>
+                        <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
+                        <SelectContent>
+                          {products.map(p => (
+                            <SelectItem key={p.id} value={p.size || p.name}>
+                              {p.name}{p.size ? ` — ${p.size}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input value={item.size} onChange={e => updateItem(idx, 'size', e.target.value)} placeholder="Ex: 8cm x 3m" />
+                    )}
                   </div>
                   <div className="w-24">
                     <Label className="text-xs">Quantidade</Label>
