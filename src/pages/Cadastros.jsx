@@ -71,6 +71,29 @@ const supplierColumns = [
   )},
 ];
 
+// ─── Categorias de Insumo ────────────────────────────────────
+const supplyCatFields = [
+  { key: 'name', label: 'Nome da Categoria', fullWidth: true },
+  { key: 'code', label: 'Código' },
+  { key: 'color', label: 'Cor (hex)', default: '#6b7280' },
+  { key: 'active', label: 'Ativo', type: 'boolean', default: true },
+];
+const supplyCatColumns = [
+  { key: 'name', label: 'Nome' },
+  { key: 'code', label: 'Código' },
+  { key: 'color', label: 'Cor', render: (v) => (
+    <span className="flex items-center gap-2">
+      <span className="w-4 h-4 rounded-full inline-block border" style={{ background: v || '#6b7280' }} />
+      <span className="text-xs font-mono">{v || '—'}</span>
+    </span>
+  )},
+  { key: 'active', label: 'Ativo', render: (v) => (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${v !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      {v !== false ? 'Ativo' : 'Inativo'}
+    </span>
+  )},
+];
+
 // ─── Tipos de Caminhão ───────────────────────────────────────
 const truckFields = [
   { key: 'name', label: 'Nome', fullWidth: true },
@@ -137,6 +160,7 @@ export default function Cadastros() {
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
           <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
           <TabsTrigger value="caminhoes">Tipos de Caminhão</TabsTrigger>
+          <TabsTrigger value="cat-insumos">Cat. Insumos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="clientes">
@@ -190,6 +214,16 @@ export default function Cadastros() {
             title="Tipo de Caminhão"
             fields={truckFields}
             columns={truckColumns}
+          />
+        </TabsContent>
+
+        <TabsContent value="cat-insumos">
+          <CadastroTable
+            entity={base44.entities.SupplyCategory}
+            entityKey="supply_categories"
+            title="Categoria de Insumo"
+            fields={supplyCatFields}
+            columns={supplyCatColumns}
           />
         </TabsContent>
       </Tabs>

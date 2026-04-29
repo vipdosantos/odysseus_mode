@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,10 @@ import { cn } from '@/lib/utils';
 import { ALL_STATUSES, STATUS_MAP } from './KanbanColumn';
 import OrderPaymentTab from './OrderPaymentTab';
 import OrderNFTab from './OrderNFTab';
+import QRZoomModal from './QRZoomModal';
 
 export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange }) {
+  const [zoomQR, setZoomQR] = useState(null); // { url, label }
   if (!order) return null;
   const st = STATUS_MAP[order.status] || { label: order.status, color: 'bg-gray-400' };
   const currentIdx = ALL_STATUSES.findIndex(s => s.key === order.status);
@@ -18,38 +20,106 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
 
   const handlePrintLabels = () => {
     const printWindow = window.open('', '_blank');
+    // 10cm x 5cm label — each on its own page for label printers
     const labels = order.items?.flatMap(item => {
       const qty = item.quantity || 0;
-      // QR data contains full order context
+      const qrId = item.qr_code_id || `${order.order_number}-${item.size}`;
       const qrData = JSON.stringify({
         pedido: order.order_number,
         cliente: order.client_name,
         tamanho: item.size,
         quantidade: qty,
-        id: item.qr_code_id || `${order.order_number}-${item.size}`,
+        id: qrId,
       });
       return Array.from({ length: qty }, (_, i) => `
-        <div style="border:2px solid #333;padding:16px;margin:8px;width:320px;display:inline-block;page-break-inside:avoid;font-family:sans-serif;border-radius:8px;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-            <div style="background:#F47920;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
-              <svg viewBox="0 0 40 40" width="22" height="22" fill="none"><path d="M6 32 L6 12 L20 26 L34 12 L34 32" stroke="white" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" fill="none"/></svg>
+        <div class="label">
+          <div class="label-header">
+            <div class="logo-box">
+              <svg viewBox="0 0 40 40" width="20" height="20" fill="none">
+                <path d="M6 32 L6 12 L20 26 L34 12 L34 32" stroke="white" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+              </svg>
             </div>
-            <span style="font-size:18px;font-weight:900;color:#2B3A8F;letter-spacing:2px;">MODELAJES</span>
+            <div>
+              <div class="brand">MODELAJES</div>
+              <div class="brand-sub">Treliças Metálicas</div>
+            </div>
+            <div class="seq">${i + 1}/${qty}</div>
           </div>
-          <div style="font-size:13px;margin-bottom:3px;"><strong>Pedido:</strong> #${order.order_number}</div>
-          <div style="font-size:13px;margin-bottom:3px;"><strong>Cliente:</strong> ${order.client_name}</div>
-          <div style="font-size:15px;font-weight:bold;margin-bottom:3px;">Tamanho: ${item.size}</div>
-          <div style="font-size:11px;color:#666;margin-bottom:8px;">${i + 1} de ${qty}</div>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(qrData)}" style="display:block;" />
-          <div style="font-size:9px;color:#999;margin-top:4px;word-break:break-all;">${item.qr_code_id || `${order.order_number}-${item.size}`}</div>
+          <div class="label-body">
+            <div class="label-info">
+              <div class="size-big">${item.size}</div>
+              <div class="info-row"><span class="lbl">Pedido</span> <span class="val">#${order.order_number}</span></div>
+              <div class="info-row"><span class="lbl">Cliente</span> <span class="val">${order.client_name}</span></div>
+              <div class="info-row"><span class="lbl">Qtd Total</span> <span class="val">${qty} un</span></div>
+            </div>
+            <div class="qr-col">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrData)}" class="qr-img" />
+            </div>
+          </div>
+          <div class="label-footer">${qrId}</div>
         </div>
       `);
     }).join('');
-    printWindow.document.write(`<html><head><title>Etiquetas - #${order.order_number}</title></head><body style="margin:16px;">${labels}<script>setTimeout(()=>window.print(),500)<\/script></body></html>`);
+
+    const html = `<!DOCTYPE html><html><head><title>Etiquetas #${order.order_number}</title>
+    <style>
+      @page { size: 100mm 50mm; margin: 0; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; background: #fff; }
+      .label {
+        width: 100mm; height: 50mm;
+        display: flex; flex-direction: column;
+        border: 0.5mm solid #ccc;
+        page-break-after: always;
+        overflow: hidden;
+      }
+      .label-header {
+        background: #2B3A8F;
+        color: #fff;
+        display: flex; align-items: center; gap: 3mm;
+        padding: 1.5mm 3mm;
+        height: 11mm;
+      }
+      .logo-box {
+        background: #F47920;
+        border-radius: 1.5mm;
+        width: 8mm; height: 8mm;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+      }
+      .brand { font-size: 5mm; font-weight: 900; letter-spacing: 1px; line-height: 1; }
+      .brand-sub { font-size: 2mm; opacity: 0.8; }
+      .seq { margin-left: auto; font-size: 3.5mm; font-weight: bold; background: #F47920; padding: 1mm 2mm; border-radius: 1mm; }
+      .label-body {
+        flex: 1; display: flex; padding: 2mm 3mm; gap: 2mm;
+      }
+      .label-info { flex: 1; display: flex; flex-direction: column; gap: 1mm; }
+      .size-big { font-size: 8mm; font-weight: 900; color: #F47920; line-height: 1; }
+      .info-row { display: flex; gap: 1mm; align-items: baseline; }
+      .lbl { font-size: 2mm; color: #666; min-width: 10mm; }
+      .val { font-size: 2.5mm; font-weight: bold; color: #111; }
+      .qr-col { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .qr-img { width: 22mm; height: 22mm; }
+      .label-footer {
+        background: #f5f5f5; border-top: 0.2mm solid #ddd;
+        padding: 0.8mm 3mm;
+        font-size: 1.8mm; color: #888;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        height: 5mm; display: flex; align-items: center;
+      }
+      @media print {
+        body { margin: 0; }
+        .label { border: none; }
+      }
+    </style></head>
+    <body>${labels}<script>setTimeout(()=>window.print(),800)<\/script></body></html>`;
+
+    printWindow.document.write(html);
     printWindow.document.close();
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -131,7 +201,13 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(qrData)}`;
                     return (
                       <div key={idx} className="p-3 rounded-xl border border-border bg-muted/30 flex gap-3 items-start">
-                        <img src={qrUrl} alt="QR Code" className="rounded w-16 h-16 shrink-0" />
+                        <img
+                          src={qrUrl}
+                          alt="QR Code"
+                          className="rounded w-16 h-16 shrink-0 cursor-zoom-in hover:scale-105 transition-transform border border-border"
+                          title="Clique para ampliar"
+                          onClick={() => setZoomQR({ url: `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`, label: item.qr_code_id || `${order.order_number}-${item.size}-${idx}` })}
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold">{item.size}</p>
                           <p className="text-xs text-muted-foreground">{item.produced || 0}/{item.quantity} produzidas</p>
@@ -173,5 +249,16 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    {/* QR Zoom */}
+    {zoomQR && (
+      <QRZoomModal
+        open={!!zoomQR}
+        onClose={() => setZoomQR(null)}
+        qrUrl={zoomQR.url}
+        label={zoomQR.label}
+      />
+    )}
+  </>
   );
 }
