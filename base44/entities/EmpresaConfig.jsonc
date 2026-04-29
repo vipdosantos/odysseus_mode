@@ -1,0 +1,29 @@
+{
+  "name": "EmpresaConfig",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "description": "Tipo de configura\u00e7\u00e3o (ex: certificado_digital, dados_empresa)"
+    },
+    "arquivo_url": {
+      "type": "string",
+      "description": "URL do arquivo (certificado .pfx)"
+    },
+    "arquivo_nome": {
+      "type": "string",
+      "description": "Nome original do arquivo"
+    },
+    "senha_certificado": {
+      "type": "string",
+      "description": "Senha do certificado digital"
+    },
+    "valor": {
+      "type": "string",
+      "description": "Valor gen\u00e9rico para configs simples"
+    }
+  },
+  "required": [
+    "tipo"
+  ]
+}

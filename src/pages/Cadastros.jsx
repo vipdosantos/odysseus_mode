@@ -3,6 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { base44 } from '@/api/base44Client';
 import CadastroTable from '@/components/cadastros/CadastroTable';
 import SellerPriceTables from '@/components/cadastros/SellerPriceTables';
+import ProductsWithCategory from '@/components/cadastros/ProductsWithCategory';
+import CertificadoDigital from '@/components/cadastros/CertificadoDigital';
 
 // ─── Clientes ───────────────────────────────────────────────
 const clientFields = [
@@ -113,36 +115,7 @@ const truckColumns = [
   )},
 ];
 
-// ─── Produtos ────────────────────────────────────────────────
-const productFields = [
-  { key: 'name', label: 'Nome', fullWidth: true },
-  { key: 'code', label: 'Código' },
-  { key: 'size', label: 'Tamanho / Dimensão' },
-  { key: 'unit', label: 'Unidade', default: 'un' },
-  { key: 'price', label: 'Preço (R$)', type: 'number', default: 0 },
-  { key: 'stock', label: 'Estoque Atual', type: 'number', default: 0 },
-  { key: 'min_stock', label: 'Estoque Mínimo', type: 'number', default: 0 },
-  { key: 'category', label: 'Categoria', type: 'select', default: 'trelica',
-    enum: ['trelica', 'madeira', 'ferro', 'outros'],
-    enumLabels: { trelica: 'Treliça', madeira: 'Madeira', ferro: 'Ferro', outros: 'Outros' }
-  },
-  { key: 'active', label: 'Ativo', type: 'boolean', default: true },
-  { key: 'notes', label: 'Observações', fullWidth: true },
-];
-const productColumns = [
-  { key: 'code', label: 'Código' },
-  { key: 'name', label: 'Nome' },
-  { key: 'size', label: 'Tamanho' },
-  { key: 'price', label: 'Preço', render: (v) => v ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—' },
-  { key: 'stock', label: 'Estoque', render: (v, item) => (
-    <span className={`font-medium ${v <= (item.min_stock || 0) && v >= 0 ? 'text-red-600' : ''}`}>{v ?? 0}</span>
-  )},
-  { key: 'active', label: 'Ativo', render: (v) => (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${v !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-      {v !== false ? 'Ativo' : 'Inativo'}
-    </span>
-  )},
-];
+// Produtos gerenciados pelo componente ProductsWithCategory
 
 export default function Cadastros() {
   return (
@@ -160,7 +133,8 @@ export default function Cadastros() {
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
           <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
           <TabsTrigger value="caminhoes">Tipos de Caminhão</TabsTrigger>
-          <TabsTrigger value="cat-insumos">Cat. Insumos</TabsTrigger>
+          <TabsTrigger value="cat-insumos">Cat. Produtos</TabsTrigger>
+          <TabsTrigger value="certificado">Certificado Digital</TabsTrigger>
         </TabsList>
 
         <TabsContent value="clientes">
@@ -194,13 +168,7 @@ export default function Cadastros() {
         </TabsContent>
 
         <TabsContent value="produtos">
-          <CadastroTable
-            entity={base44.entities.Product}
-            entityKey="products"
-            title="Produto"
-            fields={productFields}
-            columns={productColumns}
-          />
+          <ProductsWithCategory />
         </TabsContent>
 
         <TabsContent value="tabelas">
@@ -221,10 +189,14 @@ export default function Cadastros() {
           <CadastroTable
             entity={base44.entities.SupplyCategory}
             entityKey="supply_categories"
-            title="Categoria de Insumo"
+            title="Categoria de Produto"
             fields={supplyCatFields}
             columns={supplyCatColumns}
           />
+        </TabsContent>
+
+        <TabsContent value="certificado">
+          <CertificadoDigital />
         </TabsContent>
       </Tabs>
     </div>
