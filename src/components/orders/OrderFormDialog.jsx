@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,14 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     queryKey: ['sellers'],
     queryFn: () => base44.entities.Seller.list('name', 200),
   });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list('name', 500),
+  });
+
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
 
   const { data: products = [] } = useQuery({
     queryKey: ['products-active'],
@@ -104,9 +112,45 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                 <Label>Nº do Pedido</Label>
                 <Input value={form.order_number} onChange={e => set('order_number', e.target.value)} />
               </div>
-              <div>
+              <div className="relative">
                 <Label>Cliente</Label>
-                <Input value={form.client_name} onChange={e => set('client_name', e.target.value)} />
+                <Input
+                  value={clientSearch || form.client_name}
+                  onChange={e => {
+                    setClientSearch(e.target.value);
+                    set('client_name', e.target.value);
+                    setShowClientDropdown(true);
+                  }}
+                  onFocus={() => { setClientSearch(form.client_name); setShowClientDropdown(true); }}
+                  onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
+                  placeholder="Buscar ou digitar cliente..."
+                  autoComplete="off"
+                />
+                {showClientDropdown && clients.filter(c =>
+                  !clientSearch || c.name.toLowerCase().includes(clientSearch.toLowerCase())
+                ).length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {clients
+                      .filter(c => !clientSearch || c.name.toLowerCase().includes(clientSearch.toLowerCase()))
+                      .slice(0, 20)
+                      .map(c => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
+                          onMouseDown={() => {
+                            set('client_name', c.name);
+                            set('client_phone', c.phone || form.client_phone);
+                            setClientSearch('');
+                            setShowClientDropdown(false);
+                          }}
+                        >
+                          <span className="font-medium">{c.name}</span>
+                          {c.phone && <span className="text-muted-foreground ml-2 text-xs">{c.phone}</span>}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Telefone</Label>

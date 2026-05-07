@@ -21,5 +21,9 @@
       "type": "string",
       "description": "Telefone"
     }
-  }
+  },
+  "required": [
+    "department",
+    "phone"
+  ]
 }

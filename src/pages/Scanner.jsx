@@ -75,24 +75,49 @@ export default function Scanner() {
   const scanIntervalRef = useRef(null);
   const lastScanned = useRef('');
 
+  // Load jsQR dynamically
+  const jsQRRef = useRef(null);
+  useEffect(() => {
+    if (jsQRRef.current) return;
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    script.onload = () => { jsQRRef.current = window.jsQR; };
+    document.head.appendChild(script);
+  }, []);
+
   useEffect(() => {
     if (mode !== 'camera') {
       clearInterval(scanIntervalRef.current);
       return;
     }
-    scanIntervalRef.current = setInterval(async () => {
+    scanIntervalRef.current = setInterval(() => {
       if (!videoRef.current || videoRef.current.readyState < 2) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      const w = videoRef.current.videoWidth;
+      const h = videoRef.current.videoHeight;
+      if (!w || !h) return;
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoRef.current, 0, 0);
-      try {
-        // Use BarcodeDetector if available (Chrome/Android)
-        if ('BarcodeDetector' in window) {
-          const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-          const codes = await detector.detect(canvas);
+      ctx.drawImage(videoRef.current, 0, 0, w, h);
+      const imageData = ctx.getImageData(0, 0, w, h);
+
+      // Try jsQR first (works everywhere)
+      if (jsQRRef.current) {
+        const code = jsQRRef.current(imageData.data, w, h);
+        if (code?.data && code.data !== lastScanned.current) {
+          lastScanned.current = code.data;
+          setTimeout(() => { lastScanned.current = ''; }, 3000);
+          processScan(code.data);
+          return;
+        }
+      }
+
+      // Fallback: BarcodeDetector (Chrome/Android)
+      if ('BarcodeDetector' in window) {
+        const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+        detector.detect(canvas).then(codes => {
           if (codes.length > 0) {
             const val = codes[0].rawValue;
             if (val && val !== lastScanned.current) {
@@ -101,9 +126,9 @@ export default function Scanner() {
               processScan(val);
             }
           }
-        }
-      } catch (_) {}
-    }, 500);
+        }).catch(() => {});
+      }
+    }, 400);
     return () => clearInterval(scanIntervalRef.current);
   }, [mode, orders]);
 

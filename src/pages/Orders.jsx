@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Archive } from 'lucide-react';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import KanbanColumn, { ALL_STATUSES, STATUS_MAP } from '../components/orders/KanbanColumn';
 import OrderFormDialog from '../components/orders/OrderFormDialog';
@@ -56,9 +57,23 @@ export default function Orders() {
     setShowForm(true);
   };
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Order.delete(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); toast.success('Pedido excluído'); },
+  });
+
   const handleStatusChange = (order, newStatus) => {
     updateMutation.mutate({ id: order.id, data: { ...order, status: newStatus } });
     setDetailOrder(null);
+  };
+
+  const handleDelete = (order) => {
+    deleteMutation.mutate(order.id);
+  };
+
+  const handleArchive = (order) => {
+    updateMutation.mutate({ id: order.id, data: { ...order, status: 'finalizado', archived: true } });
+    toast.success('Pedido arquivado');
   };
 
   // Visualizadores só veem pedidos onde são o vendedor ou criador
@@ -167,6 +182,8 @@ export default function Orders() {
         onEdit={handleEditFromDetail}
         canEdit={canEdit}
         onStatusChange={handleStatusChange}
+        onDelete={handleDelete}
+        onArchive={handleArchive}
       />
     </div>
   );
