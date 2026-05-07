@@ -35,20 +35,17 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           id: unitId,
         });
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&bgcolor=ffffff&data=${encodeURIComponent(qrData)}`;
-        const phone = order.client_phone ? `(${order.client_phone})` : '';
+        const phone = order.client_phone ? `(11) ${order.client_phone}` : '';
+        const trussPath = 'M0,18 L10,2 L20,18 L30,2 L40,18 L50,2 L60,18 L70,2 L80,18';
         return `
         <div class="label">
           <div class="size-top">${item.size}</div>
           <div class="phone-row">${phone}</div>
           <div class="brand-block">
-            <div class="brand-inner">
-              <div class="truss-icon">
-                <svg viewBox="0 0 80 20" width="52" height="13" fill="none">
-                  <polyline points="0,18 10,2 20,18 30,2 40,18 50,2 60,18 70,2 80,18" stroke="#fff" stroke-width="3" fill="none" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="brand-name">MODELAJES</div>
-            </div>
+            <svg class="truss-svg" viewBox="0 0 80 20" width="56" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polyline points="${trussPath}" stroke="white" stroke-width="3" fill="none" stroke-linejoin="round"/>
+            </svg>
+            <div class="brand-name">MODELAJES</div>
           </div>
           <div class="qr-block">
             <img src="${qrUrl}" class="qr-img" />
@@ -72,50 +69,46 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         border: 0.3mm solid #000;
         page-break-after: always;
         overflow: hidden;
-        padding: 0;
       }
       .size-top {
-        font-size: 13mm; font-weight: 900; line-height: 1;
-        text-align: center; padding: 2mm 0 1mm;
-        letter-spacing: -0.5mm;
+        font-size: 14mm; font-weight: 900; line-height: 1;
+        text-align: center; padding: 2.5mm 0 1mm;
+        width: 100%;
       }
       .phone-row {
-        font-size: 4.5mm; font-weight: 500;
-        text-align: center; padding-bottom: 1mm;
+        font-size: 4mm; font-weight: 500;
+        text-align: center; padding-bottom: 1.5mm; width: 100%;
       }
       .brand-block {
         background: #000; color: #fff;
-        width: 100%; display: flex; justify-content: center; align-items: center;
-        padding: 2mm 3mm;
+        width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 2mm 3mm; gap: 1mm;
       }
-      .brand-inner { display: flex; flex-direction: column; align-items: center; gap: 0.5mm; }
-      .truss-icon { display: flex; align-items: center; }
-      .brand-name { font-size: 6mm; font-weight: 900; letter-spacing: 1.5px; }
+      .truss-svg { display: block; }
+      .brand-name { font-size: 6.5mm; font-weight: 900; letter-spacing: 2px; line-height: 1; }
       .qr-block {
         flex: 1; display: flex; align-items: center; justify-content: center;
         padding: 2mm;
       }
-      .qr-img { width: 38mm; height: 38mm; display: block; }
+      .qr-img { width: 36mm; height: 36mm; display: block; }
       .desc-row {
-        font-size: 4mm; font-weight: 700; text-align: center;
-        text-decoration: underline; padding: 0 2mm 1mm;
-        border-bottom: 0.3mm solid #000; width: 100%;
+        font-size: 3.8mm; font-weight: 700; text-align: center;
+        text-decoration: underline; padding: 0 2mm 1.5mm;
+        width: 100%;
       }
       .size-bottom {
-        font-size: 11mm; font-weight: 900; text-align: center;
-        padding: 1mm 0; line-height: 1; letter-spacing: -0.5mm;
+        font-size: 12mm; font-weight: 900; text-align: center;
+        padding: 0.5mm 0 0.5mm; line-height: 1; width: 100%;
       }
       .client-row {
-        font-size: 4mm; font-weight: 700; text-align: center;
-        text-decoration: underline; padding-bottom: 1mm;
-        letter-spacing: 0.2mm;
+        font-size: 3.8mm; font-weight: 700; text-align: center;
+        text-decoration: underline; padding-bottom: 0.5mm;
+        letter-spacing: 0.2mm; width: 100%;
       }
       .unit-row {
-        font-size: 3.5mm; color: #333; text-align: center; padding-bottom: 1.5mm;
+        font-size: 3mm; color: #444; text-align: center; padding-bottom: 2mm;
       }
-      @media print {
-        body { margin: 0; }
-      }
+      @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}<script>window.onload=function(){setTimeout(function(){window.print();},800);}<\/script></body></html>`;
 

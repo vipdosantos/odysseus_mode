@@ -37,32 +37,30 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return (
-        <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-background">
-          <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-          <p className="text-sm text-muted-foreground">Redirecionando para o login...</p>
-          <button
-            className="mt-2 text-sm text-primary underline"
-            onClick={() => navigateToLogin()}
-          >Clique aqui se não foi redirecionado</button>
-        </div>
-      );
     }
-  }
-
-  // Not authenticated — force login
-  if (!isLoadingAuth && !isAuthenticated && !authError) {
+    // For auth_required or any other error → redirect to login
     navigateToLogin();
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-background">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
         <p className="text-sm text-muted-foreground">Redirecionando para o login...</p>
-        <button
-          className="mt-2 text-sm text-primary underline"
-          onClick={() => navigateToLogin()}
-        >Clique aqui se não foi redirecionado</button>
+        <button className="mt-2 text-sm text-primary underline" onClick={navigateToLogin}>
+          Clique aqui se não foi redirecionado
+        </button>
+      </div>
+    );
+  }
+
+  // Not authenticated — force login
+  if (!isLoadingAuth && !isAuthenticated) {
+    navigateToLogin();
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-background">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+        <p className="text-sm text-muted-foreground">Redirecionando para o login...</p>
+        <button className="mt-2 text-sm text-primary underline" onClick={navigateToLogin}>
+          Clique aqui se não foi redirecionado
+        </button>
       </div>
     );
   }
