@@ -20,100 +20,104 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
 
   const handlePrintLabels = () => {
     const printWindow = window.open('', '_blank');
-    // 10cm x 5cm label — each on its own page for label printers
-    const labels = order.items?.flatMap(item => {
+    if (!printWindow) return;
+
+    // Each unit gets a UNIQUE QR with its unit index to prevent double-scan errors
+    const labels = (order.items || []).flatMap(item => {
       const qty = item.quantity || 0;
-      const qrId = item.qr_code_id || `${order.order_number}-${item.size}`;
-      const qrData = JSON.stringify({
-        pedido: order.order_number,
-        cliente: order.client_name,
-        tamanho: item.size,
-        quantidade: qty,
-        id: qrId,
-      });
-      return Array.from({ length: qty }, (_, i) => `
+      return Array.from({ length: qty }, (_, i) => {
+        const unitId = `${order.order_number}-${item.size}-UN${i + 1}`;
+        const qrData = JSON.stringify({
+          pedido: order.order_number,
+          tamanho: item.size,
+          unidade: i + 1,
+          total: qty,
+          id: unitId,
+        });
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&bgcolor=ffffff&data=${encodeURIComponent(qrData)}`;
+        const phone = order.client_phone ? `(${order.client_phone})` : '';
+        return `
         <div class="label">
-          <div class="label-header">
-            <div class="logo-box">
-              <svg viewBox="0 0 40 40" width="18" height="18" fill="none">
-                <path d="M6 32 L6 12 L20 26 L34 12 L34 32" stroke="white" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
-              </svg>
-            </div>
-            <div>
-              <div class="brand">MODELAJES</div>
-              <div class="brand-sub">Treliças Metálicas</div>
-            </div>
-            <div class="seq">${i + 1}/${qty}</div>
-          </div>
-          <div class="label-body">
-            <div class="label-info">
-              <div class="size-big">${item.size}</div>
-              <div class="info-row"><span class="lbl">Pedido</span> <span class="val">#${order.order_number}</span></div>
-              <div class="info-row"><span class="lbl">Cliente</span> <span class="val">${order.client_name}</span></div>
-              <div class="info-row"><span class="lbl">Qtd Total</span> <span class="val">${qty} un</span></div>
-            </div>
-            <div class="qr-col">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=000000&bgcolor=ffffff&data=${encodeURIComponent(qrData)}" class="qr-img" />
+          <div class="size-top">${item.size}</div>
+          <div class="phone-row">${phone}</div>
+          <div class="brand-block">
+            <div class="brand-inner">
+              <div class="truss-icon">
+                <svg viewBox="0 0 80 20" width="52" height="13" fill="none">
+                  <polyline points="0,18 10,2 20,18 30,2 40,18 50,2 60,18 70,2 80,18" stroke="#fff" stroke-width="3" fill="none" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="brand-name">MODELAJES</div>
             </div>
           </div>
-          <div class="label-footer">${qrId}</div>
-        </div>
-      `);
+          <div class="qr-block">
+            <img src="${qrUrl}" class="qr-img" />
+          </div>
+          <div class="desc-row">${item.size}</div>
+          <div class="size-bottom">${item.size}</div>
+          <div class="client-row">${order.client_name}</div>
+          <div class="unit-row">${i + 1} / ${qty}</div>
+        </div>`;
+      });
     }).join('');
 
-    const html = `<!DOCTYPE html><html><head><title>Etiquetas #${order.order_number}</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Etiquetas #${order.order_number}</title>
     <style>
-      @page { size: 100mm 50mm landscape; margin: 0; }
+      @page { size: 60mm 100mm portrait; margin: 0; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: Arial, Helvetica, sans-serif; background: #fff; color: #000; }
       .label {
-        width: 100mm; height: 50mm;
-        display: flex; flex-direction: column;
-        border: 0.5mm solid #000;
+        width: 60mm; height: 100mm;
+        display: flex; flex-direction: column; align-items: center;
+        border: 0.3mm solid #000;
         page-break-after: always;
         overflow: hidden;
+        padding: 0;
       }
-      .label-header {
-        background: #000;
-        color: #fff;
-        display: flex; align-items: center; gap: 3mm;
-        padding: 1.5mm 3mm;
-        height: 11mm;
+      .size-top {
+        font-size: 13mm; font-weight: 900; line-height: 1;
+        text-align: center; padding: 2mm 0 1mm;
+        letter-spacing: -0.5mm;
       }
-      .logo-box {
-        background: #fff;
-        border-radius: 1mm;
-        width: 8mm; height: 8mm;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
+      .phone-row {
+        font-size: 4.5mm; font-weight: 500;
+        text-align: center; padding-bottom: 1mm;
       }
-      .logo-box svg path { stroke: #000; }
-      .brand { font-size: 5mm; font-weight: 900; letter-spacing: 1px; line-height: 1; }
-      .brand-sub { font-size: 2mm; opacity: 0.7; }
-      .seq { margin-left: auto; font-size: 3.5mm; font-weight: bold; background: #fff; color: #000; padding: 1mm 2mm; border-radius: 1mm; }
-      .label-body {
-        flex: 1; display: flex; padding: 2mm 3mm; gap: 2mm;
+      .brand-block {
+        background: #000; color: #fff;
+        width: 100%; display: flex; justify-content: center; align-items: center;
+        padding: 2mm 3mm;
       }
-      .label-info { flex: 1; display: flex; flex-direction: column; gap: 1mm; }
-      .size-big { font-size: 8mm; font-weight: 900; color: #000; line-height: 1; }
-      .info-row { display: flex; gap: 1mm; align-items: baseline; }
-      .lbl { font-size: 2mm; color: #555; min-width: 10mm; }
-      .val { font-size: 2.5mm; font-weight: bold; color: #000; }
-      .qr-col { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-      .qr-img { width: 24mm; height: 24mm; }
-      .label-footer {
-        background: #f0f0f0; border-top: 0.2mm solid #999;
-        padding: 0.8mm 3mm;
-        font-size: 1.8mm; color: #555;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        height: 5mm; display: flex; align-items: center;
+      .brand-inner { display: flex; flex-direction: column; align-items: center; gap: 0.5mm; }
+      .truss-icon { display: flex; align-items: center; }
+      .brand-name { font-size: 6mm; font-weight: 900; letter-spacing: 1.5px; }
+      .qr-block {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        padding: 2mm;
+      }
+      .qr-img { width: 38mm; height: 38mm; display: block; }
+      .desc-row {
+        font-size: 4mm; font-weight: 700; text-align: center;
+        text-decoration: underline; padding: 0 2mm 1mm;
+        border-bottom: 0.3mm solid #000; width: 100%;
+      }
+      .size-bottom {
+        font-size: 11mm; font-weight: 900; text-align: center;
+        padding: 1mm 0; line-height: 1; letter-spacing: -0.5mm;
+      }
+      .client-row {
+        font-size: 4mm; font-weight: 700; text-align: center;
+        text-decoration: underline; padding-bottom: 1mm;
+        letter-spacing: 0.2mm;
+      }
+      .unit-row {
+        font-size: 3.5mm; color: #333; text-align: center; padding-bottom: 1.5mm;
       }
       @media print {
         body { margin: 0; }
-        .label { border: 0.3mm solid #000; }
       }
     </style></head>
-    <body>${labels}<script>setTimeout(()=>window.print(),800)<\/script></body></html>`;
+    <body>${labels}<script>window.onload=function(){setTimeout(function(){window.print();},800);}<\/script></body></html>`;
 
     printWindow.document.write(html);
     printWindow.document.close();
