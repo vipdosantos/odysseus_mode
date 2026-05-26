@@ -104,44 +104,71 @@ export default function DeliveryReceiptTab({ order }) {
 
   const handlePrintReceipt = () => {
     const signatureImg = hasSignature || order.delivery_signature
-      ? `<img src="${order.delivery_signature || canvasRef.current.toDataURL()}" style="max-width:260px;border:1px solid #ccc;" />`
+      ? `<img src="${order.delivery_signature || canvasRef.current.toDataURL()}" style="max-width:220px;border:1px solid #ccc;border-radius:4px;" />`
       : '<p style="color:#999;font-style:italic;">Sem assinatura</p>';
 
     const items = (order.items || []).map(i =>
-      `<tr><td style="padding:4px 8px;border:1px solid #ddd;">${i.size}</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:center;">${i.quantity}</td></tr>`
+      `<tr><td style="padding:3px 6px;border:1px solid #ddd;">${i.size}</td><td style="padding:3px 6px;border:1px solid #ddd;text-align:center;">${i.quantity}</td></tr>`
     ).join('');
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Recibo de Entrega</title>
+    const logoSVG = `<svg viewBox="0 0 120 24" width="90" height="18" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="0,18 12,2 24,18 36,2 48,18 60,2 72,18 84,2 96,18 108,2 120,18" stroke="white" stroke-width="3.5" fill="none" stroke-linejoin="round"/></svg>`;
+
+    const via = (num) => `
+      <div class="via">
+        <div class="header">
+          <div class="logo-block">
+            ${logoSVG}
+            <div class="brand">MODELAJES</div>
+          </div>
+          <div class="title-block">
+            <div class="title">Recibo de Entrega</div>
+            <div class="subtitle">Pedido #${order.order_number} &nbsp;|&nbsp; ${num}ª via</div>
+          </div>
+        </div>
+        <div class="info">
+          <p><strong>Cliente:</strong> ${order.client_name}</p>
+          ${order.client_phone ? `<p><strong>Telefone:</strong> ${order.client_phone}</p>` : ''}
+          ${order.delivery_address ? `<p><strong>Endereço:</strong> ${order.delivery_address}</p>` : ''}
+          <p><strong>Data:</strong> ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+        </div>
+        <table>
+          <thead><tr><th>Item</th><th>Qtd</th></tr></thead>
+          <tbody>${items}</tbody>
+        </table>
+        <p class="decl">Declaro ter recebido os itens acima em perfeito estado.</p>
+        <div class="sig-area">
+          ${signatureImg}
+          <div class="sig-line">Assinatura do Recebedor</div>
+          <p><strong>Nome:</strong> ${signerName || '___________________________'}</p>
+          <p><strong>Documento:</strong> ${signerDoc || '___________________________'}</p>
+          ${order.delivery_signed_at ? `<p><strong>Assinado em:</strong> ${format(new Date(order.delivery_signed_at), 'dd/MM/yyyy HH:mm')}</p>` : ''}
+        </div>
+      </div>`;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Recibo #${order.order_number}</title>
     <style>
-      body { font-family: Arial, sans-serif; margin: 30px; color: #111; font-size: 13px; }
-      h1 { font-size: 18px; margin-bottom: 4px; }
-      .sub { color: #666; font-size: 12px; margin-bottom: 16px; }
-      table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-      th { background: #f3f3f3; padding: 4px 8px; border: 1px solid #ddd; text-align: left; }
-      .sig-area { margin-top: 24px; }
-      .line { border-top: 1px solid #333; width: 260px; margin-top: 8px; padding-top: 4px; font-size: 11px; color: #444; }
-      @media print { body { margin: 10px; } }
+      @page { size: A4 portrait; margin: 10mm; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; color: #111; font-size: 12px; }
+      .via { width: 100%; padding: 10px 0; }
+      .via + .via { border-top: 2px dashed #999; margin-top: 10px; padding-top: 14px; }
+      .header { display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; }
+      .logo-block { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 100px; }
+      .brand { font-size: 13px; font-weight: 900; letter-spacing: 2px; color: #fff; }
+      .title-block { flex: 1; }
+      .title { font-size: 15px; font-weight: 700; }
+      .subtitle { font-size: 11px; color: #ccc; margin-top: 2px; }
+      .info p { margin: 2px 0; }
+      table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+      th { background: #f3f3f3; padding: 3px 6px; border: 1px solid #ddd; text-align: left; font-size: 11px; }
+      .decl { font-style: italic; margin: 6px 0; color: #444; }
+      .sig-area { margin-top: 10px; }
+      .sig-area img { display: block; }
+      .sig-line { border-top: 1px solid #333; width: 240px; margin-top: 6px; padding-top: 3px; font-size: 10px; color: #444; }
+      .sig-area p { margin: 3px 0; }
+      @media print { body { margin: 0; } }
     </style></head>
-    <body>
-      <h1>Recibo de Entrega — Pedido #${order.order_number}</h1>
-      <div class="sub">Emitido em ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
-      <p><strong>Cliente:</strong> ${order.client_name}</p>
-      ${order.client_phone ? `<p><strong>Telefone:</strong> ${order.client_phone}</p>` : ''}
-      ${order.delivery_address ? `<p><strong>Endereço:</strong> ${order.delivery_address}</p>` : ''}
-      <table>
-        <thead><tr><th>Item</th><th>Qtd</th></tr></thead>
-        <tbody>${items}</tbody>
-      </table>
-      <p>Declaro ter recebido os itens acima em perfeito estado.</p>
-      <div class="sig-area">
-        ${signatureImg}
-        <div class="line">Assinatura do Recebedor</div>
-        <p style="margin-top:8px;"><strong>Nome:</strong> ${signerName || '___________________________'}</p>
-        <p><strong>Documento:</strong> ${signerDoc || '___________________________'}</p>
-        ${order.delivery_signed_at ? `<p><strong>Data:</strong> ${format(new Date(order.delivery_signed_at), 'dd/MM/yyyy HH:mm')}</p>` : ''}
-      </div>
-      <script>window.onload=function(){window.print();}<\/script>
-    </body></html>`;
+    <body>${via(1)}${via(2)}<script>window.onload=function(){window.print();}<\/script></body></html>`;
 
     const w = window.open('', '_blank');
     w.document.write(html);
