@@ -111,14 +111,13 @@ export default function DeliveryReceiptTab({ order }) {
       `<tr><td style="padding:3px 6px;border:1px solid #ddd;">${i.size}</td><td style="padding:3px 6px;border:1px solid #ddd;text-align:center;">${i.quantity}</td></tr>`
     ).join('');
 
-    const logoSVG = `<svg viewBox="0 0 120 24" width="90" height="18" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="0,18 12,2 24,18 36,2 48,18 60,2 72,18 84,2 96,18 108,2 120,18" stroke="white" stroke-width="3.5" fill="none" stroke-linejoin="round"/></svg>`;
+    const logoImg = `<img src="https://media.base44.com/images/public/69e67ee13ca6bee2db939472/a733a5b7d_graph-paper-5mm-1-en.png" style="height:40px;width:auto;object-fit:contain;" alt="Modelajes" />`;
 
     const via = (num) => `
       <div class="via">
         <div class="header">
           <div class="logo-block">
-            ${logoSVG}
-            <div class="brand">MODELAJES</div>
+            ${logoImg}
           </div>
           <div class="title-block">
             <div class="title">Recibo de Entrega</div>
@@ -152,12 +151,12 @@ export default function DeliveryReceiptTab({ order }) {
       body { font-family: Arial, sans-serif; color: #111; font-size: 12px; }
       .via { width: 100%; padding: 10px 0; }
       .via + .via { border-top: 2px dashed #999; margin-top: 10px; padding-top: 14px; }
-      .header { display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; }
+      .header { display: flex; align-items: center; gap: 12px; background: #fff; color: #111; padding: 6px 12px; border-radius: 6px; margin-bottom: 10px; border: 1.5px solid #e5e7eb; }
       .logo-block { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 100px; }
-      .brand { font-size: 13px; font-weight: 900; letter-spacing: 2px; color: #fff; }
+      .brand { font-size: 13px; font-weight: 900; letter-spacing: 2px; color: #111; }
       .title-block { flex: 1; }
       .title { font-size: 15px; font-weight: 700; }
-      .subtitle { font-size: 11px; color: #ccc; margin-top: 2px; }
+      .subtitle { font-size: 11px; color: #666; margin-top: 2px; }
       .info p { margin: 2px 0; }
       table { border-collapse: collapse; width: 100%; margin: 8px 0; }
       th { background: #f3f3f3; padding: 3px 6px; border: 1px solid #ddd; text-align: left; font-size: 11px; }

@@ -37,16 +37,12 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         });
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&bgcolor=ffffff&data=${encodeURIComponent(qrData)}`;
         const phone = order.client_phone ? `(11) ${order.client_phone}` : '';
-        const trussPath = 'M0,18 L10,2 L20,18 L30,2 L40,18 L50,2 L60,18 L70,2 L80,18';
         return `
         <div class="label">
           <div class="size-top">${item.size}</div>
           <div class="phone-row">${phone}</div>
           <div class="brand-block">
-            <svg class="truss-svg" viewBox="0 0 80 20" width="56" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polyline points="${trussPath}" stroke="white" stroke-width="3" fill="none" stroke-linejoin="round"/>
-            </svg>
-            <div class="brand-name">MODELAJES</div>
+            <img src="https://media.base44.com/images/public/69e67ee13ca6bee2db939472/a733a5b7d_graph-paper-5mm-1-en.png" class="brand-logo" alt="Modelajes" />
           </div>
           <div class="qr-block">
             <img src="${qrUrl}" class="qr-img" />
@@ -81,12 +77,11 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         text-align: center; padding-bottom: 1.5mm; width: 100%;
       }
       .brand-block {
-        background: #000; color: #fff;
-        width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 2mm 3mm; gap: 1mm;
+        background: #fff;
+        width: 100%; display: flex; align-items: center; justify-content: center;
+        padding: 2mm 2mm; border-bottom: 0.3mm solid #ddd;
       }
-      .truss-svg { display: block; }
-      .brand-name { font-size: 6.5mm; font-weight: 900; letter-spacing: 2px; line-height: 1; }
+      .brand-logo { height: 10mm; width: auto; object-fit: contain; }
       .qr-block {
         flex: 1; display: flex; align-items: center; justify-content: center;
         padding: 2mm;
