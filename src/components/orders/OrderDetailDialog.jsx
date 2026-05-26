@@ -9,6 +9,7 @@ import { ALL_STATUSES, STATUS_MAP } from './KanbanColumn';
 import OrderPaymentTab from './OrderPaymentTab';
 import OrderNFTab from './OrderNFTab';
 import QRZoomModal from './QRZoomModal';
+import DeliveryReceiptTab from './DeliveryReceiptTab';
 
 export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive }) {
   const [zoomQR, setZoomQR] = useState(null); // { url, label }
@@ -134,6 +135,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
             <TabsTrigger value="detalhes" className="flex-1 text-xs">Detalhes</TabsTrigger>
             <TabsTrigger value="pagamento" className="flex-1 text-xs">Pagamento</TabsTrigger>
             <TabsTrigger value="nota" className="flex-1 text-xs">Nota Fiscal</TabsTrigger>
+            <TabsTrigger value="recibo" className="flex-1 text-xs">Recibo</TabsTrigger>
           </TabsList>
 
           {/* ── ABA DETALHES ── */}
@@ -261,6 +263,11 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           {/* ── ABA NOTA FISCAL ── */}
           <TabsContent value="nota">
             <OrderNFTab order={order} />
+          </TabsContent>
+
+          {/* ── ABA RECIBO ── */}
+          <TabsContent value="recibo">
+            <DeliveryReceiptTab order={order} />
           </TabsContent>
         </Tabs>
       </DialogContent>

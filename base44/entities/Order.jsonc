@@ -116,10 +116,26 @@
     },
     "delivery_photos": {
       "type": "array",
-      "description": "Fotos da entrega",
+      "description": "Fotos da entrega / documentos de recebimento",
       "items": {
         "type": "string"
       }
+    },
+    "delivery_signature": {
+      "type": "string",
+      "description": "Assinatura do recebedor (base64 PNG)"
+    },
+    "delivery_signed_by": {
+      "type": "string",
+      "description": "Nome do recebedor"
+    },
+    "delivery_signer_doc": {
+      "type": "string",
+      "description": "CPF/RG do recebedor"
+    },
+    "delivery_signed_at": {
+      "type": "string",
+      "description": "Data/hora da assinatura"
     }
   },
   "required": [
