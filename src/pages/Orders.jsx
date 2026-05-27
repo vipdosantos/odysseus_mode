@@ -31,9 +31,35 @@ export default function Orders() {
     queryFn: () => base44.entities.Order.list('-created_date', 200),
   });
 
+  const createReceivableMutation = useMutation({
+    mutationFn: (data) => base44.entities.Receivable.create(data),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Order.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); setShowForm(false); },
+    onSuccess: (created, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      setShowForm(false);
+      // Auto-criar contas a receber com parcelas
+      const installments = Number(vars.installments) || 1;
+      const totalValue = Number(vars.total_value) || 0;
+      const installmentValue = totalValue > 0 ? totalValue / installments : 0;
+      const baseDate = vars.delivery_date || new Date().toISOString().slice(0, 10);
+      for (let i = 0; i < installments; i++) {
+        const dueDate = new Date(baseDate);
+        dueDate.setMonth(dueDate.getMonth() + i);
+        createReceivableMutation.mutate({
+          description: `Pedido #${vars.order_number}${installments > 1 ? ` - Parcela ${i+1}/${installments}` : ''}`,
+          client_name: vars.client_name,
+          order_number: vars.order_number,
+          amount: installmentValue,
+          due_date: dueDate.toISOString().slice(0, 10),
+          status: 'pendente',
+          payment_method: vars.payment_method || 'boleto',
+        });
+      }
+      if (totalValue > 0) toast.success(`${installments} parcela(s) criada(s) em Contas a Receber`);
+    },
   });
 
   const updateMutation = useMutation({

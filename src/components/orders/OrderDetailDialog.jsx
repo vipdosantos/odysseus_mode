@@ -36,7 +36,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           id: unitId,
         });
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&bgcolor=ffffff&data=${encodeURIComponent(qrData)}`;
-        const phone = order.client_phone ? `(11) ${order.client_phone}` : '';
+        const phone = order.seller_phone ? order.seller_phone : (order.client_phone || '');
         return `
         <div class="label">
           <div class="size-top">${item.size}</div>

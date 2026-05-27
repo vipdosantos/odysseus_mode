@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Search, Pencil, Trash2, AlertTriangle, FlaskConical } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, AlertTriangle, FlaskConical, FileUp, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const categoryLabels = { arame:'Arame', madeira:'Madeira', prego:'Prego/Grampo', cola:'Cola/Resina', tinta:'Tinta', outros:'Outros' };
@@ -39,6 +40,70 @@ export default function Supplies() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplies'] }),
   });
 
+  const [importLoading, setImportLoading] = useState(false);
+  const fileRef = React.useRef();
+
+  const handleNFImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportLoading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+      file_url,
+      json_schema: {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                code: { type: 'string' },
+                unit: { type: 'string' },
+                quantity: { type: 'number' },
+                cost_per_unit: { type: 'number' },
+                supplier_name: { type: 'string' }
+              }
+            }
+          }
+        }
+      }
+    });
+    if (result.status === 'success' && result.output?.items?.length) {
+      const items = result.output.items;
+      for (const item of items) {
+        const existing = supplies.find(s =>
+          s.code && item.code && s.code.toLowerCase() === item.code.toLowerCase() ||
+          s.name?.toLowerCase() === item.name?.toLowerCase()
+        );
+        if (existing) {
+          await base44.entities.Supply.update(existing.id, {
+            stock: (existing.stock || 0) + (item.quantity || 0),
+            cost_per_unit: item.cost_per_unit || existing.cost_per_unit,
+          });
+        } else {
+          await base44.entities.Supply.create({
+            name: item.name || 'Insumo NF',
+            code: item.code || '',
+            unit: item.unit || 'un',
+            stock: item.quantity || 0,
+            min_stock: 0,
+            cost_per_unit: item.cost_per_unit || 0,
+            supplier_name: item.supplier_name || '',
+            category: 'outros',
+          });
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['supplies'] });
+      toast.success(`${items.length} insumo(s) atualizados da NF!`);
+    } else {
+      toast.error('Não foi possível ler os itens da nota fiscal');
+    }
+    setImportLoading(false);
+    e.target.value = '';
+  };
+
   const f = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
   const openNew = () => { setEditing(null); setForm({ ...emptyForm }); setDialogOpen(true); };
   const openEdit = (s) => { setEditing(s); setForm({ ...s }); setDialogOpen(true); };
@@ -59,7 +124,14 @@ export default function Supplies() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><FlaskConical className="w-6 h-6 text-primary" /> Insumos de Fabricação</h1>
           <p className="text-sm text-muted-foreground">{supplies.length} insumos cadastrados</p>
         </div>
-        <Button onClick={openNew} className="bg-primary text-primary-foreground"><Plus className="w-4 h-4 mr-1" /> Novo Insumo</Button>
+        <div className="flex gap-2">
+          <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.xml,.xlsx,.csv" className="hidden" onChange={handleNFImport} />
+          <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={importLoading}>
+            {importLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <FileUp className="w-4 h-4 mr-1" />}
+            Importar NF
+          </Button>
+          <Button onClick={openNew} className="bg-primary text-primary-foreground"><Plus className="w-4 h-4 mr-1" /> Novo Insumo</Button>
+        </div>
       </div>
 
       {lowStock.length > 0 && (

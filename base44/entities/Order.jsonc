@@ -22,6 +22,10 @@
       "type": "string",
       "description": "Nome do vendedor"
     },
+    "seller_phone": {
+      "type": "string",
+      "description": "Telefone do vendedor"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -94,6 +98,24 @@
     "total_value": {
       "type": "number"
     },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "boleto",
+        "pix",
+        "transferencia",
+        "cartao",
+        "dinheiro",
+        "cheque"
+      ],
+      "default": "boleto",
+      "description": "Forma de pagamento"
+    },
+    "installments": {
+      "type": "number",
+      "default": 1,
+      "description": "N\u00famero de parcelas"
+    },
     "notes": {
       "type": "string"
     },
@@ -109,14 +131,14 @@
     },
     "attachments": {
       "type": "array",
-      "description": "Anexos (PDF, JPG, Excel)",
+      "description": "Anexos",
       "items": {
         "type": "string"
       }
     },
     "delivery_photos": {
       "type": "array",
-      "description": "Fotos da entrega / documentos de recebimento",
+      "description": "Fotos da entrega",
       "items": {
         "type": "string"
       }

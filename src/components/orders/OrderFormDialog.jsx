@@ -17,11 +17,11 @@ const emptyItem = { size: '', quantity: 1, produced: 0, qr_code_id: '' };
 export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
   const [form, setForm] = useState({
     order_number: '', client_name: '', client_phone: '',
-    seller_id: '', seller_name: '',
+    seller_id: '', seller_name: '', seller_phone: '',
     status: 'of_etiquetas', priority: 'normal',
     delivery_date: '', delivery_address: '', delivery_lat: null, delivery_lng: null,
     truck_type: 'nenhum',
-    total_value: 0, notes: '',
+    total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
     items: [{ ...emptyItem }],
     attachments: [],
     delivery_photos: [],
@@ -57,11 +57,11 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
       setForm({
         order_number: `PED-${Date.now().toString().slice(-6)}`,
         client_name: '', client_phone: '',
-        seller_id: '', seller_name: '',
+        seller_id: '', seller_name: '', seller_phone: '',
         status: 'of_etiquetas', priority: 'normal',
         delivery_date: '', delivery_address: '', delivery_lat: null, delivery_lng: null,
         truck_type: 'nenhum',
-        total_value: 0, notes: '',
+        total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
         items: [{ ...emptyItem }],
         attachments: [],
         delivery_photos: [],
@@ -162,6 +162,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                   const seller = sellers.find(s => s.id === v);
                   set('seller_id', v);
                   set('seller_name', seller?.name || '');
+                  set('seller_phone', seller?.phone || '');
                 }}>
                   <SelectTrigger><SelectValue placeholder="Selecionar vendedor" /></SelectTrigger>
                   <SelectContent>
@@ -185,6 +186,24 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
               <div>
                 <Label>Valor Total (R$)</Label>
                 <Input type="number" value={form.total_value} onChange={e => set('total_value', e.target.value)} />
+              </div>
+              <div>
+                <Label>Forma de Pagamento</Label>
+                <Select value={form.payment_method || 'boleto'} onValueChange={v => set('payment_method', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="transferencia">Transferência</SelectItem>
+                    <SelectItem value="cartao">Cartão</SelectItem>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="cheque">Cheque</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Parcelas</Label>
+                <Input type="number" min={1} max={24} value={form.installments || 1} onChange={e => set('installments', Number(e.target.value))} />
               </div>
               {order && (
                 <div>
