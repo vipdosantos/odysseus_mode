@@ -20,6 +20,8 @@ import Assets from './pages/Assets';
 import Supplies from './pages/Supplies';
 import BankAccounts from './pages/BankAccounts';
 import FiscalNotes from './pages/FiscalNotes';
+import OrdemPedido from './pages/OrdemPedido';
+import ControleEstoque from './pages/ControleEstoque';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
@@ -82,6 +84,8 @@ const AuthenticatedApp = () => {
         <Route path="/insumos" element={<Supplies />} />
         <Route path="/contas-bancarias" element={<BankAccounts />} />
         <Route path="/notas-fiscais" element={<FiscalNotes />} />
+        <Route path="/ordem-pedido" element={<OrdemPedido />} />
+        <Route path="/estoque" element={<ControleEstoque />} />
         <Route path="/usuarios" element={<Users />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
