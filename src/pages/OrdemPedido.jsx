@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, DollarSign, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
+import { ShoppingCart, DollarSign, ChevronRight, CheckCircle2, Clock, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -44,6 +44,11 @@ export default function OrdemPedido() {
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
     queryFn: () => base44.entities.Order.list('-created_date', 200),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Order.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
   });
 
   const { data: bills = [] } = useQuery({
@@ -207,6 +212,7 @@ export default function OrdemPedido() {
                       )}
                     </td>
                     <td className="p-3">
+                      <div className="flex gap-1">
                       <Button
                         size="sm"
                         variant={hasBills ? 'outline' : 'default'}
@@ -216,6 +222,15 @@ export default function OrdemPedido() {
                         <DollarSign className="w-3.5 h-3.5 mr-1" />
                         {hasBills ? 'Nova Conta' : 'Gerar Conta'}
                       </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => { if (window.confirm(`Excluir o pedido #${order.order_number}?`)) deleteMutation.mutate(order.id); }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
                     </td>
                   </tr>
                 );
