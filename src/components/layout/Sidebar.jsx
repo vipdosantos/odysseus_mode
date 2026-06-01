@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Factory, DollarSign, Users, 
   ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser,
   TrendingUp, CalendarDays, ClipboardList, Wrench, FlaskConical,
-  Landmark, FileText, ShoppingCart, Boxes
+  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'operador', 'financeiro', 'visualizador'] },
   { path: '/pedidos', icon: Package, label: 'Pedidos', roles: ['admin', 'operador', 'visualizador'] },
   { path: '/ordem-pedido', icon: ShoppingCart, label: 'Ordem de Pedido', roles: ['admin', 'financeiro'] },
+  { path: '/aprovacoes', icon: ClipboardCheck, label: 'Aprovação de Ordens', roles: ['admin', 'financeiro', 'operador'] },
   { path: '/estoque', icon: Boxes, label: 'Controle de Estoque', roles: ['admin', 'operador'] },
   { path: '/producao', icon: Factory, label: 'Produção', roles: ['admin', 'operador'] },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR', roles: ['admin', 'operador'] },

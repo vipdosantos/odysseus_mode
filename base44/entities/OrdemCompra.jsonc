@@ -1,0 +1,99 @@
+{
+  "name": "OrdemCompra",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "pedido",
+        "insumo"
+      ],
+      "default": "insumo",
+      "description": "Tipo: pedido de venda ou aquisi\u00e7\u00e3o de insumo"
+    },
+    "descricao": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o"
+    },
+    "fornecedor": {
+      "type": "string",
+      "description": "Fornecedor / De quem"
+    },
+    "valor_total": {
+      "type": "number",
+      "default": 0
+    },
+    "data_entrega": {
+      "type": "string",
+      "format": "date"
+    },
+    "parcelas": {
+      "type": "number",
+      "default": 1
+    },
+    "forma_pagamento": {
+      "type": "string",
+      "enum": [
+        "boleto",
+        "pix",
+        "transferencia",
+        "cartao",
+        "dinheiro",
+        "cheque"
+      ],
+      "default": "boleto"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "aguardando_aprovacao",
+        "aprovado",
+        "rejeitado",
+        "pago"
+      ],
+      "default": "aguardando_aprovacao"
+    },
+    "aprovado_por": {
+      "type": "string"
+    },
+    "rejeitado_motivo": {
+      "type": "string"
+    },
+    "itens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "quantidade": {
+            "type": "number"
+          },
+          "unidade": {
+            "type": "string"
+          },
+          "valor_unit": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "order_ref": {
+      "type": "string",
+      "description": "Refer\u00eancia ao pedido de venda"
+    },
+    "notas": {
+      "type": "string"
+    },
+    "bill_gerado": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "descricao",
+    "valor_total"
+  ]
+}

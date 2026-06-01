@@ -21,6 +21,7 @@ import Supplies from './pages/Supplies';
 import BankAccounts from './pages/BankAccounts';
 import FiscalNotes from './pages/FiscalNotes';
 import OrdemPedido from './pages/OrdemPedido';
+import OrdemCompra from './pages/OrdemCompra';
 import ControleEstoque from './pages/ControleEstoque';
 
 const AuthenticatedApp = () => {
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
         <Route path="/contas-bancarias" element={<BankAccounts />} />
         <Route path="/notas-fiscais" element={<FiscalNotes />} />
         <Route path="/ordem-pedido" element={<OrdemPedido />} />
+        <Route path="/aprovacoes" element={<OrdemCompra />} />
         <Route path="/estoque" element={<ControleEstoque />} />
         <Route path="/usuarios" element={<Users />} />
       </Route>
