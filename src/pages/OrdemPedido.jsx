@@ -6,11 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, DollarSign, ChevronRight, CheckCircle2, Clock, Trash2 } from 'lucide-react';
+import { ShoppingCart, DollarSign, CheckCircle2, Clock, Trash2, Plus, Search } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import OrderFormDialog from '@/components/orders/OrderFormDialog';
 
 const PAYMENT_LABELS = {
   boleto: 'Boleto', pix: 'PIX', transferencia: 'Transferência',
@@ -32,7 +32,8 @@ const STATUS_LABELS = {
 
 export default function OrdemPedido() {
   const queryClient = useQueryClient();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [showNewOrder, setShowNewOrder] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [form, setForm] = useState({
     description: '', supplier: '', amount: 0,
@@ -45,9 +46,21 @@ export default function OrdemPedido() {
     queryKey: ['orders'],
     queryFn: () => base44.entities.Order.list('-created_date', 200),
   });
+  const { data: currentUser } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Order.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
+  });
+  const updateOrderMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Order.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
+  });
+  const createOrderMutation = useMutation({
+    mutationFn: (data) => base44.entities.Order.create(data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
   });
 
@@ -69,7 +82,7 @@ export default function OrdemPedido() {
       payment_method: order.payment_method || 'boleto',
       notes: order.notes || '',
     });
-    setDialogOpen(true);
+    setConvertDialogOpen(true);
   };
 
   const handleConvert = async () => {
@@ -82,9 +95,7 @@ export default function OrdemPedido() {
       const due = new Date(form.due_date || new Date());
       due.setMonth(due.getMonth() + i);
       await base44.entities.Bill.create({
-        description: installments > 1
-          ? `${form.description} — Parcela ${i + 1}/${installments}`
-          : form.description,
+        description: installments > 1 ? `${form.description} — Parcela ${i + 1}/${installments}` : form.description,
         supplier: form.supplier,
         amount: installmentValue,
         due_date: due.toISOString().slice(0, 10),
@@ -96,8 +107,18 @@ export default function OrdemPedido() {
     }
     queryClient.invalidateQueries({ queryKey: ['bills'] });
     toast.success(`${installments} conta(s) a pagar criada(s) com sucesso!`);
-    setDialogOpen(false);
+    setConvertDialogOpen(false);
     setConverting(false);
+  };
+
+  const handleSaveOrder = async (data) => {
+    if (selectedOrder) {
+      await updateOrderMutation.mutateAsync({ id: selectedOrder.id, data });
+    } else {
+      await createOrderMutation.mutateAsync(data);
+    }
+    setShowNewOrder(false);
+    setSelectedOrder(null);
   };
 
   const filtered = orders.filter(o =>
@@ -106,7 +127,6 @@ export default function OrdemPedido() {
     o.client_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Check if order already has bills
   const orderBillsMap = {};
   for (const bill of bills) {
     const match = bill.description?.match(/Pedido #([^\s—]+)/);
@@ -121,45 +141,110 @@ export default function OrdemPedido() {
   const totalPaid = bills.filter(b => b.status === 'pago').reduce((s, b) => s + (b.amount || 0), 0);
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <ShoppingCart className="w-6 h-6 text-primary" /> Ordem de Pedido
           </h1>
-          <p className="text-sm text-muted-foreground">Converta pedidos em contas a pagar</p>
+          <p className="text-sm text-muted-foreground">Gerencie pedidos e converta em contas a pagar</p>
         </div>
-        <Input
-          className="max-w-xs"
-          placeholder="Buscar pedido..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+        <Button onClick={() => { setSelectedOrder(null); setShowNewOrder(true); }} className="bg-primary text-primary-foreground w-full sm:w-auto">
+          <Plus className="w-4 h-4 mr-2" /> Nova Ordem
+        </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card border rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground mb-1">Pedidos</p>
-          <p className="text-2xl font-bold">{orders.length}</p>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-card border rounded-2xl p-3 md:p-4">
+          <p className="text-xs text-muted-foreground">Pedidos</p>
+          <p className="text-xl md:text-2xl font-bold">{orders.length}</p>
         </div>
-        <div className="bg-card border rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground mb-1">Contas Pendentes</p>
-          <p className="text-2xl font-bold text-red-600">
+        <div className="bg-card border rounded-2xl p-3 md:p-4">
+          <p className="text-xs text-muted-foreground">Pendentes</p>
+          <p className="text-xl md:text-2xl font-bold text-red-600 truncate">
             R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </p>
         </div>
-        <div className="bg-card border rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground mb-1">Contas Pagas</p>
-          <p className="text-2xl font-bold text-green-600">
+        <div className="bg-card border rounded-2xl p-3 md:p-4">
+          <p className="text-xs text-muted-foreground">Pagas</p>
+          <p className="text-xl md:text-2xl font-bold text-green-600 truncate">
             R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-card rounded-2xl border overflow-hidden">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          className="pl-9"
+          placeholder="Buscar pedido ou cliente..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {filtered.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">Nenhum pedido encontrado</div>
+        )}
+        {filtered.map(order => {
+          const linkedBills = orderBillsMap[order.order_number] || [];
+          const hasBills = linkedBills.length > 0;
+          return (
+            <div key={order.id} className="bg-card border rounded-2xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-bold text-primary text-base">#{order.order_number}</p>
+                  <p className="font-semibold text-sm">{order.client_name}</p>
+                  {order.seller_name && <p className="text-xs text-muted-foreground">{order.seller_name}</p>}
+                </div>
+                <span className={cn('text-xs px-2 py-1 rounded-full text-white font-semibold shrink-0', STATUS_COLORS[order.status] || 'bg-gray-400')}>
+                  {STATUS_LABELS[order.status] || order.status}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-3 text-sm">
+                {order.total_value > 0 && (
+                  <span className="font-semibold">R$ {order.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                )}
+                {order.payment_method && (
+                  <span className="text-muted-foreground">{PAYMENT_LABELS[order.payment_method]}{order.installments > 1 && <span className="text-primary font-bold ml-1">{order.installments}x</span>}</span>
+                )}
+                {order.delivery_date && (
+                  <span className="text-muted-foreground">{format(parseISO(order.delivery_date), 'dd/MM/yy')}</span>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  size="sm"
+                  variant={hasBills ? 'outline' : 'default'}
+                  className={cn('flex-1 text-xs', !hasBills && 'bg-primary text-primary-foreground')}
+                  onClick={() => openConvert(order)}
+                >
+                  <DollarSign className="w-3.5 h-3.5 mr-1" />
+                  {hasBills ? `${linkedBills.length} conta(s)` : 'Gerar Conta'}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => { if (window.confirm(`Excluir o pedido #${order.order_number}?`)) deleteMutation.mutate(order.id); }}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden md:block bg-card rounded-2xl border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 border-b">
@@ -182,9 +267,7 @@ export default function OrdemPedido() {
                     <td className="p-3 font-medium">{order.client_name}</td>
                     <td className="p-3 text-muted-foreground">{order.seller_name || '—'}</td>
                     <td className="p-3 font-semibold">
-                      {order.total_value > 0
-                        ? `R$ ${order.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                        : '—'}
+                      {order.total_value > 0 ? `R$ ${order.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                     </td>
                     <td className="p-3 text-muted-foreground whitespace-nowrap">
                       {order.delivery_date ? format(parseISO(order.delivery_date), 'dd/MM/yyyy') : '—'}
@@ -201,36 +284,27 @@ export default function OrdemPedido() {
                     <td className="p-3">
                       {hasBills ? (
                         <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          {linkedBills.length} conta(s)
+                          <CheckCircle2 className="w-3.5 h-3.5" />{linkedBills.length} conta(s)
                         </span>
                       ) : (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="w-3.5 h-3.5" />
-                          Não gerado
+                          <Clock className="w-3.5 h-3.5" />Não gerado
                         </span>
                       )}
                     </td>
                     <td className="p-3">
                       <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant={hasBills ? 'outline' : 'default'}
-                        className={cn('text-xs', !hasBills && 'bg-primary text-primary-foreground')}
-                        onClick={() => openConvert(order)}
-                      >
-                        <DollarSign className="w-3.5 h-3.5 mr-1" />
-                        {hasBills ? 'Nova Conta' : 'Gerar Conta'}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => { if (window.confirm(`Excluir o pedido #${order.order_number}?`)) deleteMutation.mutate(order.id); }}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                      </Button>
-                    </div>
+                        <Button size="sm" variant={hasBills ? 'outline' : 'default'}
+                          className={cn('text-xs', !hasBills && 'bg-primary text-primary-foreground')}
+                          onClick={() => openConvert(order)}>
+                          <DollarSign className="w-3.5 h-3.5 mr-1" />
+                          {hasBills ? 'Nova Conta' : 'Gerar Conta'}
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8"
+                          onClick={() => { if (window.confirm(`Excluir o pedido #${order.order_number}?`)) deleteMutation.mutate(order.id); }}>
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -240,13 +314,21 @@ export default function OrdemPedido() {
         </div>
       </div>
 
-      {/* Convert Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+      {/* New Order Dialog */}
+      <OrderFormDialog
+        open={showNewOrder}
+        onOpenChange={(v) => { setShowNewOrder(v); if (!v) setSelectedOrder(null); }}
+        order={selectedOrder}
+        onSave={handleSaveOrder}
+        canEdit={true}
+      />
+
+      {/* Convert to Bill Dialog */}
+      <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
+        <DialogContent className="max-w-md w-[95vw]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-primary" />
-              Gerar Conta a Pagar
+              <DollarSign className="w-5 h-5 text-primary" /> Gerar Conta a Pagar
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-2">
@@ -270,7 +352,7 @@ export default function OrdemPedido() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Parcelas do Boleto</Label>
+                <Label>Parcelas</Label>
                 <Input type="number" min={1} max={24} value={form.installments} onChange={e => f('installments', e.target.value)} />
               </div>
               <div>
@@ -278,9 +360,7 @@ export default function OrdemPedido() {
                 <Select value={form.payment_method} onValueChange={v => f('payment_method', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(PAYMENT_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
+                    {Object.entries(PAYMENT_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -294,9 +374,9 @@ export default function OrdemPedido() {
               </div>
             )}
           </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleConvert} disabled={converting} className="bg-primary text-primary-foreground">
+          <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setConvertDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleConvert} disabled={converting} className="w-full sm:w-auto bg-primary text-primary-foreground">
               {converting ? 'Gerando...' : 'Gerar Conta(s) a Pagar'}
             </Button>
           </DialogFooter>
