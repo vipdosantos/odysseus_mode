@@ -24,11 +24,11 @@ export default function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <Sidebar user={user} />
       </div>
       <MobileNav user={user} />
-      <main className="flex-1 min-w-0 md:pb-0 pb-16">
+      <main className="flex-1 min-w-0 lg:pb-0 pb-16">
         <Outlet context={{ user }} />
       </main>
     </div>

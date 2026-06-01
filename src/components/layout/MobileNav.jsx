@@ -1,27 +1,30 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Warehouse, Landmark, FileText, Users, Settings, Truck } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Boxes, Landmark, FileText, Users, Settings, Wrench, ClipboardList, ShoppingCart, ClipboardCheck, BookUser, LogOut, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const mainItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Home' },
+const allItems = [
+  { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/pedidos', icon: Package, label: 'Pedidos' },
-  { path: '/scanner', icon: ScanLine, label: 'Scanner' },
   { path: '/producao', icon: Factory, label: 'Produção' },
-  { path: '/financeiro', icon: DollarSign, label: 'Finanças' },
-];
-
-const moreItems = [
-  { path: '/receber', icon: Landmark, label: 'Receber' },
+  { path: '/scanner', icon: ScanLine, label: 'Scanner QR' },
+  { path: '/financeiro', icon: DollarSign, label: 'Contas a Pagar' },
+  { path: '/receber', icon: TrendingUp, label: 'Contas a Receber' },
+  { path: '/ordem-pedido', icon: ShoppingCart, label: 'Ordem de Pedido' },
+  { path: '/aprovacoes', icon: ClipboardCheck, label: 'Aprovações' },
+  { path: '/estoque', icon: Boxes, label: 'Controle Estoque' },
   { path: '/calendario', icon: Calendar, label: 'Calendário' },
-  { path: '/insumos', icon: Warehouse, label: 'Insumos' },
-  { path: '/patrimonio', icon: Truck, label: 'Patrimônio' },
-  { path: '/produtividade', icon: BarChart2, label: 'Produtividade' },
+  { path: '/insumos', icon: Boxes, label: 'Insumos' },
+  { path: '/patrimonio', icon: Wrench, label: 'Patrimônio' },
+  { path: '/produtividade', icon: ClipboardList, label: 'Produtividade' },
   { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais' },
-  { path: '/contas-bancarias', icon: Landmark, label: 'Contas' },
-  { path: '/cadastros', icon: Settings, label: 'Cadastros' },
+  { path: '/contas-bancarias', icon: Landmark, label: 'Contas Bancárias' },
+  { path: '/cadastros', icon: BookUser, label: 'Cadastros' },
   { path: '/usuarios', icon: Users, label: 'Usuários' },
 ];
+
+const mainItems = allItems.slice(0, 4);
 
 export default function MobileNav({ user }) {
   const location = useLocation();
@@ -31,15 +34,15 @@ export default function MobileNav({ user }) {
     <>
       {/* Full-screen "more" menu overlay */}
       {showMore && (
-        <div className="md:hidden fixed inset-0 z-50 bg-background flex flex-col">
+        <div className="lg:hidden fixed inset-0 z-50 bg-background flex flex-col">
           <div className="flex items-center justify-between px-4 py-4 border-b border-border">
-            <span className="font-bold text-lg">Menu</span>
+            <span className="font-bold text-lg">Menu Completo</span>
             <button onClick={() => setShowMore(false)} className="p-2 rounded-full hover:bg-muted">
               <X className="w-6 h-6" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 grid grid-cols-3 gap-3 content-start">
-            {[...mainItems, ...moreItems].map(item => {
+          <div className="flex-1 overflow-y-auto p-4 grid grid-cols-3 sm:grid-cols-4 gap-3 content-start">
+            {allItems.map(item => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
@@ -63,7 +66,7 @@ export default function MobileNav({ user }) {
       )}
 
       {/* Bottom nav bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 no-print">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 no-print">
         <div className="flex items-center justify-around py-2">
           {mainItems.map(item => {
             const isActive = location.pathname === item.path;
@@ -87,6 +90,13 @@ export default function MobileNav({ user }) {
           >
             <Menu className="w-5 h-5" />
             <span className="text-[10px] font-medium">Mais</span>
+          </button>
+          <button
+            onClick={() => base44.auth.logout()}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-muted-foreground"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Sair</span>
           </button>
         </div>
       </nav>
