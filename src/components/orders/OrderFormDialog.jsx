@@ -171,6 +171,9 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
               <div>
                 <Label>Vendedor</Label>
                 <Select value={form.seller_id || ''} onValueChange={v => {
+                  if (v === '') {
+                    set('seller_id', ''); set('seller_name', ''); set('seller_phone', ''); return;
+                  }
                   const seller = sellers.find(s => s.id === v);
                   set('seller_id', v);
                   set('seller_name', seller?.name || '');

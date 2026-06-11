@@ -223,6 +223,11 @@ export default function OrdemCompra() {
           </h1>
           <p className="text-sm text-muted-foreground">Aprove ou rejeite ordens de compra de insumos e materiais</p>
         </div>
+        {isAdmin && (
+          <Button onClick={() => openNew('insumo')} className="bg-primary text-primary-foreground w-full sm:w-auto">
+            <Plus className="w-4 h-4 mr-2" /> Nova Ordem
+          </Button>
+        )}
       </div>
 
       {/* Summary */}

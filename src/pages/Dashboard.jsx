@@ -22,7 +22,7 @@ export default function Dashboard() {
 
   const stats = {
     totalOrders: orders.length,
-    inProduction: orders.filter(o => o.status === 'em_producao').length,
+    inProduction: orders.filter(o => o.status === 'producao').length,
     pendingBills: bills.filter(b => b.status === 'pendente').length,
     totalPending: bills.filter(b => b.status === 'pendente').reduce((s, b) => s + (b.amount || 0), 0),
     overdueBills: bills.filter(b => b.status === 'pendente' && new Date(b.due_date) < new Date()).length,
