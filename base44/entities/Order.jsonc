@@ -14,6 +14,14 @@
       "type": "string",
       "description": "Telefone do cliente"
     },
+    "client_photo": {
+      "type": "string",
+      "description": "Foto do cliente (URL)"
+    },
+    "access_key": {
+      "type": "string",
+      "description": "Chave de acesso ao status do pedido"
+    },
     "seller_id": {
       "type": "string",
       "description": "ID do vendedor"

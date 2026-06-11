@@ -11,7 +11,7 @@ const allItems = [
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR' },
   { path: '/financeiro', icon: DollarSign, label: 'Contas a Pagar' },
   { path: '/receber', icon: TrendingUp, label: 'Contas a Receber' },
-  { path: '/ordem-pedido', icon: ShoppingCart, label: 'Ordem de Pedido' },
+  { path: '/ordem-pedido', icon: ShoppingCart, label: 'Ordem de Compras' },
   { path: '/aprovacoes', icon: ClipboardCheck, label: 'Aprovações' },
   { path: '/estoque', icon: Boxes, label: 'Controle Estoque' },
   { path: '/calendario', icon: Calendar, label: 'Calendário' },

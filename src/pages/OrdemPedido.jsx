@@ -4,175 +4,154 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ShoppingCart, DollarSign, CheckCircle2, Clock, Trash2, Plus, Search } from 'lucide-react';
+import { ShoppingBag, Plus, Trash2, Search, Clock, CheckCircle2, XCircle, PackageCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import OrderFormDialog from '@/components/orders/OrderFormDialog';
 
 const PAYMENT_LABELS = {
   boleto: 'Boleto', pix: 'PIX', transferencia: 'Transferência',
   cartao: 'Cartão', dinheiro: 'Dinheiro', cheque: 'Cheque',
 };
 
-const STATUS_COLORS = {
-  of_etiquetas: 'bg-gray-400', corte_vigas: 'bg-yellow-400', producao: 'bg-blue-500',
-  secagem: 'bg-cyan-500', expedicao: 'bg-orange-400', aguardando_entrega: 'bg-amber-500',
-  entrega: 'bg-indigo-500', a_caminho: 'bg-purple-500', recebido: 'bg-teal-500',
-  pagamento_pendente: 'bg-red-500', finalizado: 'bg-green-600',
+const STATUS_CONFIG = {
+  rascunho:             { label: 'Rascunho',       color: 'bg-gray-400' },
+  aguardando_aprovacao: { label: 'Ag. Aprovação',  color: 'bg-yellow-500' },
+  aprovado:             { label: 'Aprovado',        color: 'bg-green-600' },
+  rejeitado:            { label: 'Rejeitado',       color: 'bg-red-500' },
+  pago:                 { label: 'Pago',            color: 'bg-blue-600' },
 };
-const STATUS_LABELS = {
-  of_etiquetas: 'OF e Etiquetas', corte_vigas: 'Corte Vigas', producao: 'Produção',
-  secagem: 'Secagem', expedicao: 'Expedição', aguardando_entrega: 'Ag. Entrega',
-  entrega: 'Entrega', a_caminho: 'A Caminho', recebido: 'Recebido',
-  pagamento_pendente: 'Pag. Pendente', finalizado: 'Finalizado',
+
+const emptyItem = { nome: '', quantidade: 1, unidade: 'un', valor_unit: 0 };
+const emptyForm = {
+  descricao: '', fornecedor: '', valor_total: 0,
+  data_entrega: '', parcelas: 1, forma_pagamento: 'boleto',
+  status: 'aguardando_aprovacao', notas: '', itens: [], tipo: 'insumo',
 };
 
 export default function OrdemPedido() {
   const queryClient = useQueryClient();
-  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
-  const [showNewOrder, setShowNewOrder] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [form, setForm] = useState({
-    description: '', supplier: '', amount: 0,
-    due_date: '', installments: 1, payment_method: 'boleto', notes: '',
-  });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ ...emptyForm });
   const [search, setSearch] = useState('');
-  const [converting, setConverting] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
 
-  const { data: orders = [] } = useQuery({
-    queryKey: ['orders'],
-    queryFn: () => base44.entities.Order.list('-created_date', 200),
+  const { data: ordens = [] } = useQuery({
+    queryKey: ['ordens_compra'],
+    queryFn: () => base44.entities.OrdemCompra.list('-created_date', 500),
   });
+
   const { data: currentUser } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Order.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
-  });
-  const updateOrderMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Order.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
-  });
-  const createOrderMutation = useMutation({
-    mutationFn: (data) => base44.entities.Order.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'financeiro';
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.OrdemCompra.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ordens_compra'] });
+      setDialogOpen(false);
+      toast.success('Ordem de compra enviada para aprovação!');
+    },
   });
 
-  const { data: bills = [] } = useQuery({
-    queryKey: ['bills'],
-    queryFn: () => base44.entities.Bill.list('-created_date', 500),
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.OrdemCompra.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ordens_compra'] });
+      setDialogOpen(false);
+      toast.success('Ordem atualizada!');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.OrdemCompra.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ordens_compra'] }),
   });
 
   const f = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
 
-  const openConvert = (order) => {
-    setSelectedOrder(order);
-    setForm({
-      description: `Pedido #${order.order_number} — ${order.client_name}`,
-      supplier: order.client_name,
-      amount: order.total_value || 0,
-      due_date: order.delivery_date || '',
-      installments: order.installments || 1,
-      payment_method: order.payment_method || 'boleto',
-      notes: order.notes || '',
-    });
-    setConvertDialogOpen(true);
+  const addItem = () => setForm(prev => ({ ...prev, itens: [...(prev.itens || []), { ...emptyItem }] }));
+  const updateItem = (i, k, v) => setForm(prev => {
+    const itens = [...prev.itens];
+    itens[i] = { ...itens[i], [k]: v };
+    return { ...prev, itens };
+  });
+  const removeItem = (i) => setForm(prev => ({ ...prev, itens: prev.itens.filter((_, idx) => idx !== i) }));
+
+  const calcTotal = form.itens?.length > 0
+    ? form.itens.reduce((s, i) => s + (Number(i.quantidade || 0) * Number(i.valor_unit || 0)), 0)
+    : Number(form.valor_total || 0);
+
+  const openNew = () => {
+    setEditing(null);
+    setForm({ ...emptyForm });
+    setDialogOpen(true);
   };
 
-  const handleConvert = async () => {
-    setConverting(true);
-    const installments = Number(form.installments) || 1;
-    const totalAmount = Number(form.amount) || 0;
-    const installmentValue = totalAmount / installments;
-
-    for (let i = 0; i < installments; i++) {
-      const due = new Date(form.due_date || new Date());
-      due.setMonth(due.getMonth() + i);
-      await base44.entities.Bill.create({
-        description: installments > 1 ? `${form.description} — Parcela ${i + 1}/${installments}` : form.description,
-        supplier: form.supplier,
-        amount: installmentValue,
-        due_date: due.toISOString().slice(0, 10),
-        payment_method: form.payment_method,
-        status: 'pendente',
-        notes: form.notes,
-        category: 'outros',
-      });
-    }
-    queryClient.invalidateQueries({ queryKey: ['bills'] });
-    toast.success(`${installments} conta(s) a pagar criada(s) com sucesso!`);
-    setConvertDialogOpen(false);
-    setConverting(false);
+  const openEdit = (o) => {
+    setEditing(o);
+    setForm({ ...o });
+    setDialogOpen(true);
   };
 
-  const handleSaveOrder = async (data) => {
-    if (selectedOrder) {
-      await updateOrderMutation.mutateAsync({ id: selectedOrder.id, data });
-    } else {
-      await createOrderMutation.mutateAsync(data);
-    }
-    setShowNewOrder(false);
-    setSelectedOrder(null);
+  const handleSave = () => {
+    if (!form.descricao.trim()) { toast.error('Informe a descrição da ordem.'); return; }
+    const totalCalc = form.itens?.length > 0
+      ? form.itens.reduce((s, i) => s + (Number(i.quantidade) * Number(i.valor_unit)), 0)
+      : Number(form.valor_total);
+    const data = { ...form, valor_total: totalCalc, tipo: 'insumo' };
+    editing ? updateMutation.mutate({ id: editing.id, data }) : createMutation.mutate(data);
   };
 
-  const filtered = orders.filter(o =>
-    !search ||
-    o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
-    o.client_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = ordens.filter(o => {
+    const matchSearch = !search ||
+      o.descricao?.toLowerCase().includes(search.toLowerCase()) ||
+      o.fornecedor?.toLowerCase().includes(search.toLowerCase());
+    return matchSearch;
+  });
 
-  const orderBillsMap = {};
-  for (const bill of bills) {
-    const match = bill.description?.match(/Pedido #([^\s—]+)/);
-    if (match) {
-      const num = match[1];
-      if (!orderBillsMap[num]) orderBillsMap[num] = [];
-      orderBillsMap[num].push(bill);
-    }
-  }
-
-  const totalPending = bills.filter(b => b.status === 'pendente').reduce((s, b) => s + (b.amount || 0), 0);
-  const totalPaid = bills.filter(b => b.status === 'pago').reduce((s, b) => s + (b.amount || 0), 0);
+  const totals = {
+    total: ordens.length,
+    pendentes: ordens.filter(o => o.status === 'aguardando_aprovacao').length,
+    aprovadas: ordens.filter(o => o.status === 'aprovado').length,
+    rejeitadas: ordens.filter(o => o.status === 'rejeitado').length,
+  };
 
   return (
-    <div className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 space-y-5 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-primary" /> Ordem de Pedido
+            <ShoppingBag className="w-6 h-6 text-primary" /> Ordem de Compras
           </h1>
-          <p className="text-sm text-muted-foreground">Gerencie pedidos e converta em contas a pagar</p>
+          <p className="text-sm text-muted-foreground">Solicite compras de insumos e materiais para aprovação</p>
         </div>
-        <Button onClick={() => { setSelectedOrder(null); setShowNewOrder(true); }} className="bg-primary text-primary-foreground w-full sm:w-auto">
-          <Plus className="w-4 h-4 mr-2" /> Nova Ordem
+        <Button onClick={openNew} className="bg-primary text-primary-foreground w-full sm:w-auto">
+          <Plus className="w-4 h-4 mr-2" /> Nova Ordem de Compra
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card border rounded-2xl p-3 md:p-4">
-          <p className="text-xs text-muted-foreground">Pedidos</p>
-          <p className="text-xl md:text-2xl font-bold">{orders.length}</p>
-        </div>
-        <div className="bg-card border rounded-2xl p-3 md:p-4">
-          <p className="text-xs text-muted-foreground">Pendentes</p>
-          <p className="text-xl md:text-2xl font-bold text-red-600 truncate">
-            R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </p>
-        </div>
-        <div className="bg-card border rounded-2xl p-3 md:p-4">
-          <p className="text-xs text-muted-foreground">Pagas</p>
-          <p className="text-xl md:text-2xl font-bold text-green-600 truncate">
-            R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </p>
-        </div>
+      {/* Summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Total', value: totals.total, color: '' },
+          { label: 'Ag. Aprovação', value: totals.pendentes, color: 'text-yellow-600' },
+          { label: 'Aprovadas', value: totals.aprovadas, color: 'text-green-600' },
+          { label: 'Rejeitadas', value: totals.rejeitadas, color: 'text-red-600' },
+        ].map(s => (
+          <div key={s.label} className="bg-card border rounded-2xl p-3 md:p-4">
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+            <p className={cn('text-xl md:text-2xl font-bold', s.color)}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
       {/* Search */}
@@ -180,204 +159,194 @@ export default function OrdemPedido() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           className="pl-9"
-          placeholder="Buscar pedido ou cliente..."
+          placeholder="Buscar por descrição ou fornecedor..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
       </div>
 
-      {/* Mobile Cards */}
-      <div className="flex flex-col gap-3 md:hidden">
+      {/* List */}
+      <div className="space-y-3">
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">Nenhum pedido encontrado</div>
+          <div className="text-center py-16 text-muted-foreground">
+            <PackageCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>Nenhuma ordem de compra encontrada</p>
+          </div>
         )}
-        {filtered.map(order => {
-          const linkedBills = orderBillsMap[order.order_number] || [];
-          const hasBills = linkedBills.length > 0;
+        {filtered.map(o => {
+          const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG.rascunho;
+          const expanded = expandedId === o.id;
           return (
-            <div key={order.id} className="bg-card border rounded-2xl p-4 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-bold text-primary text-base">#{order.order_number}</p>
-                  <p className="font-semibold text-sm">{order.client_name}</p>
-                  {order.seller_name && <p className="text-xs text-muted-foreground">{order.seller_name}</p>}
+            <div key={o.id} className={cn('bg-card border rounded-2xl overflow-hidden', o.status === 'rejeitado' && 'opacity-60')}>
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <p className="font-semibold">{o.descricao}</p>
+                    <span className={cn('text-xs px-2 py-0.5 rounded-full text-white font-semibold', sc.color)}>{sc.label}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {o.fornecedor && <span>{o.fornecedor} · </span>}
+                    <span className="font-semibold text-foreground">R$ {(o.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    {o.parcelas > 1 && <span className="text-primary font-semibold ml-1">{o.parcelas}x</span>}
+                    {o.data_entrega && <span className="ml-2">· {format(parseISO(o.data_entrega), 'dd/MM/yyyy')}</span>}
+                  </p>
+                  {o.status === 'rejeitado' && o.rejeitado_motivo && (
+                    <p className="text-xs text-red-600 mt-0.5">Motivo: {o.rejeitado_motivo}</p>
+                  )}
+                  {o.status === 'aprovado' && o.aprovado_por && (
+                    <p className="text-xs text-green-600 mt-0.5">Aprovado por: {o.aprovado_por}</p>
+                  )}
                 </div>
-                <span className={cn('text-xs px-2 py-1 rounded-full text-white font-semibold shrink-0', STATUS_COLORS[order.status] || 'bg-gray-400')}>
-                  {STATUS_LABELS[order.status] || order.status}
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {(o.status === 'rascunho' || o.status === 'aguardando_aprovacao') && (
+                    <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => openEdit(o)}>
+                      Editar
+                    </Button>
+                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={() => { if (window.confirm('Excluir esta ordem?')) deleteMutation.mutate(o.id); }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                  {o.itens?.length > 0 && (
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setExpandedId(expanded ? null : o.id)}>
+                      {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </Button>
+                  )}
+                </div>
               </div>
-
-              <div className="flex flex-wrap gap-3 text-sm">
-                {order.total_value > 0 && (
-                  <span className="font-semibold">R$ {order.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                )}
-                {order.payment_method && (
-                  <span className="text-muted-foreground">{PAYMENT_LABELS[order.payment_method]}{order.installments > 1 && <span className="text-primary font-bold ml-1">{order.installments}x</span>}</span>
-                )}
-                {order.delivery_date && (
-                  <span className="text-muted-foreground">{format(parseISO(order.delivery_date), 'dd/MM/yy')}</span>
-                )}
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <Button
-                  size="sm"
-                  variant={hasBills ? 'outline' : 'default'}
-                  className={cn('flex-1 text-xs', !hasBills && 'bg-primary text-primary-foreground')}
-                  onClick={() => openConvert(order)}
-                >
-                  <DollarSign className="w-3.5 h-3.5 mr-1" />
-                  {hasBills ? `${linkedBills.length} conta(s)` : 'Gerar Conta'}
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 shrink-0"
-                  onClick={() => { if (window.confirm(`Excluir o pedido #${order.order_number}?`)) deleteMutation.mutate(order.id); }}
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                </Button>
-              </div>
+              {expanded && o.itens?.length > 0 && (
+                <div className="border-t bg-muted/30 px-4 py-3">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-muted-foreground">
+                          <th className="text-left pb-1">Item</th>
+                          <th className="text-left pb-1">Qtd</th>
+                          <th className="text-left pb-1">Un.</th>
+                          <th className="text-left pb-1">Valor Unit.</th>
+                          <th className="text-left pb-1">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {o.itens.map((item, i) => (
+                          <tr key={i} className="border-t border-border/50">
+                            <td className="py-1 font-medium">{item.nome}</td>
+                            <td className="py-1">{item.quantidade}</td>
+                            <td className="py-1">{item.unidade}</td>
+                            <td className="py-1">R$ {Number(item.valor_unit || 0).toFixed(2)}</td>
+                            <td className="py-1 font-semibold">R$ {(Number(item.quantidade) * Number(item.valor_unit || 0)).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* Desktop Table */}
-      <div className="hidden md:block bg-card rounded-2xl border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-b">
-              <tr>
-                {['Pedido','Cliente','Vendedor','Valor','Entrega','Status','Pagamento','Contas',''].map(h => (
-                  <th key={h} className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} className="text-center py-12 text-muted-foreground">Nenhum pedido encontrado</td></tr>
-              )}
-              {filtered.map(order => {
-                const linkedBills = orderBillsMap[order.order_number] || [];
-                const hasBills = linkedBills.length > 0;
-                return (
-                  <tr key={order.id} className="border-t hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-bold text-primary">#{order.order_number}</td>
-                    <td className="p-3 font-medium">{order.client_name}</td>
-                    <td className="p-3 text-muted-foreground">{order.seller_name || '—'}</td>
-                    <td className="p-3 font-semibold">
-                      {order.total_value > 0 ? `R$ ${order.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
-                    </td>
-                    <td className="p-3 text-muted-foreground whitespace-nowrap">
-                      {order.delivery_date ? format(parseISO(order.delivery_date), 'dd/MM/yyyy') : '—'}
-                    </td>
-                    <td className="p-3">
-                      <span className={cn('text-xs px-2 py-1 rounded-full text-white font-semibold', STATUS_COLORS[order.status] || 'bg-gray-400')}>
-                        {STATUS_LABELS[order.status] || order.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-muted-foreground">
-                      {order.payment_method ? PAYMENT_LABELS[order.payment_method] : '—'}
-                      {order.installments > 1 && <span className="ml-1 text-xs text-primary font-semibold">{order.installments}x</span>}
-                    </td>
-                    <td className="p-3">
-                      {hasBills ? (
-                        <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
-                          <CheckCircle2 className="w-3.5 h-3.5" />{linkedBills.length} conta(s)
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="w-3.5 h-3.5" />Não gerado
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-1">
-                        <Button size="sm" variant={hasBills ? 'outline' : 'default'}
-                          className={cn('text-xs', !hasBills && 'bg-primary text-primary-foreground')}
-                          onClick={() => openConvert(order)}>
-                          <DollarSign className="w-3.5 h-3.5 mr-1" />
-                          {hasBills ? 'Nova Conta' : 'Gerar Conta'}
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8"
-                          onClick={() => { if (window.confirm(`Excluir o pedido #${order.order_number}?`)) deleteMutation.mutate(order.id); }}>
-                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* New Order Dialog */}
-      <OrderFormDialog
-        open={showNewOrder}
-        onOpenChange={(v) => { setShowNewOrder(v); if (!v) setSelectedOrder(null); }}
-        order={selectedOrder}
-        onSave={handleSaveOrder}
-        canEdit={true}
-      />
-
-      {/* Convert to Bill Dialog */}
-      <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
-        <DialogContent className="max-w-md w-[95vw]">
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-primary" /> Gerar Conta a Pagar
+              <ShoppingBag className="w-5 h-5 text-primary" />
+              {editing ? 'Editar Ordem de Compra' : 'Nova Ordem de Compra'}
             </DialogTitle>
           </DialogHeader>
+
           <div className="space-y-3 mt-2">
             <div>
-              <Label>Descrição</Label>
-              <Input value={form.description} onChange={e => f('description', e.target.value)} />
+              <Label>Descrição *</Label>
+              <Input value={form.descricao} onChange={e => f('descricao', e.target.value)} placeholder="Ex: Compra de arame galvanizado..." />
             </div>
             <div>
-              <Label>De quem (Fornecedor / Cliente)</Label>
-              <Input value={form.supplier} onChange={e => f('supplier', e.target.value)} />
+              <Label>Fornecedor</Label>
+              <Input value={form.fornecedor} onChange={e => f('fornecedor', e.target.value)} placeholder="Nome do fornecedor" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Valor Total (R$)</Label>
-                <Input type="number" value={form.amount} onChange={e => f('amount', e.target.value)} />
+
+            {/* Itens */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Itens da Compra</Label>
+                <Button size="sm" variant="outline" type="button" onClick={addItem} className="text-xs h-7">
+                  <Plus className="w-3 h-3 mr-1" /> Adicionar Item
+                </Button>
               </div>
-              <div>
-                <Label>Data de Vencimento</Label>
-                <Input type="date" value={form.due_date} onChange={e => f('due_date', e.target.value)} />
-              </div>
+              {form.itens?.map((item, i) => (
+                <div key={i} className="grid grid-cols-12 gap-1 mb-2 items-center">
+                  <Input className="col-span-4 text-xs" placeholder="Nome" value={item.nome} onChange={e => updateItem(i, 'nome', e.target.value)} />
+                  <Input className="col-span-2 text-xs" type="number" placeholder="Qtd" value={item.quantidade} onChange={e => updateItem(i, 'quantidade', e.target.value)} />
+                  <Input className="col-span-2 text-xs" placeholder="Un." value={item.unidade} onChange={e => updateItem(i, 'unidade', e.target.value)} />
+                  <Input className="col-span-3 text-xs" type="number" placeholder="R$/un" value={item.valor_unit} onChange={e => updateItem(i, 'valor_unit', e.target.value)} />
+                  <Button size="icon" variant="ghost" className="col-span-1 h-8 w-8" onClick={() => removeItem(i)}>
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                </div>
+              ))}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Parcelas</Label>
-                <Input type="number" min={1} max={24} value={form.installments} onChange={e => f('installments', e.target.value)} />
-              </div>
-              <div>
-                <Label>Forma de Pagamento</Label>
-                <Select value={form.payment_method} onValueChange={v => f('payment_method', v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PAYMENT_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            {form.installments > 1 && form.amount > 0 && (
-              <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                <p className="font-semibold text-primary">
-                  {form.installments}x de R$ {(Number(form.amount) / Number(form.installments)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">Vencimentos mensais a partir da data informada</p>
+
+            {form.itens?.length > 0 && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm font-semibold text-primary">
+                Total: R$ {calcTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
             )}
+
+            {(!form.itens || form.itens.length === 0) && (
+              <div>
+                <Label>Valor Total (R$)</Label>
+                <Input type="number" value={form.valor_total} onChange={e => f('valor_total', e.target.value)} />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Data Prevista</Label>
+                <Input type="date" value={form.data_entrega} onChange={e => f('data_entrega', e.target.value)} />
+              </div>
+              <div>
+                <Label>Parcelas</Label>
+                <Input type="number" min={1} max={24} value={form.parcelas} onChange={e => f('parcelas', Number(e.target.value))} />
+              </div>
+            </div>
+
+            <div>
+              <Label>Forma de Pagamento</Label>
+              <Select value={form.forma_pagamento} onValueChange={v => f('forma_pagamento', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(PAYMENT_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {form.parcelas > 1 && calcTotal > 0 && (
+              <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                <p className="font-semibold text-primary">{form.parcelas}x de R$ {(calcTotal / Number(form.parcelas)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xs text-muted-foreground">Parcelas mensais a partir da data informada</p>
+              </div>
+            )}
+
+            <div>
+              <Label>Observações</Label>
+              <Textarea value={form.notas} onChange={e => f('notas', e.target.value)} rows={2} />
+            </div>
           </div>
-          <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setConvertDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleConvert} disabled={converting} className="w-full sm:w-auto bg-primary text-primary-foreground">
-              {converting ? 'Gerando...' : 'Gerar Conta(s) a Pagar'}
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={handleSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className="bg-primary text-primary-foreground"
+            >
+              {editing ? 'Salvar Alterações' : 'Enviar para Aprovação'}
             </Button>
           </DialogFooter>
         </DialogContent>

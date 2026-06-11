@@ -6,11 +6,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, KeyRound, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
+import ClientPhotoCapture from './ClientPhotoCapture';
+
+function generateAccessKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({ length: 16 }, (_, i) =>
+    (i > 0 && i % 4 === 0 ? '-' : '') + chars[Math.floor(Math.random() * chars.length)]
+  ).join('');
+}
 
 const emptyItem = { size: '', quantity: 1, produced: 0, qr_code_id: '' };
 
@@ -25,6 +33,8 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     items: [{ ...emptyItem }],
     attachments: [],
     delivery_photos: [],
+    client_photo: '',
+    access_key: '',
   });
 
   const { data: sellers = [] } = useQuery({
@@ -65,6 +75,8 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
         items: [{ ...emptyItem }],
         attachments: [],
         delivery_photos: [],
+        client_photo: '',
+        access_key: generateAccessKey(),
       });
     }
   }, [order, open]);
@@ -227,6 +239,39 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                 </div>
               )}
             </div>
+            {/* Foto do Cliente */}
+            <div>
+              <Label>Foto do Cliente</Label>
+              <div className="mt-1">
+                <ClientPhotoCapture
+                  photoUrl={form.client_photo}
+                  onChange={v => set('client_photo', v)}
+                />
+              </div>
+            </div>
+
+            {/* Chave de Acesso */}
+            <div>
+              <Label className="flex items-center gap-1"><KeyRound className="w-3.5 h-3.5" /> Chave de Acesso ao Status</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  value={form.access_key}
+                  readOnly
+                  className="font-mono text-sm tracking-widest bg-muted"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => set('access_key', generateAccessKey())}
+                  title="Gerar nova chave"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Compartilhe esta chave com o cliente para que ele consulte o status do pedido.</p>
+            </div>
+
             <div>
               <Label>Observações</Label>
               <Textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} />

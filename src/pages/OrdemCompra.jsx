@@ -219,17 +219,9 @@ export default function OrdemCompra() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <ClipboardCheck className="w-6 h-6 text-primary" /> Aprovação de Ordens
+            <ClipboardCheck className="w-6 h-6 text-primary" /> Aprovação de Ordens de Compra
           </h1>
-          <p className="text-sm text-muted-foreground">Ordens de pedido e aquisição de insumos</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => openNew('pedido')}>
-            <ShoppingCart className="w-4 h-4 mr-1" /> Nova Ordem Pedido
-          </Button>
-          <Button onClick={() => openNew('insumo')} className="bg-primary text-primary-foreground">
-            <PackageCheck className="w-4 h-4 mr-1" /> Aquisição Insumo
-          </Button>
+          <p className="text-sm text-muted-foreground">Aprove ou rejeite ordens de compra de insumos e materiais</p>
         </div>
       </div>
 
