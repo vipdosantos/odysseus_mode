@@ -57,10 +57,23 @@ export default function SobraTrelica() {
       if (!itemLen || itemLen <= 0) return;
 
       const qty = item.quantity;
-      // Quantas peças de fábrica são necessárias para produzir as unidades pedidas
-      const piecesNeeded = Math.ceil((itemLen * qty) / length);
+
+      // Verifica sobras desse tamanho já em estoque
+      const sobraSize = `${(length - itemLen).toFixed(2)}m`;
+      const estoqueExistente = supplies.find(s =>
+        s.name?.toLowerCase().includes('sobra') &&
+        s.name?.toLowerCase().includes(sobraSize.toLowerCase())
+      );
+      const sobraEmEstoque = estoqueExistente ? (estoqueExistente.stock || 0) : 0;
+
+      // Quantas peças podem ser aproveitadas do estoque
+      const piecesFromStock = Math.min(sobraEmEstoque, qty);
+      // Quantidades que ainda precisam vir de barras novas
+      const qtyRemaining = qty - piecesFromStock;
+
+      const piecesNeeded = qtyRemaining > 0 ? Math.ceil((itemLen * qtyRemaining) / length) : 0;
       const totalBought = piecesNeeded * length;
-      const totalUsed = itemLen * qty;
+      const totalUsed = itemLen * qtyRemaining;
       const sobra = parseFloat((totalBought - totalUsed).toFixed(3));
 
       results.push({
@@ -68,6 +81,8 @@ export default function SobraTrelica() {
         quantity: qty,
         itemLen,
         factoryLength: length,
+        piecesFromStock,
+        sobraEmEstoque,
         piecesNeeded,
         totalUsed,
         sobra,
@@ -217,10 +232,15 @@ export default function SobraTrelica() {
                         <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Sem sobra</span>
                       )}
                     </div>
+                    {r.piecesFromStock > 0 && (
+                      <div className="text-xs bg-green-50 border border-green-200 rounded-lg px-3 py-1.5 text-green-700">
+                        ✓ {r.piecesFromStock} un aproveitadas do estoque (sobras existentes)
+                      </div>
+                    )}
                     <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                      <div><p className="font-medium text-foreground">{r.piecesNeeded}</p><p>Barras usadas</p></div>
+                      <div><p className="font-medium text-foreground">{r.piecesNeeded}</p><p>Barras novas</p></div>
                       <div><p className="font-medium text-foreground">{r.totalUsed.toFixed(2)}m</p><p>Total consumido</p></div>
-                      <div><p className="font-medium text-amber-600">{r.sobra.toFixed(2)}m × {r.piecesNeeded}</p><p>Sobra total</p></div>
+                      <div><p className="font-medium text-amber-600">{r.sobra.toFixed(2)}m × {r.piecesNeeded}</p><p>Sobra gerada</p></div>
                     </div>
                   </div>
                 ))}
