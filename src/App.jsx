@@ -23,6 +23,8 @@ import FiscalNotes from './pages/FiscalNotes';
 import OrdemPedido from './pages/OrdemPedido';
 import OrdemCompra from './pages/OrdemCompra';
 import ControleEstoque from './pages/ControleEstoque';
+import SobraTrelica from './pages/SobraTrelica';
+import ApiConfig from './pages/ApiConfig';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
@@ -88,6 +90,8 @@ const AuthenticatedApp = () => {
         <Route path="/ordem-pedido" element={<OrdemPedido />} />
         <Route path="/aprovacoes" element={<OrdemCompra />} />
         <Route path="/estoque" element={<ControleEstoque />} />
+        <Route path="/sobra-trelica" element={<SobraTrelica />} />
+        <Route path="/api-config" element={<ApiConfig />} />
         <Route path="/usuarios" element={<Users />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

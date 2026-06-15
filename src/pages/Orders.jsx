@@ -102,10 +102,12 @@ export default function Orders() {
     toast.success('Pedido arquivado');
   };
 
-  // Visualizadores só veem pedidos onde são o vendedor ou criador
-  const visibleOrders = user?.role === 'visualizador'
-    ? orders.filter(o => o.seller_name === user.full_name || o.created_by === user.email)
-    : orders;
+  // Vendedor só vê os próprios pedidos; visualizador também restrito
+  const visibleOrders = user?.role === 'vendedor'
+    ? orders.filter(o => o.seller_id === user.id || o.seller_name === user.full_name)
+    : user?.role === 'visualizador'
+    ? orders.filter(o => o.seller_id === user.id || o.seller_name === user.full_name || o.created_by_id === user.id)
+    : orders; // admin, operador, financeiro veem todos
 
   const filtered = visibleOrders.filter(o =>
     !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) ||

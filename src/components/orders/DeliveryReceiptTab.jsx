@@ -2,11 +2,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
-import { Pen, Trash2, Upload, CheckCircle, FileText, Download } from 'lucide-react';
+import { Pen, Trash2, Upload, CheckCircle, FileText, Download, Camera, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 export default function DeliveryReceiptTab({ order }) {
   const canvasRef = useRef(null);
+  const videoRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastPos, setLastPos] = useState(null);
   const [signerName, setSignerName] = useState(order.delivery_signed_by || '');
@@ -15,6 +17,45 @@ export default function DeliveryReceiptTab({ order }) {
   const [saved, setSaved] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [capturedPhotos, setCapturedPhotos] = useState(order.delivery_photos || []);
+
+  const openCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      setCameraStream(stream);
+      setCameraOpen(true);
+      setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100);
+    } catch {
+      toast?.('Câmera não disponível');
+    }
+  };
+
+  const closeCamera = () => {
+    cameraStream?.getTracks().forEach(t => t.stop());
+    setCameraStream(null);
+    setCameraOpen(false);
+  };
+
+  const capturePhoto = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], `foto_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setUploadingDoc(true);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const updated = [...capturedPhotos, file_url];
+      setCapturedPhotos(updated);
+      await base44.entities.Order.update(order.id, { delivery_photos: updated });
+      setUploadingDoc(false);
+    }, 'image/jpeg', 0.85);
+    closeCamera();
+  };
 
   // Load existing signature on open
   useEffect(() => {
@@ -97,8 +138,9 @@ export default function DeliveryReceiptTab({ order }) {
     if (!file) return;
     setUploadingDoc(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    const existing = order.delivery_photos || [];
-    await base44.entities.Order.update(order.id, { delivery_photos: [...existing, file_url] });
+    const updated = [...capturedPhotos, file_url];
+    setCapturedPhotos(updated);
+    await base44.entities.Order.update(order.id, { delivery_photos: updated });
     setUploadingDoc(false);
   };
 
@@ -225,19 +267,41 @@ export default function DeliveryReceiptTab({ order }) {
         <p className="text-xs text-muted-foreground mt-1 text-center">Assine acima com o dedo ou mouse</p>
       </div>
 
-      {/* Upload de documento */}
+      {/* Fotos / Documentos */}
       <div>
-        <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5"><FileText className="w-4 h-4" /> Documento de Recebimento</h4>
-        <label className="flex items-center gap-2 cursor-pointer border border-dashed border-border rounded-xl p-3 hover:bg-muted/30 transition-colors">
-          <Upload className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">{uploadingDoc ? 'Enviando...' : 'Anexar foto ou PDF'}</span>
-          <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleUploadDoc} disabled={uploadingDoc} />
-        </label>
-        {order.delivery_photos?.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {order.delivery_photos.map((url, i) => (
-              <a key={i} href={url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-primary underline">
-                <Download className="w-3 h-3" /> Arquivo {i + 1}
+        <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5"><FileText className="w-4 h-4" /> Fotos / Documento de Recebimento</h4>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={openCamera}
+            disabled={uploadingDoc}
+            className="flex-1 flex items-center justify-center gap-2 border border-dashed border-border rounded-xl p-3 hover:bg-muted/30 transition-colors text-sm text-muted-foreground"
+          >
+            <Camera className="w-4 h-4" /> Tirar Foto
+          </button>
+          <label className="flex-1 flex items-center justify-center gap-2 cursor-pointer border border-dashed border-border rounded-xl p-3 hover:bg-muted/30 transition-colors text-sm text-muted-foreground">
+            <Upload className="w-4 h-4" />
+            {uploadingDoc ? 'Enviando...' : 'Anexar Arquivo'}
+            <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleUploadDoc} disabled={uploadingDoc} />
+          </label>
+        </div>
+
+        {/* Camera Modal */}
+        {cameraOpen && (
+          <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+            <video ref={videoRef} autoPlay playsInline className="w-full max-w-sm rounded-xl" />
+            <div className="flex gap-4 mt-6">
+              <Button onClick={capturePhoto} className="bg-primary text-primary-foreground px-8">Capturar</Button>
+              <Button variant="outline" onClick={closeCamera} className="text-white border-white"><X className="w-4 h-4 mr-1" /> Cancelar</Button>
+            </div>
+          </div>
+        )}
+
+        {capturedPhotos.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {capturedPhotos.map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noreferrer">
+                <img src={url} alt={`Foto ${i+1}`} className="w-16 h-16 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity" />
               </a>
             ))}
           </div>

@@ -16,6 +16,7 @@ const roleLabels = {
   admin: { label: 'Administrador', class: 'bg-red-100 text-red-700' },
   operador: { label: 'Operador', class: 'bg-blue-100 text-blue-700' },
   financeiro: { label: 'Financeiro', class: 'bg-green-100 text-green-700' },
+  vendedor: { label: 'Vendedor', class: 'bg-purple-100 text-purple-700' },
   visualizador: { label: 'Visualizador', class: 'bg-gray-100 text-gray-600' },
 };
 
@@ -23,6 +24,7 @@ const roleDescriptions = [
   { role: 'admin', label: 'Administrador', color: 'bg-red-100 text-red-700 border-red-200', desc: 'Acesso total: gerencia usuários, aprova ordens, acessa financeiro, cadastros e todas as telas.' },
   { role: 'operador', label: 'Operador', color: 'bg-blue-100 text-blue-700 border-blue-200', desc: 'Acessa produção, scanner de QR, pedidos e calendário de entregas. Sem acesso financeiro.' },
   { role: 'financeiro', label: 'Financeiro', color: 'bg-green-100 text-green-700 border-green-200', desc: 'Acessa financeiro, contas a receber, notas fiscais, ordens de compra e aprovações.' },
+  { role: 'vendedor', label: 'Vendedor', color: 'bg-purple-100 text-purple-700 border-purple-200', desc: 'Vê apenas seus próprios pedidos. Pode criar pedidos, mas não acessa financeiro ou produção.' },
   { role: 'visualizador', label: 'Visualizador', color: 'bg-gray-100 text-gray-600 border-gray-200', desc: 'Apenas visualiza pedidos e dashboard. Não pode criar, editar ou excluir nada.' },
 ];
 
@@ -131,6 +133,7 @@ export default function Users() {
                           <SelectItem value="admin">Administrador</SelectItem>
                           <SelectItem value="operador">Operador</SelectItem>
                           <SelectItem value="financeiro">Financeiro</SelectItem>
+                          <SelectItem value="vendedor">Vendedor</SelectItem>
                           <SelectItem value="visualizador">Visualizador</SelectItem>
                         </SelectContent>
                       </Select>
@@ -183,6 +186,7 @@ export default function Users() {
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="operador">Operador</SelectItem>
                   <SelectItem value="financeiro">Financeiro</SelectItem>
+                  <SelectItem value="vendedor">Vendedor</SelectItem>
                   <SelectItem value="visualizador">Visualizador</SelectItem>
                 </SelectContent>
               </Select>

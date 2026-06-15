@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Factory, DollarSign, Users, 
   ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser,
   TrendingUp, CalendarDays, ClipboardList, Wrench, FlaskConical,
-  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck
+  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck, Ruler, Code2
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -12,10 +12,11 @@ import ModelajesLogo from './ModelajesLogo';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'operador', 'financeiro', 'visualizador'] },
-  { path: '/pedidos', icon: Package, label: 'Pedidos', roles: ['admin', 'operador', 'visualizador'] },
+  { path: '/pedidos', icon: Package, label: 'Pedidos', roles: ['admin', 'operador', 'financeiro', 'vendedor', 'visualizador'] },
   { path: '/ordem-pedido', icon: ShoppingCart, label: 'Ordem de Compras', roles: ['admin', 'financeiro'] },
   { path: '/aprovacoes', icon: ClipboardCheck, label: 'Aprovação de Ordens', roles: ['admin', 'financeiro', 'operador'] },
   { path: '/estoque', icon: Boxes, label: 'Controle de Estoque', roles: ['admin', 'operador'] },
+  { path: '/sobra-trelica', icon: Ruler, label: 'Sobra de Treliça', roles: ['admin', 'operador'] },
   { path: '/producao', icon: Factory, label: 'Produção', roles: ['admin', 'operador'] },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR', roles: ['admin', 'operador'] },
   { path: '/financeiro', icon: DollarSign, label: 'Contas a Pagar', roles: ['admin', 'financeiro'] },
@@ -27,6 +28,7 @@ const navItems = [
   { path: '/patrimonio', icon: Wrench, label: 'Patrimônio', roles: ['admin'] },
   { path: '/produtividade', icon: ClipboardList, label: 'Produtividade', roles: ['admin', 'operador'] },
   { path: '/cadastros', icon: BookUser, label: 'Cadastros', roles: ['admin', 'operador'] },
+  { path: '/api-config', icon: Code2, label: 'Integração API', roles: ['admin'] },
   { path: '/usuarios', icon: Users, label: 'Usuários', roles: ['admin'] },
 ];
 
