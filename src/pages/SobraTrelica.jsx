@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Ruler, Package, Scissors, CheckCircle, AlertTriangle, Layers } from 'lucide-react';
+import { Ruler, Package, Scissors, CheckCircle, AlertTriangle, Layers, Printer, Pencil, ArrowRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +20,7 @@ export default function SobraTrelica() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [calcResult, setCalcResult] = useState(null);
+  const [editMode, setEditMode] = useState(false);
 
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
@@ -73,6 +74,11 @@ export default function SobraTrelica() {
       .filter(s => s.len && s.len > 0 && (s.stock || 0) > 0)
       .sort((a, b) => b.len - a.len);
   }, [supplies]);
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditMode(false);
+  };
 
   const calcRoteiro = () => {
     // 1. Tenta reaproveitar sobras do estoque primeiro (maior sobra primeiro)
@@ -153,6 +159,111 @@ export default function SobraTrelica() {
       totalWaste: perdas.reduce((sum, p) => sum + p.len, 0),
     });
     setDialogOpen(true);
+  };
+
+  const recalcFromBars = (bars) => {
+    bars.forEach(bar => {
+      const totalCut = bar.cuts.reduce((sum, c) => sum + c.len, 0);
+      bar.remaining = parseFloat((BAR_LENGTH - totalCut).toFixed(3));
+    });
+    const filteredBars = bars.filter(b => b.cuts.length > 0);
+
+    const sobrasGeradas = [];
+    const perdas = [];
+    filteredBars.forEach((bar, idx) => {
+      if (bar.remaining >= MIN_SOBRA) {
+        sobrasGeradas.push({ barIndex: idx + 1, len: bar.remaining, label: `${bar.remaining.toFixed(2)}m` });
+      } else if (bar.remaining > 0) {
+        perdas.push({ barIndex: idx + 1, len: bar.remaining });
+      }
+    });
+
+    const sobrasAgrupadas = {};
+    sobrasGeradas.forEach(s => {
+      if (!sobrasAgrupadas[s.label]) sobrasAgrupadas[s.label] = { ...s, count: 0 };
+      sobrasAgrupadas[s.label].count++;
+    });
+
+    setCalcResult(prev => ({
+      ...prev,
+      bars: filteredBars,
+      sobrasGeradas: Object.values(sobrasAgrupadas),
+      perdas,
+      totalBars: filteredBars.length,
+      totalWaste: perdas.reduce((sum, p) => sum + p.len, 0),
+    }));
+  };
+
+  const moveCut = (fromBarIdx, cutIdx, toBarIdxStr) => {
+    const bars = calcResult.bars.map(b => ({ ...b, cuts: [...b.cuts] }));
+    const piece = bars[fromBarIdx].cuts.splice(cutIdx, 1)[0];
+    const toBarIdx = parseInt(toBarIdxStr);
+    if (toBarIdx === -1) {
+      // Remover do plano
+      toast.info(`Peça ${piece.size} removida do plano de corte`);
+    } else {
+      if (toBarIdx >= bars.filter(b => b.cuts.length > 0).length) {
+        bars.push({ remaining: BAR_LENGTH, cuts: [] });
+      }
+      bars[toBarIdx].cuts.push(piece);
+    }
+    recalcFromBars(bars);
+  };
+
+  const handlePrint = () => {
+    const w = window.open('', '_blank');
+    const date = new Date().toLocaleDateString('pt-BR');
+    let html = `<html><head><title>Roteiro de Corte</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #333; margin-bottom: 4px; }
+        .summary { background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+        .bar { border: 1px solid #999; border-radius: 8px; padding: 12px; margin-bottom: 12px; page-break-inside: avoid; }
+        .bar-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; text-align: left; }
+        th { background: #f9fafb; }
+        .sobra-badge { color: #92400e; font-weight: bold; }
+        .perda-badge { color: #dc2626; font-weight: bold; }
+        @media print { .no-print { display: none; } }
+      </style>
+    </head><body>
+      <h1>Roteiro de Corte de Treliça</h1>
+      <p style="margin: 0 0 12px; font-size: 13px; color: #666;">Data: ${date} — Barras de ${BAR_LENGTH}m</p>
+      <div class="summary">
+        <strong>Barras:</strong> ${calcResult.totalBars} |
+        <strong>Peças do estoque:</strong> ${calcResult.usedFromStock.length} |
+        <strong>Sobras geradas:</strong> ${calcResult.sobrasGeradas.reduce((s,x) => s+x.count, 0)} |
+        <strong>Perda:</strong> ${calcResult.totalWaste.toFixed(2)}m
+      </div>`;
+
+    calcResult.bars.forEach((bar, idx) => {
+      const isSobra = bar.remaining >= MIN_SOBRA;
+      const sobraClass = isSobra ? 'sobra-badge' : 'perda-badge';
+      html += `<div class="bar">
+        <div class="bar-header">
+          <span>Barra ${idx + 1}</span>
+          <span class="${sobraClass}">${bar.remaining > 0 ? `Sobra: ${bar.remaining.toFixed(2)}m` : 'Aproveitamento total'}</span>
+        </div>
+        <table><thead><tr><th>Peça</th><th>Comprimento</th><th>Pedido</th></tr></thead><tbody>`;
+      bar.cuts.forEach(c => {
+        html += `<tr><td>${c.size}</td><td>${c.len}m</td><td>#${c.orderNumber}</td></tr>`;
+      });
+      html += `</tbody></table></div>`;
+    });
+
+    if (calcResult.usedFromStock.length > 0) {
+      html += `<h2 style="font-size: 16px; margin-top: 20px;">Peças Reaproveitadas do Estoque (${calcResult.usedFromStock.length})</h2><table><thead><tr><th>Peça</th><th>Origem (Sobra)</th><th>Pedido</th></tr></thead><tbody>`;
+      calcResult.usedFromStock.forEach(u => {
+        html += `<tr><td>${u.size}</td><td>${u.sobraName}</td><td>#${u.orderNumber}</td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+
+    html += `<div class="no-print" style="margin-top: 20px;"><button onclick="window.print()" style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Imprimir</button></div>`;
+    html += `</body></html>`;
+    w.document.write(html);
+    w.document.close();
   };
 
   const handleApplyToStock = async () => {
@@ -301,7 +412,7 @@ export default function SobraTrelica() {
       </div>
 
       {/* Dialog roteiro */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) closeDialog(); else setDialogOpen(true); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -348,7 +459,22 @@ export default function SobraTrelica() {
 
               {/* Plano de corte por barra */}
               <div>
-                <p className="text-sm font-semibold mb-2">Plano de Corte ({calcResult.totalBars} barras de 12m)</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold">Plano de Corte ({calcResult.totalBars} barras de 12m)</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setEditMode(!editMode)}>
+                      <Pencil className="w-3.5 h-3.5 mr-1" /> {editMode ? 'Concluir Edição' : 'Editar'}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handlePrint}>
+                      <Printer className="w-3.5 h-3.5 mr-1" /> Imprimir
+                    </Button>
+                  </div>
+                </div>
+                {editMode && (
+                  <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2">
+                    Modo edição: use o menu de cada peça para movê-la entre barras ou removê-la do plano.
+                  </p>
+                )}
                 <div className="space-y-2">
                   {calcResult.bars.map((bar, idx) => {
                     const used = BAR_LENGTH - bar.remaining;
@@ -392,9 +518,27 @@ export default function SobraTrelica() {
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {bar.cuts.map((c, ci) => (
-                            <span key={ci} className="text-[10px] text-muted-foreground">
-                              {c.size} (#{c.orderNumber}){ci < bar.cuts.length - 1 ? ' ·' : ''}
-                            </span>
+                            editMode ? (
+                              <span key={ci} className="text-[10px] inline-flex items-center gap-1 bg-white border border-input rounded-full pl-2 pr-1 py-0.5">
+                                {c.size} (#{c.orderNumber})
+                                <select
+                                  className="text-[10px] border-0 bg-transparent cursor-pointer focus:outline-none"
+                                  value=""
+                                  onChange={(e) => { if (e.target.value !== "") moveCut(idx, ci, e.target.value); }}
+                                >
+                                  <option value="">Mover para...</option>
+                                  {Array.from({ length: calcResult.bars.length }, (_, i) => i).filter(i => i !== idx).map(i => (
+                                    <option key={i} value={i}>Barra {i + 1}</option>
+                                  ))}
+                                  <option value={calcResult.bars.length}>Nova barra</option>
+                                  <option value="-1">Remover</option>
+                                </select>
+                              </span>
+                            ) : (
+                              <span key={ci} className="text-[10px] text-muted-foreground">
+                                {c.size} (#{c.orderNumber}){ci < bar.cuts.length - 1 ? ' ·' : ''}
+                              </span>
+                            )
                           ))}
                         </div>
                       </div>
@@ -429,7 +573,10 @@ export default function SobraTrelica() {
             </div>
           )}
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Fechar</Button>
+            <Button variant="outline" onClick={closeDialog}>Fechar</Button>
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="w-4 h-4 mr-2" /> Imprimir
+            </Button>
             <Button onClick={handleApplyToStock} className="bg-primary text-primary-foreground">
               <CheckCircle className="w-4 h-4 mr-2" /> Aplicar e Atualizar Estoque
             </Button>
