@@ -29,8 +29,17 @@ export default function OrderCard({ order, onClick }) {
           <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-700 rounded-full font-semibold">URGENTE</span>
         )}
       </div>
-      <p className="text-sm text-foreground/80 mb-3">{order.client_name}</p>
-      
+      <p className="text-sm text-foreground/80 mb-2">{order.client_name}</p>
+
+      {/* Tipos de treliça */}
+      {order.items?.some(i => i.truss_type) && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {Array.from(new Set(order.items.filter(i => i.truss_type).map(i => i.truss_type))).map(t => (
+            <span key={t} className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">{t}</span>
+          ))}
+        </div>
+      )}
+
       {/* Progress bar */}
       <div className="mb-2">
         <div className="flex justify-between text-[10px] text-muted-foreground mb-1">

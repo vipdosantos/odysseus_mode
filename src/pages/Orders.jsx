@@ -271,6 +271,13 @@ function SingleOrderRow({ order, onCardClick, canEdit, onStatusChange, nextStatu
           )}
         </div>
         <p className="text-sm text-foreground/80">{order.client_name}</p>
+        {order.items?.some(i => i.truss_type) && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {Array.from(new Set(order.items.filter(i => i.truss_type).map(i => i.truss_type))).map(t => (
+              <span key={t} className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">{t}</span>
+            ))}
+          </div>
+        )}
         {totalItems > 0 && (
           <div className="mt-2">
             <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
