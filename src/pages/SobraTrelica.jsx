@@ -163,14 +163,14 @@ export default function SobraTrelica() {
 
   const calcRoteiro = () => {
     const byType = {};
-    usedTypes.forEach(type => {
+    TRUSS_TYPES.forEach(type => {
       const piecesOfType = allPieces.filter(p => p.trussType === type);
       const stockOfType = sobrasEstoque.filter(s => s.trussType === type);
       byType[type] = calcForType(piecesOfType, stockOfType);
     });
 
-    setCalcResult({ byType, trussTypes: usedTypes });
-    setActiveType(usedTypes[0] || null);
+    setCalcResult({ byType, trussTypes: TRUSS_TYPES });
+    setActiveType(TRUSS_TYPES[0]);
     setDialogOpen(true);
   };
 
@@ -533,6 +533,14 @@ export default function SobraTrelica() {
 
 function TypeRoteiro({ type, result, editMode, moveCut }) {
   const { totalBars, totalPieces, usedFromStock, bars, sobrasGeradas, perdas, totalWaste } = result;
+  if (totalPieces === 0) {
+    return (
+      <div className="text-center py-10 text-muted-foreground">
+        <Scissors className="w-8 h-8 mx-auto mb-2 opacity-30" />
+        <p className="text-sm">Nenhuma peça do tipo <strong>{type}</strong> no corte de vigas.</p>
+      </div>
+    );
+  }
   return (
     <>
       <div className="grid grid-cols-4 gap-2">
