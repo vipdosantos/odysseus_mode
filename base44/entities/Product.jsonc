@@ -50,6 +50,28 @@
       "description": "Ativo",
       "default": true
     },
+    "consumo_insumos": {
+      "type": "array",
+      "description": "Consumo de insumos por unidade do produto (BOM)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "supply_id": {
+            "type": "string",
+            "description": "ID do insumo (Supply)"
+          },
+          "supply_name": {
+            "type": "string",
+            "description": "Nome do insumo"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 0,
+            "description": "Quantidade consumida por unidade"
+          }
+        }
+      }
+    },
     "notes": {
       "type": "string",
       "description": "Observa\u00e7\u00f5es"

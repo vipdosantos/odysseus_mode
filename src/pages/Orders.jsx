@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import KanbanColumn, { ALL_STATUSES, STATUS_MAP } from '../components/orders/KanbanColumn';
 import OrderFormDialog from '../components/orders/OrderFormDialog';
 import OrderDetailDialog from '../components/orders/OrderDetailDialog';
+import { applyStockDecrement } from '@/lib/stockSync';
 import { cn } from '@/lib/utils';
 
 // "Pedidos" tab = all statuses (kanban), others = filtered single-column view
@@ -59,6 +60,17 @@ export default function Orders() {
         });
       }
       if (totalValue > 0) toast.success(`${installments} parcela(s) criada(s) em Contas a Receber`);
+
+      // Baixar estoque de produtos (treliças) e insumos conforme consumo (BOM)
+      applyStockDecrement(created)
+        .then(({ produtos, insumos }) => {
+          if (produtos || insumos) {
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            queryClient.invalidateQueries({ queryKey: ['supplies'] });
+            toast.success(`Estoque atualizado: ${produtos} produto(s), ${insumos} insumo(s) baixado(s)`);
+          }
+        })
+        .catch(() => toast.error('Falha ao baixar estoque — verifique o Controle de Estoque.'));
     },
   });
 

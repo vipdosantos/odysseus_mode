@@ -126,17 +126,8 @@
     },
     "truck_type": {
       "type": "string",
-      "enum": [
-        "nenhum",
-        "moto",
-        "van",
-        "toco",
-        "truck",
-        "carreta",
-        "bitrem"
-      ],
       "default": "nenhum",
-      "description": "Tipo de caminh\u00e3o"
+      "description": "C\u00f3digo do tipo de caminh\u00e3o (vinculado ao cadastro TruckType)"
     },
     "total_value": {
       "type": "number"

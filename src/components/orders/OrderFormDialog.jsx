@@ -56,6 +56,11 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     queryFn: () => base44.entities.Product.filter({ active: true }, 'name', 200),
   });
 
+  const { data: truckTypes = [] } = useQuery({
+    queryKey: ['truck-types-active'],
+    queryFn: () => base44.entities.TruckType.filter({ active: true }, 'name', 200),
+  });
+
   useEffect(() => {
     if (order) {
       setForm({
@@ -388,14 +393,16 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nenhum">— Nenhum —</SelectItem>
-                    <SelectItem value="moto">Moto</SelectItem>
-                    <SelectItem value="van">Van / Kombi</SelectItem>
-                    <SelectItem value="toco">Toco</SelectItem>
-                    <SelectItem value="truck">Truck</SelectItem>
-                    <SelectItem value="carreta">Carreta</SelectItem>
-                    <SelectItem value="bitrem">Bitrem</SelectItem>
+                    {truckTypes.map(t => (
+                      <SelectItem key={t.id} value={t.code || t.name}>
+                        {t.name}{t.capacity_kg ? ` (${Number(t.capacity_kg).toLocaleString('pt-BR')} kg)` : ''}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {truckTypes.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">Cadastre os tipos em Cadastros → Tipos de Caminhão.</p>
+                )}
               </div>
             </div>
             <DeliveryMapPicker

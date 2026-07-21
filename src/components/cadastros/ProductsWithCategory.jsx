@@ -29,6 +29,11 @@ export default function ProductsWithCategory() {
     queryFn: () => base44.entities.SupplyCategory.filter({ active: true }, 'name', 200),
   });
 
+  const { data: supplies = [] } = useQuery({
+    queryKey: ['supplies'],
+    queryFn: () => base44.entities.Supply.list('name', 500),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Product.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['products'] }); setDialogOpen(false); },
@@ -46,9 +51,21 @@ export default function ProductsWithCategory() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const updateConsumo = (i, field, value) => {
+    const consumo = [...(form.consumo_insumos || [])];
+    consumo[i] = { ...consumo[i], [field]: value };
+    if (field === 'supply_id') {
+      const s = supplies.find(x => x.id === value);
+      consumo[i].supply_name = s?.name || '';
+    }
+    set('consumo_insumos', consumo);
+  };
+  const addConsumo = () => set('consumo_insumos', [...(form.consumo_insumos || []), { supply_id: '', supply_name: '', quantity: 1 }]);
+  const removeConsumo = (i) => set('consumo_insumos', (form.consumo_insumos || []).filter((_, idx) => idx !== i));
+
   const openNew = () => {
     setEditing(null);
-    setForm({ name: '', code: '', size: '', unit: 'un', price: 0, stock: 0, min_stock: 0, category: categories[0]?.name || '', active: true, notes: '' });
+    setForm({ name: '', code: '', size: '', unit: 'un', price: 0, stock: 0, min_stock: 0, category: categories[0]?.name || '', active: true, consumo_insumos: [], notes: '' });
     setDialogOpen(true);
   };
 
@@ -59,7 +76,16 @@ export default function ProductsWithCategory() {
   };
 
   const handleSave = () => {
-    const data = { ...form, price: Number(form.price) || 0, stock: Number(form.stock) || 0, min_stock: Number(form.min_stock) || 0 };
+    const consumo = (form.consumo_insumos || [])
+      .filter(c => c.supply_id && Number(c.quantity) > 0)
+      .map(c => ({ supply_id: c.supply_id, supply_name: c.supply_name, quantity: Number(c.quantity) || 0 }));
+    const data = {
+      ...form,
+      price: Number(form.price) || 0,
+      stock: Number(form.stock) || 0,
+      min_stock: Number(form.min_stock) || 0,
+      consumo_insumos: consumo,
+    };
     if (editing) updateMutation.mutate({ id: editing.id, data });
     else createMutation.mutate(data);
   };
@@ -188,6 +214,43 @@ export default function ProductsWithCategory() {
                   <SelectItem value="false">Não</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <Label>Consumo de Insumos (por unidade)</Label>
+                <Button type="button" variant="outline" size="sm" onClick={addConsumo}>
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Insumo
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">Define quanto de cada insumo é consumido por treliça. Usado para baixar o estoque ao salvar pedidos.</p>
+              <div className="space-y-2">
+                {(form.consumo_insumos || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Nenhum consumo cadastrado.</p>
+                )}
+                {(form.consumo_insumos || []).map((c, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Select value={c.supply_id || ''} onValueChange={v => updateConsumo(i, 'supply_id', v)}>
+                      <SelectTrigger className="flex-1"><SelectValue placeholder="Selecionar insumo" /></SelectTrigger>
+                      <SelectContent>
+                        {supplies.map(s => <SelectItem key={s.id} value={s.id}>{s.name}{s.code ? ` (${s.code})` : ''}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="any"
+                      className="w-24"
+                      value={c.quantity}
+                      onChange={e => updateConsumo(i, 'quantity', e.target.value)}
+                      placeholder="Qtd"
+                    />
+                    <span className="text-xs text-muted-foreground w-8">{supplies.find(s => s.id === c.supply_id)?.unit || ''}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeConsumo(i)}>
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="col-span-2">
               <Label className="mb-1 block">Observações</Label>
