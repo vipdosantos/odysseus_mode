@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, KeyRound, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { TRUSS_TYPES } from '@/lib/trussTypes';
+import { TRUSS_TYPES, FERRO_DIAMETERS } from '@/lib/trussTypes';
 import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
@@ -21,7 +21,7 @@ function generateAccessKey() {
   ).join('');
 }
 
-const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '' };
+const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
 
 export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
   const [form, setForm] = useState({
@@ -93,6 +93,21 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { ...emptyItem }] }));
   const removeItem = (idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
 
+  const updateAdicional = (idx, diametro, value) => {
+    const qty = Number(value) || 0;
+    const items = [...form.items];
+    const adicionais = [...(items[idx].adicionais || [])];
+    const existing = adicionais.findIndex(a => a.diametro === diametro);
+    if (existing >= 0) {
+      if (qty > 0) adicionais[existing] = { diametro, quantity: qty };
+      else adicionais.splice(existing, 1);
+    } else if (qty > 0) {
+      adicionais.push({ diametro, quantity: qty });
+    }
+    items[idx] = { ...items[idx], adicionais };
+    setForm(f => ({ ...f, items }));
+  };
+
   const handleSave = () => {
     const items = form.items.map((item, idx) => ({
       ...item,
@@ -100,7 +115,14 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
       produced: Number(item.produced) || 0,
       qr_code_id: item.qr_code_id || `${form.order_number}-${item.size}-${idx}`,
     }));
-    onSave({ ...form, total_value: Number(form.total_value) || 0, items });
+    onSave({
+      ...form,
+      total_value: Number(form.total_value) || 0,
+      items: items.map(item => ({
+        ...item,
+        adicionais: (item.adicionais || []).filter(a => Number(a.quantity) > 0),
+      })),
+    });
   };
 
   return (
@@ -292,7 +314,8 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
             </div>
             <div className="space-y-3">
               {form.items.map((item, idx) => (
-                <div key={idx} className="flex items-end gap-3 p-3 bg-muted/50 rounded-xl">
+                <div key={idx} className="p-3 bg-muted/50 rounded-xl space-y-2">
+                  <div className="flex items-end gap-3">
                   <div className="w-28">
                     <Label className="text-xs">Tipo Treliça</Label>
                     <Select value={item.truss_type || 'H8'} onValueChange={v => updateItem(idx, 'truss_type', v)}>
@@ -328,6 +351,25 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1 border-t border-border/50">
+                    <span className="text-xs font-medium text-muted-foreground">Adicionais (ferros):</span>
+                    {FERRO_DIAMETERS.map(f => {
+                      const adc = (item.adicionais || []).find(a => a.diametro === f.code);
+                      return (
+                        <div key={f.code} className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium">{f.label}</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            className="w-16 h-8"
+                            value={adc?.quantity ?? 0}
+                            onChange={e => updateAdicional(idx, f.code, e.target.value)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </div>

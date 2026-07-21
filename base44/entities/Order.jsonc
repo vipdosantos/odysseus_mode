@@ -81,6 +81,29 @@
           },
           "qr_code_id": {
             "type": "string"
+          },
+          "adicionais": {
+            "type": "array",
+            "description": "Ferros adicionais",
+            "items": {
+              "type": "object",
+              "properties": {
+                "diametro": {
+                  "type": "string",
+                  "enum": [
+                    "5.0",
+                    "6.3",
+                    "8.0",
+                    "12.5"
+                  ],
+                  "description": "Di\u00e2metro do ferro"
+                },
+                "quantity": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
           }
         }
       }

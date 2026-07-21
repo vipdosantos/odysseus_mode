@@ -10,7 +10,7 @@ import OrderPaymentTab from './OrderPaymentTab';
 import OrderNFTab from './OrderNFTab';
 import QRZoomModal from './QRZoomModal';
 import DeliveryReceiptTab from './DeliveryReceiptTab';
-import { TRUSS_TYPE_LABEL } from '@/lib/trussTypes';
+import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 
 export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive }) {
   const [zoomQR, setZoomQR] = useState(null); // { url, label }
@@ -220,6 +220,16 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                             <p className="text-sm font-bold">{item.size}</p>
                           </div>
                           <p className="text-xs text-muted-foreground">{item.produced || 0}/{item.quantity} produzidas</p>
+                          {item.adicionais?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <span className="text-[10px] text-muted-foreground self-center">Adicionais:</span>
+                              {item.adicionais.map((a, i) => (
+                                <span key={i} className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                                  {FERRO_LABEL(a.diametro)} ×{a.quantity}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1.5 w-full">
                             <div className="h-full bg-primary rounded-full" style={{ width: `${item.quantity > 0 ? ((item.produced || 0) / item.quantity) * 100 : 0}%` }} />
                           </div>

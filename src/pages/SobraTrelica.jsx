@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Ruler, Package, Scissors, CheckCircle, AlertTriangle, Layers, Printer, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { TRUSS_TYPES } from '@/lib/trussTypes';
+import { TRUSS_TYPES, FERRO_DIAMETERS, FERRO_LABEL } from '@/lib/trussTypes';
 
 const BAR_LENGTH = 12; // Treliça só tem 12 metros
 const MIN_SOBRA = 0.5; // Sobras menores que 0.5m são consideradas perda
@@ -90,6 +90,8 @@ export default function SobraTrelica() {
   const [calcResult, setCalcResult] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [activeType, setActiveType] = useState(null);
+  const [planMode, setPlanMode] = useState('trelica');
+  const [activeFerro, setActiveFerro] = useState(null);
 
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
@@ -136,6 +138,33 @@ export default function SobraTrelica() {
     return pieces;
   }, [corteVigasOrders]);
 
+  // Coleta as peças de ferros adicionais (por diâmetro), mesma length da treliça
+  const allFerroPieces = useMemo(() => {
+    const pieces = [];
+    corteVigasOrders.forEach(order => {
+      (order.items || []).forEach(item => {
+        if (!item.size || !item.quantity) return;
+        const itemLen = parseLen(item.size);
+        if (!itemLen || itemLen <= 0) return;
+        (item.adicionais || []).forEach(adc => {
+          const qty = Number(adc.quantity) || 0;
+          if (qty <= 0) return;
+          for (let i = 0; i < qty; i++) {
+            pieces.push({
+              orderNumber: order.order_number,
+              orderId: order.id,
+              size: item.size,
+              len: itemLen,
+              diametro: adc.diametro,
+              kind: 'ferro',
+            });
+          }
+        });
+      });
+    });
+    return pieces;
+  }, [corteVigasOrders]);
+
   const usedTypes = useMemo(() => {
     const types = Array.from(new Set(allPieces.map(p => p.trussType)));
     // ordena tipos conhecidos primeiro, "Sem tipo" por último
@@ -169,12 +198,20 @@ export default function SobraTrelica() {
       byType[type] = calcForType(piecesOfType, stockOfType);
     });
 
-    setCalcResult({ byType, trussTypes: TRUSS_TYPES });
+    const byFerro = {};
+    FERRO_DIAMETERS.forEach(f => {
+      const piecesOfFerro = allFerroPieces.filter(p => p.diametro === f.code);
+      byFerro[f.code] = calcForType(piecesOfFerro, []);
+    });
+
+    setCalcResult({ byType, byFerro, trussTypes: TRUSS_TYPES, ferroDiameters: FERRO_DIAMETERS.map(f => f.code) });
+    setPlanMode('trelica');
     setActiveType(TRUSS_TYPES[0]);
+    setActiveFerro(FERRO_DIAMETERS[0].code);
     setDialogOpen(true);
   };
 
-  const recalcFromBars = (type, bars) => {
+  const recalcGroup = (kind, key, bars) => {
     bars.forEach(bar => {
       const totalCut = bar.cuts.reduce((sum, c) => sum + c.len, 0);
       bar.remaining = parseFloat((BAR_LENGTH - totalCut).toFixed(3));
@@ -199,10 +236,10 @@ export default function SobraTrelica() {
 
     setCalcResult(prev => ({
       ...prev,
-      byType: {
-        ...prev.byType,
-        [type]: {
-          ...prev.byType[type],
+      [kind === 'trelica' ? 'byType' : 'byFerro']: {
+        ...prev[kind === 'trelica' ? 'byType' : 'byFerro'],
+        [key]: {
+          ...prev[kind === 'trelica' ? 'byType' : 'byFerro'][key],
           bars: filteredBars,
           sobrasGeradas: Object.values(sobrasAgrupadas),
           perdas,
@@ -213,9 +250,9 @@ export default function SobraTrelica() {
     }));
   };
 
-  const moveCut = (type, fromBarIdx, cutIdx, toBarIdxStr) => {
-    const typeResult = calcResult.byType[type];
-    const bars = typeResult.bars.map(b => ({ ...b, cuts: [...b.cuts] }));
+  const moveCut = (kind, key, fromBarIdx, cutIdx, toBarIdxStr) => {
+    const groupResult = kind === 'trelica' ? calcResult.byType[key] : calcResult.byFerro[key];
+    const bars = groupResult.bars.map(b => ({ ...b, cuts: [...b.cuts] }));
     const piece = bars[fromBarIdx].cuts.splice(cutIdx, 1)[0];
     const toBarIdx = parseInt(toBarIdxStr);
     if (toBarIdx === -1) {
@@ -226,7 +263,7 @@ export default function SobraTrelica() {
       }
       bars[toBarIdx].cuts.push(piece);
     }
-    recalcFromBars(type, bars);
+    recalcGroup(kind, key, bars);
   };
 
   const handlePrint = () => {
@@ -259,16 +296,30 @@ export default function SobraTrelica() {
       totalSobras += r.sobrasGeradas.reduce((s, x) => s + x.count, 0);
       totalWaste += r.totalWaste;
     });
+    let ferroBars = 0, ferroWaste = 0, ferroPieces = 0;
+    (calcResult.ferroDiameters || []).forEach(d => {
+      const r = calcResult.byFerro[d];
+      ferroBars += r.totalBars;
+      ferroWaste += r.totalWaste;
+      ferroPieces += r.totalPieces;
+    });
     html += `<div class="summary">
-      <strong>Barras:</strong> ${totalBars} |
+      <strong>Treliças — Barras:</strong> ${totalBars} |
       <strong>Peças do estoque:</strong> ${totalStock} |
       <strong>Sobras geradas:</strong> ${totalSobras} |
       <strong>Perda:</strong> ${totalWaste.toFixed(2)}m
     </div>`;
+    if (ferroPieces > 0) {
+      html += `<div class="summary" style="margin-top:8px;">
+        <strong>Adicionais (Ferros) — Barras:</strong> ${ferroBars} |
+        <strong>Peças:</strong> ${ferroPieces} |
+        <strong>Perda:</strong> ${ferroWaste.toFixed(2)}m
+      </div>`;
+    }
 
     calcResult.trussTypes.forEach(type => {
       const r = calcResult.byType[type];
-      html += `<h2>Tipo ${typeLabel(type)} — ${r.totalBars} barras / ${r.totalPieces} peças</h2>`;
+      html += `<h2>Treliça ${typeLabel(type)} — ${r.totalBars} barras / ${r.totalPieces} peças</h2>`;
       r.bars.forEach((bar, idx) => {
         const isSobra = bar.remaining >= MIN_SOBRA;
         const sobraClass = isSobra ? 'sobra-badge' : 'perda-badge';
@@ -291,6 +342,26 @@ export default function SobraTrelica() {
         });
         html += `</tbody></table>`;
       }
+    });
+
+    (calcResult.ferroDiameters || []).forEach(diam => {
+      const r = calcResult.byFerro[diam];
+      if (r.totalPieces === 0) return;
+      html += `<h2 style="color:#1d4ed8;border-bottom-color:#3b82f6;">Ferro ${FERRO_LABEL(diam)} — ${r.totalBars} barras / ${r.totalPieces} peças</h2>`;
+      r.bars.forEach((bar, idx) => {
+        const isSobra = bar.remaining >= MIN_SOBRA;
+        const sobraClass = isSobra ? 'sobra-badge' : 'perda-badge';
+        html += `<div class="bar">
+          <div class="bar-header">
+            <span>Barra ${idx + 1}</span>
+            <span class="${sobraClass}">${bar.remaining > 0 ? `Sobra: ${bar.remaining.toFixed(2)}m` : 'Aproveitamento total'}</span>
+          </div>
+          <table><thead><tr><th>Peça</th><th>Comprimento</th><th>Pedido</th></tr></thead><tbody>`;
+        bar.cuts.forEach(c => {
+          html += `<tr><td>${c.size} (${FERRO_LABEL(c.diametro)})</td><td>${c.len}m</td><td>#${c.orderNumber}</td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+      });
     });
 
     html += `<div class="no-print" style="margin-top: 20px;"><button onclick="window.print()" style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Imprimir</button></div>`;
@@ -481,36 +552,92 @@ export default function SobraTrelica() {
           </DialogHeader>
           {calcResult && calcResult.trussTypes.length > 0 && (
             <div className="space-y-4 mt-2">
-              <Tabs value={activeType || calcResult.trussTypes[0]} onValueChange={setActiveType}>
-                <TabsList className="w-full flex-wrap justify-start">
-                  {calcResult.trussTypes.map(t => (
-                    <TabsTrigger key={t} value={t} className="flex-1">
-                      {typeLabel(t)}
-                      <span className="ml-1.5 text-[10px] text-muted-foreground">{calcResult.byType[t].totalBars}b</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
-                {calcResult.trussTypes.map(t => {
-                  const r = calcResult.byType[t];
-                  return (
-                    <TabsContent key={t} value={t} className="space-y-4 mt-3">
-                      <TypeRoteiro
-                        type={t}
-                        result={r}
-                        allBars={r.bars}
-                        editMode={editMode}
-                        moveCut={moveCut}
-                      />
-                    </TabsContent>
-                  );
-                })}
-              </Tabs>
-
-              {/* Avisos gerais */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
-                Cada tipo de treliça tem seu próprio plano de corte. Barras e sobras de um tipo não são reaproveitadas em outro.
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={planMode === 'trelica' ? 'default' : 'outline'}
+                  onClick={() => setPlanMode('trelica')}
+                  className={planMode === 'trelica' ? 'bg-primary text-primary-foreground' : ''}
+                >
+                  <Layers className="w-3.5 h-3.5 mr-1.5" /> Treliças
+                </Button>
+                <Button
+                  size="sm"
+                  variant={planMode === 'ferro' ? 'default' : 'outline'}
+                  onClick={() => setPlanMode('ferro')}
+                  className={planMode === 'ferro' ? 'bg-blue-600 text-white' : ''}
+                >
+                  Adicionais (Ferros)
+                </Button>
               </div>
+
+              {planMode === 'trelica' ? (
+                <>
+                  <Tabs value={activeType || calcResult.trussTypes[0]} onValueChange={setActiveType}>
+                    <TabsList className="w-full flex-wrap justify-start">
+                      {calcResult.trussTypes.map(t => (
+                        <TabsTrigger key={t} value={t} className="flex-1">
+                          {typeLabel(t)}
+                          <span className="ml-1.5 text-[10px] text-muted-foreground">{calcResult.byType[t].totalBars}b</span>
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+
+                    {calcResult.trussTypes.map(t => {
+                      const r = calcResult.byType[t];
+                      return (
+                        <TabsContent key={t} value={t} className="space-y-4 mt-3">
+                          <TypeRoteiro
+                            kind="trelica"
+                            groupKey={t}
+                            groupLabel={typeLabel(t)}
+                            result={r}
+                            editMode={editMode}
+                            moveCut={moveCut}
+                          />
+                        </TabsContent>
+                      );
+                    })}
+                  </Tabs>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
+                    Cada tipo de treliça tem seu próprio plano de corte. Barras e sobras de um tipo não são reaproveitadas em outro.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Tabs value={activeFerro || (calcResult.ferroDiameters && calcResult.ferroDiameters[0])} onValueChange={setActiveFerro}>
+                    <TabsList className="w-full flex-wrap justify-start">
+                      {(calcResult.ferroDiameters || []).map(d => (
+                        <TabsTrigger key={d} value={d} className="flex-1">
+                          {FERRO_LABEL(d)}
+                          <span className="ml-1.5 text-[10px] text-muted-foreground">{calcResult.byFerro[d].totalBars}b</span>
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+
+                    {(calcResult.ferroDiameters || []).map(d => {
+                      const r = calcResult.byFerro[d];
+                      return (
+                        <TabsContent key={d} value={d} className="space-y-4 mt-3">
+                          <TypeRoteiro
+                            kind="ferro"
+                            groupKey={d}
+                            groupLabel={FERRO_LABEL(d)}
+                            result={r}
+                            editMode={editMode}
+                            moveCut={moveCut}
+                          />
+                        </TabsContent>
+                      );
+                    })}
+                  </Tabs>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
+                    Plano de corte dos ferros adicionais por diâmetro. Cada diâmetro é cortado em barras de 12m separadas.
+                  </div>
+                </>
+              )}
             </div>
           )}
           <DialogFooter className="mt-4">
@@ -531,13 +658,15 @@ export default function SobraTrelica() {
   );
 }
 
-function TypeRoteiro({ type, result, editMode, moveCut }) {
+function TypeRoteiro({ kind, groupKey, groupLabel, result, editMode, moveCut }) {
   const { totalBars, totalPieces, usedFromStock, bars, sobrasGeradas, perdas, totalWaste } = result;
+  const isFerro = kind === 'ferro';
+  const cutLabel = (c) => c.diametro ? `${FERRO_LABEL(c.diametro)} ${c.size}` : c.size;
   if (totalPieces === 0) {
     return (
       <div className="text-center py-10 text-muted-foreground">
         <Scissors className="w-8 h-8 mx-auto mb-2 opacity-30" />
-        <p className="text-sm">Nenhuma peça do tipo <strong>{type}</strong> no corte de vigas.</p>
+        <p className="text-sm">Nenhuma peça de <strong>{groupLabel}</strong> no corte de vigas.</p>
       </div>
     );
   }
@@ -607,7 +736,7 @@ function TypeRoteiro({ type, result, editMode, moveCut }) {
                       key={ci}
                       className="bg-primary flex items-center justify-center text-[10px] text-primary-foreground border-r border-primary-foreground/20"
                       style={{ width: `${(c.len / BAR_LENGTH) * 100}%` }}
-                      title={`${c.size} — Pedido #${c.orderNumber}`}
+                      title={`${cutLabel(c)} — Pedido #${c.orderNumber}`}
                     >
                       {c.len}m
                     </div>
@@ -628,11 +757,11 @@ function TypeRoteiro({ type, result, editMode, moveCut }) {
                   {bar.cuts.map((c, ci) => (
                     editMode ? (
                       <span key={ci} className="text-[10px] inline-flex items-center gap-1 bg-white border border-input rounded-full pl-2 pr-1 py-0.5">
-                        {c.size} (#{c.orderNumber})
+                        {cutLabel(c)} (#{c.orderNumber})
                         <select
                           className="text-[10px] border-0 bg-transparent cursor-pointer focus:outline-none"
                           value=""
-                          onChange={(e) => { if (e.target.value !== "") moveCut(type, idx, ci, e.target.value); }}
+                          onChange={(e) => { if (e.target.value !== "") moveCut(kind, groupKey, idx, ci, e.target.value); }}
                         >
                           <option value="">Mover para...</option>
                           {Array.from({ length: bars.length }, (_, i) => i).filter(i => i !== idx).map(i => (
@@ -644,7 +773,7 @@ function TypeRoteiro({ type, result, editMode, moveCut }) {
                       </span>
                     ) : (
                       <span key={ci} className="text-[10px] text-muted-foreground">
-                        {c.size} (#{c.orderNumber}){ci < bar.cuts.length - 1 ? ' ·' : ''}
+                        {cutLabel(c)} (#{c.orderNumber}){ci < bar.cuts.length - 1 ? ' ·' : ''}
                       </span>
                     )
                   ))}
@@ -657,7 +786,11 @@ function TypeRoteiro({ type, result, editMode, moveCut }) {
 
       {sobrasGeradas.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-          <p className="text-sm font-semibold text-amber-800 mb-2">Sobras aproveitáveis que serão adicionadas ao estoque (tipo {type === SEM_TIPO ? 'sem tipo' : type}):</p>
+          <p className="text-sm font-semibold text-amber-800 mb-2">
+            {isFerro
+              ? `Sobras aproveitáveis de ${groupLabel}:`
+              : `Sobras aproveitáveis que serão adicionadas ao estoque (${groupLabel === 'Sem tipo' ? 'sem tipo' : groupLabel}):`}
+          </p>
           <div className="flex flex-wrap gap-2">
             {sobrasGeradas.map((s, i) => (
               <span key={i} className="text-xs bg-white border border-amber-300 text-amber-700 px-2 py-1 rounded-full font-medium">
