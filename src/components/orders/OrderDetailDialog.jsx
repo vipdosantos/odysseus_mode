@@ -10,6 +10,7 @@ import OrderPaymentTab from './OrderPaymentTab';
 import OrderNFTab from './OrderNFTab';
 import QRZoomModal from './QRZoomModal';
 import DeliveryReceiptTab from './DeliveryReceiptTab';
+import { TRUSS_TYPE_LABEL } from '@/lib/trussTypes';
 
 export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive }) {
   const [zoomQR, setZoomQR] = useState(null); // { url, label }
@@ -212,7 +213,12 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                           onClick={() => setZoomQR({ url: `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`, label: item.qr_code_id || `${order.order_number}-${item.size}-${idx}` })}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold">{item.size}</p>
+                          <div className="flex items-center gap-2">
+                            {item.truss_type && (
+                              <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">{TRUSS_TYPE_LABEL(item.truss_type)}</span>
+                            )}
+                            <p className="text-sm font-bold">{item.size}</p>
+                          </div>
                           <p className="text-xs text-muted-foreground">{item.produced || 0}/{item.quantity} produzidas</p>
                           <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1.5 w-full">
                             <div className="h-full bg-primary rounded-full" style={{ width: `${item.quantity > 0 ? ((item.produced || 0) / item.quantity) * 100 : 0}%` }} />

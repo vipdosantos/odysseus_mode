@@ -60,6 +60,18 @@
           "size": {
             "type": "string"
           },
+          "truss_type": {
+            "type": "string",
+            "enum": [
+              "H8",
+              "H12",
+              "H16",
+              "H20",
+              "H25",
+              "H30"
+            ],
+            "description": "Tipo de treli\u00e7a"
+          },
           "quantity": {
             "type": "number"
           },

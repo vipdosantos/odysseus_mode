@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Package, Truck, Calendar, Phone, User, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { TRUSS_TYPE_LABEL } from '@/lib/trussTypes';
 
 const STATUS_FLOW = [
   { key: 'of_etiquetas',       label: 'OF e Etiquetas' },
@@ -188,7 +189,10 @@ export default function OrderStatusLookup() {
                       <div key={idx} className="flex items-center gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-slate-700">{item.size}</span>
+                            <span className="text-sm font-medium text-slate-700">
+                              {item.truss_type && <span className="inline-block text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded mr-1.5">{TRUSS_TYPE_LABEL(item.truss_type)}</span>}
+                              {item.size}
+                            </span>
                             <span className="text-xs text-slate-400">{item.produced || 0}/{item.quantity} un</span>
                           </div>
                           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">

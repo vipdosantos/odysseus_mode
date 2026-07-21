@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, KeyRound, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { TRUSS_TYPES } from '@/lib/trussTypes';
 import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
@@ -20,7 +21,7 @@ function generateAccessKey() {
   ).join('');
 }
 
-const emptyItem = { size: '', quantity: 1, produced: 0, qr_code_id: '' };
+const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '' };
 
 export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
   const [form, setForm] = useState({
@@ -292,6 +293,15 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
             <div className="space-y-3">
               {form.items.map((item, idx) => (
                 <div key={idx} className="flex items-end gap-3 p-3 bg-muted/50 rounded-xl">
+                  <div className="w-28">
+                    <Label className="text-xs">Tipo Treliça</Label>
+                    <Select value={item.truss_type || 'H8'} onValueChange={v => updateItem(idx, 'truss_type', v)}>
+                      <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                      <SelectContent>
+                        {TRUSS_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex-1">
                     <Label className="text-xs">Tamanho / Produto</Label>
                     {products.length > 0 ? (
