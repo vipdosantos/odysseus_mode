@@ -248,6 +248,10 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                 <Label>Parcelas</Label>
                 <Input type="number" min={1} max={24} value={form.installments || 1} onChange={e => set('installments', Number(e.target.value))} />
               </div>
+              <div>
+                <Label>Chave de Acesso ao Status</Label>
+                <Input value={form.access_key || ''} onChange={e => set('access_key', e.target.value)} placeholder="Gerada automaticamente se vazia" />
+              </div>
               {order && (
                 <div>
                   <Label>Status</Label>
