@@ -14,6 +14,13 @@ import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
 
+function generateAccessKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({ length: 16 }, (_, i) =>
+    (i > 0 && i % 4 === 0 ? '-' : '') + chars[Math.floor(Math.random() * chars.length)]
+  ).join('');
+}
+
 const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
 
 export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
@@ -28,6 +35,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     attachments: [],
     delivery_photos: [],
     client_photo: '',
+    access_key: '',
   });
 
   const { data: sellers = [] } = useQuery({
@@ -74,6 +82,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
         attachments: [],
         delivery_photos: [],
         client_photo: '',
+        access_key: generateAccessKey(),
       });
     }
   }, [order, open]);

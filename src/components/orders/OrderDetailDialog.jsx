@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Pencil, Printer, Calendar, Phone, User, ChevronRight, Trash2, Archive } from 'lucide-react';
+import { Pencil, Printer, Calendar, Phone, User, ChevronRight, Trash2, Archive, Link2, Check } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ALL_STATUSES, STATUS_MAP } from './KanbanColumn';
@@ -14,8 +14,15 @@ import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 
 export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive }) {
   const [zoomQR, setZoomQR] = useState(null); // { url, label }
+  const [linkCopied, setLinkCopied] = useState(false);
   if (!order) return null;
 
+  const handleCopyStatusLink = () => {
+    const url = `${window.location.origin}/status/${order.access_key}`;
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
   const st = STATUS_MAP[order.status] || { label: order.status, color: 'bg-gray-400' };
   const currentIdx = ALL_STATUSES.findIndex(s => s.key === order.status);
   const nextStatus = ALL_STATUSES[currentIdx + 1];
@@ -240,6 +247,12 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                 <Button onClick={handlePrintLabels} variant="outline" className="flex-1 min-w-[140px]">
                   <Printer className="w-4 h-4 mr-2" /> Imprimir Etiquetas
                 </Button>
+                {order.access_key && (
+                  <Button onClick={handleCopyStatusLink} variant="outline" className="flex-1 min-w-[140px]">
+                    {linkCopied ? <Check className="w-4 h-4 mr-2 text-green-500" /> : <Link2 className="w-4 h-4 mr-2" />}
+                    {linkCopied ? 'Link Copiado!' : 'Link de Status'}
+                  </Button>
+                )}
                 {canEdit && (
                   <Button onClick={() => onEdit(order)} className="flex-1 min-w-[100px] bg-primary text-primary-foreground">
                     <Pencil className="w-4 h-4 mr-2" /> Editar
