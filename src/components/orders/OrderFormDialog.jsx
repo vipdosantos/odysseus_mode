@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, KeyRound, RefreshCw } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { TRUSS_TYPES, FERRO_DIAMETERS } from '@/lib/trussTypes';
@@ -279,28 +279,6 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                   onChange={v => set('client_photo', v)}
                 />
               </div>
-            </div>
-
-            {/* Chave de Acesso */}
-            <div>
-              <Label className="flex items-center gap-1"><KeyRound className="w-3.5 h-3.5" /> Chave de Acesso ao Status</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  value={form.access_key}
-                  readOnly
-                  className="font-mono text-sm tracking-widest bg-muted"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => set('access_key', generateAccessKey())}
-                  title="Gerar nova chave"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Compartilhe esta chave com o cliente para que ele consulte o status do pedido.</p>
             </div>
 
             <div>
