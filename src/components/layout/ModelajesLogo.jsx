@@ -15,7 +15,7 @@ export default function ModelajesLogo({ collapsed }) {
 
   return (
     <div className="flex items-center px-1">
-      <img src={LOGO_URL} alt="Modelajes" className="h-12 w-auto object-contain" />
+      <img src={LOGO_URL} alt="Modelajes" className="h-12 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
     </div>
   );
 }
