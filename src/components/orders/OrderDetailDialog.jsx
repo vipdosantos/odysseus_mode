@@ -114,13 +114,12 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       }
       .vbox { background: #a6a6a6; color: #000; font-size: 8mm; font-weight: 800; padding: 1mm 4mm; border-radius: 1mm; }
       .col-brand {
-        background: #000; width: 32mm;
+        background: #fff; width: 32mm;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         gap: 2mm; padding: 2mm; overflow: hidden;
       }
       .brand-logo {
         width: 26mm; height: auto;
-        filter: brightness(0) invert(1);
         object-fit: contain;
       }
       .qr { width: 22mm; height: 22mm; display: block; }
