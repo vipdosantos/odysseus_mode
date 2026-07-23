@@ -11,6 +11,7 @@ import OrderNFTab from './OrderNFTab';
 import QRZoomModal from './QRZoomModal';
 import DeliveryReceiptTab from './DeliveryReceiptTab';
 import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
+import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 
 export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive }) {
   const [zoomQR, setZoomQR] = useState(null); // { url, label }
@@ -70,10 +71,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
             <span class="vt vbox">${item.size}</span>
           </div>
           <div class="col-brand">
-            <div class="logo">
-              <span class="vt lmark">M</span>
-              <span class="vt ltext">MODELAJES</span>
-            </div>
+            <img src="${LOGO_URL}" class="brand-logo" />
             <img src="${qrUrl}" class="qr" />
           </div>
         </div>`;
@@ -117,12 +115,14 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .vbox { background: #a6a6a6; color: #000; font-size: 8mm; font-weight: 800; padding: 1mm 4mm; border-radius: 1mm; }
       .col-brand {
         background: #000; width: 32mm;
-        display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-        padding: 2mm; overflow: hidden;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 2mm; padding: 2mm; overflow: hidden;
       }
-      .logo { display: flex; flex-direction: row; gap: 1mm; align-items: center; }
-      .lmark { color: #fff; font-size: 13mm; font-weight: 900; line-height: 1; }
-      .ltext { color: #fff; font-size: 2.2mm; font-weight: 700; letter-spacing: 0.4mm; }
+      .brand-logo {
+        width: 26mm; height: auto;
+        filter: brightness(0) invert(1);
+        object-fit: contain;
+      }
       .qr { width: 22mm; height: 22mm; display: block; }
       @media print { body { margin: 0; } }
     </style></head>
