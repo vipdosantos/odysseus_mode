@@ -45,6 +45,10 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&bgcolor=ffffff&data=${encodeURIComponent(qrData)}`;
         const phone = order.seller_phone || '';
         const seller = order.seller_name || '';
+        const extras = [];
+        if (item.truss_type) extras.push(TRUSS_TYPE_LABEL(item.truss_type));
+        (item.adicionais || []).forEach(a => { if (a.quantity > 0) extras.push(`${FERRO_LABEL(a.diametro)} ×${a.quantity}`); });
+        const extraHtml = extras.length ? `<div class="info-extra">${extras.join(' · ')}</div>` : '';
         return `
         <div class="label">
           <div class="label-inner">
@@ -61,6 +65,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                 <span class="info-label">Cliente</span>
                 <span class="info-value client-name">${order.client_name}</span>
               </div>
+              ${extraHtml}
               <div class="info-cell unit-cell">
                 <span class="info-label">Unidade</span>
                 <span class="info-value unit-value">${i + 1} / ${qty}</span>
@@ -119,6 +124,10 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       }
       .info-cell {
         display: flex; align-items: center; gap: 1.5mm;
+      }
+      .info-extra {
+        font-size: 2.6mm; font-weight: 700; color: #b45309;
+        line-height: 1.1; word-break: break-word;
       }
       .info-label {
         font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.2mm;
