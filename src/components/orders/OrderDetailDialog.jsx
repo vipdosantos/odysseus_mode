@@ -49,18 +49,24 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const phone = order.seller_phone ? order.seller_phone : (order.client_phone || '');
         return `
         <div class="label">
-          <div class="size-top">${item.size}</div>
-          <div class="phone-row">${phone}</div>
-          <div class="brand-block">
+          <div class="label-header">
             <img src="https://media.base44.com/images/public/69e67ee13ca6bee2db939472/a733a5b7d_graph-paper-5mm-1-en.png" class="brand-logo" alt="Modelajes" />
           </div>
+          <div class="size-band">${item.size}</div>
           <div class="qr-block">
             <img src="${qrUrl}" class="qr-img" />
           </div>
-          <div class="desc-row">${item.size}</div>
-          <div class="size-bottom">${item.size}</div>
-          <div class="client-row">${order.client_name}</div>
-          <div class="unit-row">${i + 1} / ${qty}</div>
+          <div class="info-grid">
+            <div class="info-cell">
+              <span class="info-label">Cliente</span>
+              <span class="info-value client-name">${order.client_name}</span>
+            </div>
+            <div class="info-cell unit-cell">
+              <span class="info-label">Unidade</span>
+              <span class="info-value unit-value">${i + 1} / ${qty}</span>
+            </div>
+          </div>
+          <div class="phone-row">${phone}</div>
         </div>`;
       });
     }).join('');
@@ -69,50 +75,56 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
     <style>
       @page { size: 60mm 100mm portrait; margin: 0; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: Arial, Helvetica, sans-serif; background: #fff; color: #000; }
+      body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #1a1d23; }
       .label {
         width: 60mm; height: 100mm;
-        display: flex; flex-direction: column; align-items: center;
-        border: 0.3mm solid #000;
+        display: flex; flex-direction: column;
+        border: 0.3mm solid #1a1d23;
         page-break-after: always;
         overflow: hidden;
       }
-      .size-top {
-        font-size: 14mm; font-weight: 900; line-height: 1;
-        text-align: center; padding: 2.5mm 0 1mm;
-        width: 100%;
-      }
-      .phone-row {
-        font-size: 4mm; font-weight: 500;
-        text-align: center; padding-bottom: 1.5mm; width: 100%;
-      }
-      .brand-block {
-        background: #fff;
-        width: 100%; display: flex; align-items: center; justify-content: center;
-        padding: 2mm 2mm; border-bottom: 0.3mm solid #ddd;
-      }
-      .brand-logo { height: 10mm; width: auto; object-fit: contain; }
-      .qr-block {
-        flex: 1; display: flex; align-items: center; justify-content: center;
+      .label-header {
+        background: #1a1d23;
+        display: flex; align-items: center; justify-content: center;
         padding: 2mm;
       }
-      .qr-img { width: 36mm; height: 36mm; display: block; }
-      .desc-row {
-        font-size: 3.8mm; font-weight: 700; text-align: center;
-        text-decoration: underline; padding: 0 2mm 1.5mm;
-        width: 100%;
+      .brand-logo { height: 6mm; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
+      .size-band {
+        background: #f59e0b; color: #1a1d23;
+        font-size: 12mm; font-weight: 900; line-height: 1;
+        text-align: center; padding: 2mm 0;
       }
-      .size-bottom {
-        font-size: 12mm; font-weight: 900; text-align: center;
-        padding: 0.5mm 0 0.5mm; line-height: 1; width: 100%;
+      .qr-block {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        padding: 2.5mm;
       }
-      .client-row {
-        font-size: 3.8mm; font-weight: 700; text-align: center;
-        text-decoration: underline; padding-bottom: 0.5mm;
-        letter-spacing: 0.2mm; width: 100%;
+      .qr-img {
+        width: 38mm; height: 38mm; display: block;
+        border: 0.4mm solid #1a1d23; border-radius: 1.5mm; padding: 0.5mm;
       }
-      .unit-row {
-        font-size: 3mm; color: #444; text-align: center; padding-bottom: 2mm;
+      .info-grid {
+        display: flex; border-top: 0.3mm solid #1a1d23;
+      }
+      .info-cell {
+        flex: 1; padding: 1.2mm 2mm; display: flex; flex-direction: column; gap: 0.3mm;
+      }
+      .info-cell + .info-cell { border-left: 0.3mm solid #1a1d23; }
+      .unit-cell { background: #1a1d23; }
+      .info-label {
+        font-size: 2.4mm; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.2mm;
+      }
+      .unit-cell .info-label { color: #f59e0b; }
+      .info-value {
+        font-size: 4mm; font-weight: 800;
+      }
+      .client-name {
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30mm;
+      }
+      .unit-value { color: #fff; }
+      .phone-row {
+        background: #f4f4f5; font-size: 3.6mm; font-weight: 700;
+        text-align: center; padding: 1.4mm 2mm; border-top: 0.3mm solid #1a1d23;
+        letter-spacing: 0.2mm;
       }
       @media print { body { margin: 0; } }
     </style></head>
