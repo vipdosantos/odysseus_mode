@@ -71,7 +71,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
             <span class="vt vbox">${item.size}</span>
           </div>
           <div class="col-brand">
-            <img src="${LOGO_URL}" class="brand-logo" />
+            <div class="logo-wrap"><img src="${LOGO_URL}" class="brand-logo" /></div>
             <img src="${qrUrl}" class="qr" />
           </div>
         </div>`;
@@ -91,6 +91,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       }
       .vt {
         writing-mode: vertical-rl;
+        transform: rotate(180deg);
         display: inline-block;
         line-height: 1.1;
       }
@@ -113,15 +114,13 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       }
       .vbox { background: #a6a6a6; color: #000; font-size: 8mm; font-weight: 800; padding: 1mm 4mm; border-radius: 1mm; }
       .col-brand {
-        background: #fff; width: 32mm;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 1.5mm; padding: 2mm; overflow: hidden;
+        background: #fff; width: 38mm;
+        display: flex; flex-direction: row; align-items: center; justify-content: center;
+        gap: 2mm; padding: 1.5mm; overflow: hidden;
       }
-      .brand-logo {
-        width: 24mm; height: auto;
-        object-fit: contain;
-      }
-      .qr { width: 24mm; height: 24mm; display: block; }
+      .logo-wrap { position: relative; width: 11mm; height: 42mm; overflow: hidden; }
+      .brand-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg); width: 42mm; height: auto; }
+      .qr { width: 26mm; height: 26mm; display: block; }
       @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}</body></html>`;
