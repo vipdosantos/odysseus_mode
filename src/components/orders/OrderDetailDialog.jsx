@@ -103,19 +103,20 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .brand-logo { height: 5mm; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
       .size-band {
         background: #f59e0b; color: #1a1d23;
-        font-size: 8mm; font-weight: 900; line-height: 1;
-        padding: 0.6mm 3mm; border-radius: 1mm;
+        font-size: 12mm; font-weight: 900; line-height: 1;
+        padding: 0.4mm 4mm; border-radius: 1mm;
+        letter-spacing: 0.3mm;
       }
       .label-body {
         flex: 1; display: flex; align-items: stretch;
       }
       .qr-block {
-        flex: 1; display: flex; align-items: center; justify-content: center;
+        flex: 0 0 30mm; display: flex; align-items: center; justify-content: center;
         padding: 2mm;
         border-right: 0.3mm solid #1a1d23;
       }
       .qr-img {
-        width: 33mm; height: 33mm; display: block;
+        width: 24mm; height: 24mm; display: block;
         border: 0.4mm solid #1a1d23; border-radius: 1.5mm; padding: 0.5mm;
       }
       .info-stack {
@@ -133,7 +134,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.2mm;
         min-width: 11mm;
       }
-      .info-value { font-size: 3.6mm; font-weight: 800; }
+      .info-value { font-size: 5mm; font-weight: 800; }
       .client-name {
         white-space: normal; word-break: break-word; overflow-wrap: anywhere; line-height: 1.1;
       }
