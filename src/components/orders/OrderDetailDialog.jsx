@@ -29,9 +29,6 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
   const prevStatus = ALL_STATUSES[currentIdx - 1];
 
   const handlePrintLabels = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
     // Each unit gets a UNIQUE QR with its unit index to prevent double-scan errors
     const labels = (order.items || []).flatMap((item, idx) => {
       const qty = item.quantity || 0;
@@ -141,10 +138,20 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       }
       @media print { body { margin: 0; } }
     </style></head>
-    <body>${labels}<script>window.onload=function(){setTimeout(function(){window.print();},800);}<\/script></body></html>`;
+    <body>${labels}</body></html>`;
 
-    printWindow.document.write(html);
-    printWindow.document.close();
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;top:0;';
+    document.body.appendChild(iframe);
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 800);
+    };
+    iframe.contentDocument.write(html);
+    iframe.contentDocument.close();
   };
 
   return (
