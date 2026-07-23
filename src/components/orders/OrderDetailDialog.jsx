@@ -48,35 +48,33 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const extras = [];
         if (item.truss_type) extras.push(TRUSS_TYPE_LABEL(item.truss_type));
         (item.adicionais || []).forEach(a => { if (a.quantity > 0) extras.push(`${FERRO_LABEL(a.diametro)} ×${a.quantity}`); });
-        const specsHtml = extras.length ? `<div class="specs-line">${extras.join(' · ')}</div>` : '';
+        const specsHtml = extras.length ? `<span class="vt specs">${extras.join(' · ')}</span>` : '';
         return `
         <div class="label">
-          <div class="label-inner">
-            <div class="data-section">
-              <div class="seller-line">
-                ${seller ? `<span class="seller-name">${seller}</span>` : ''}
-                ${phone ? `<span class="seller-phone">${phone}</span>` : ''}
-              </div>
-              <div class="unit-row">
-                <span class="field-label">Unidade</span>
-                <span class="unit-box">${i + 1} / ${qty}</span>
-              </div>
-              ${specsHtml}
-              <div class="client-block">
-                <span class="field-label">Cliente</span>
-                <span class="client-name">${order.client_name}</span>
-              </div>
+          <div class="col-data">
+            <div class="seller">
+              <span class="vt name">${seller || ''}</span>
+              <span class="vt phone">${phone || ''}</span>
             </div>
-            <div class="value-bar">
-              <span class="value-box">${item.size}</span>
+            <div class="unit">
+              <span class="vt flabel">Unidade</span>
+              <span class="vt ubox">${i + 1} / ${qty}</span>
             </div>
-            <div class="brand-section">
-              <div class="logo-block">
-                <span class="logo-mark">M</span>
-                <span class="logo-text">MODELAJES</span>
-              </div>
-              <img src="${qrUrl}" class="qr-img" />
+            ${specsHtml}
+            <div class="client">
+              <span class="vt flabel">Cliente</span>
+              <span class="vt cname">${order.client_name}</span>
             </div>
+          </div>
+          <div class="col-value">
+            <span class="vt vbox">${item.size}</span>
+          </div>
+          <div class="col-brand">
+            <div class="logo">
+              <span class="vt lmark">M</span>
+              <span class="vt ltext">MODELAJES</span>
+            </div>
+            <img src="${qrUrl}" class="qr" />
           </div>
         </div>`;
       });
@@ -84,54 +82,48 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Etiquetas #${order.order_number}</title>
     <style>
-      @page { size: 100mm 50mm landscape; margin: 0; }
+      @page { size: 100mm 50mm; margin: 0; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #000; }
       .label {
-        width: 100mm; height: 50mm; position: relative;
+        width: 100mm; height: 50mm;
         page-break-after: always; overflow: hidden;
-      }
-      .label-inner {
-        position: absolute;
-        width: 50mm; height: 100mm;
-        top: 50mm; left: 0;
-        transform: rotate(-90deg);
-        transform-origin: top left;
-        display: flex; flex-direction: column;
+        display: flex; flex-direction: row;
         border: 0.3mm solid #000;
       }
-      .data-section {
-        flex: 1; padding: 2mm 2.5mm;
-        display: flex; flex-direction: column; gap: 1.5mm;
+      .vt {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        display: inline-block;
+        line-height: 1.1;
       }
-      .seller-line { display: flex; flex-direction: column; gap: 0.5mm; }
-      .seller-name { font-size: 3mm; font-weight: 700; }
-      .seller-phone { font-size: 2.8mm; font-weight: 600; color: #333; }
-      .unit-row { display: flex; align-items: center; gap: 2mm; }
-      .field-label { font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.3mm; }
-      .unit-box { background: #000; color: #fff; font-size: 3.2mm; font-weight: 800; padding: 0.5mm 2mm; border-radius: 1mm; }
-      .specs-line { font-size: 2.6mm; font-weight: 700; color: #b45309; line-height: 1.1; }
-      .client-block { margin-top: auto; }
-      .client-name { display: block; font-size: 5mm; font-weight: 800; line-height: 1.05; word-break: break-word; }
-      .value-bar {
-        background: #000; height: 16mm;
+      .col-data {
+        flex: 1; background: #fff; padding: 2mm 2.5mm;
+        display: flex; flex-direction: row; align-items: flex-start; gap: 2.5mm;
+      }
+      .seller { display: flex; flex-direction: row; gap: 1.5mm; }
+      .seller .name { font-size: 3mm; font-weight: 700; }
+      .seller .phone { font-size: 2.8mm; font-weight: 600; color: #333; }
+      .unit { display: flex; flex-direction: column; gap: 1mm; }
+      .flabel { font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.3mm; }
+      .ubox { background: #000; color: #fff; font-size: 3.2mm; font-weight: 800; padding: 0.5mm 2mm; border-radius: 1mm; }
+      .specs { font-size: 2.6mm; font-weight: 700; color: #b45309; }
+      .client { display: flex; flex-direction: row; gap: 1.5mm; margin-left: auto; align-items: flex-start; }
+      .cname { font-size: 5mm; font-weight: 800; max-height: 46mm; }
+      .col-value {
+        background: #000; width: 16mm;
         display: flex; align-items: center; justify-content: center;
       }
-      .value-box {
-        background: #a6a6a6; color: #000;
-        font-size: 8mm; font-weight: 800; line-height: 1;
-        padding: 1mm 4mm; border-radius: 1mm;
+      .vbox { background: #a6a6a6; color: #000; font-size: 8mm; font-weight: 800; padding: 1mm 4mm; border-radius: 1mm; }
+      .col-brand {
+        background: #000; width: 32mm;
+        display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+        padding: 2mm; overflow: hidden;
       }
-      .brand-section {
-        background: #000; height: 32mm;
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 2mm;
-        overflow: hidden;
-      }
-      .logo-block { display: flex; flex-direction: column; align-items: center; gap: 0.5mm; }
-      .logo-mark { color: #fff; font-size: 13mm; font-weight: 900; line-height: 1; }
-      .logo-text { color: #fff; font-size: 2.2mm; font-weight: 700; letter-spacing: 0.4mm; }
-      .qr-img { width: 22mm; height: 22mm; display: block; }
+      .logo { display: flex; flex-direction: row; gap: 1mm; align-items: center; }
+      .lmark { color: #fff; font-size: 13mm; font-weight: 900; line-height: 1; }
+      .ltext { color: #fff; font-size: 2.2mm; font-weight: 700; letter-spacing: 0.4mm; }
+      .qr { width: 22mm; height: 22mm; display: block; }
       @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}</body></html>`;
