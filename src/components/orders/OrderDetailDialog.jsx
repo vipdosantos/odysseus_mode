@@ -101,9 +101,9 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .seller { display: flex; flex-direction: row; gap: 1.5mm; }
       .seller .name { font-size: 3mm; font-weight: 700; }
       .seller .phone { font-size: 2.8mm; font-weight: 600; color: #333; }
-      .unit { display: flex; flex-direction: column; gap: 1mm; }
+      .unit { display: flex; flex-direction: column; gap: 1.5mm; align-items: center; padding: 0 0.5mm; }
       .flabel { font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.3mm; }
-      .ubox { background: #000; color: #fff; font-size: 3.2mm; font-weight: 800; padding: 0.5mm 2mm; border-radius: 1mm; }
+      .ubox { background: #000; color: #fff; font-size: 3.4mm; font-weight: 800; padding: 1.2mm 1.6mm; border-radius: 1.5mm; min-width: 7mm; text-align: center; }
       .specs { font-size: 2.6mm; font-weight: 700; color: #b45309; }
       .client { display: flex; flex-direction: row; gap: 1.5mm; margin-left: auto; align-items: flex-start; }
       .cname { font-size: 5mm; font-weight: 800; max-height: 46mm; }
@@ -115,13 +115,13 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .col-brand {
         background: #fff; width: 32mm;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 2mm; padding: 2mm; overflow: hidden;
+        gap: 1.5mm; padding: 2mm; overflow: hidden;
       }
       .brand-logo {
-        width: 26mm; height: auto;
+        width: 24mm; height: auto;
         object-fit: contain;
       }
-      .qr { width: 22mm; height: 22mm; display: block; }
+      .qr { width: 24mm; height: 24mm; display: block; }
       @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}</body></html>`;
