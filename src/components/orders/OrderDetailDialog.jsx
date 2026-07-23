@@ -125,12 +125,13 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .brand-section {
         background: #000; height: 32mm;
         display: flex; align-items: center; justify-content: space-between;
-        padding: 2mm 2.5mm;
+        padding: 2mm;
+        overflow: hidden;
       }
-      .logo-block { display: flex; align-items: center; gap: 1mm; }
-      .logo-mark { color: #fff; font-size: 18mm; font-weight: 900; line-height: 1; }
-      .logo-text { color: #fff; font-size: 2.8mm; font-weight: 700; letter-spacing: 0.5mm; }
-      .qr-img { width: 24mm; height: 24mm; display: block; }
+      .logo-block { display: flex; flex-direction: column; align-items: center; gap: 0.5mm; }
+      .logo-mark { color: #fff; font-size: 13mm; font-weight: 900; line-height: 1; }
+      .logo-text { color: #fff; font-size: 2.2mm; font-weight: 700; letter-spacing: 0.4mm; }
+      .qr-img { width: 22mm; height: 22mm; display: block; }
       @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}</body></html>`;
