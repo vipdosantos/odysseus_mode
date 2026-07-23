@@ -49,6 +49,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const phone = order.seller_phone ? order.seller_phone : (order.client_phone || '');
         return `
         <div class="label">
+          <div class="label-inner">
           <div class="label-header">
             <img src="https://media.base44.com/images/public/69e67ee13ca6bee2db939472/a733a5b7d_graph-paper-5mm-1-en.png" class="brand-logo" alt="Modelajes" />
             <span class="size-band">${item.size}</span>
@@ -69,20 +70,30 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
               <div class="phone-row">${phone}</div>
             </div>
           </div>
+          </div>
         </div>`;
       });
     }).join('');
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Etiquetas #${order.order_number}</title>
     <style>
-      @page { size: 100mm 50mm landscape; margin: 0; }
+      @page { size: 50mm 100mm portrait; margin: 0; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #1a1d23; }
       .label {
+        width: 50mm; height: 100mm;
+        position: relative;
+        page-break-after: always;
+        overflow: hidden;
+      }
+      .label-inner {
         width: 100mm; height: 50mm;
         display: flex; flex-direction: column;
         border: 0.3mm solid #1a1d23;
-        page-break-after: always;
+        position: absolute;
+        top: 0; left: 50mm;
+        transform: rotate(90deg);
+        transform-origin: top left;
         overflow: hidden;
       }
       .label-header {
