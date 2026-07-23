@@ -53,13 +53,10 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         <div class="label">
           <div class="label-inner">
           <div class="label-header">
-            <img src="https://media.base44.com/images/public/69e67ee13ca6bee2db939472/a733a5b7d_graph-paper-5mm-1-en.png" class="brand-logo" alt="Modelajes" />
             <span class="size-band">${item.size}</span>
+            <img src="https://media.base44.com/images/public/69e67ee13ca6bee2db939472/a733a5b7d_graph-paper-5mm-1-en.png" class="brand-logo" alt="Modelajes" />
           </div>
           <div class="label-body">
-            <div class="qr-block">
-              <img src="${qrUrl}" class="qr-img" />
-            </div>
             <div class="info-stack">
               <div class="info-cell">
                 <span class="info-label">Cliente</span>
@@ -71,6 +68,9 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                 <span class="info-value unit-value">${i + 1} / ${qty}</span>
               </div>
               <div class="phone-row">${seller ? `<span class="seller-name">${seller}</span>` : ''}${phone}</div>
+            </div>
+            <div class="qr-block">
+              <img src="${qrUrl}" class="qr-img" />
             </div>
           </div>
           </div>
@@ -113,7 +113,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .qr-block {
         flex: 1; display: flex; align-items: center; justify-content: center;
         padding: 2mm;
-        border-right: 0.3mm solid #1a1d23;
+        border-left: 0.3mm solid #1a1d23;
       }
       .qr-img {
         width: 24mm; height: 24mm; display: block;
