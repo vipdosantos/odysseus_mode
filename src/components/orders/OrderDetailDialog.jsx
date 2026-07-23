@@ -90,14 +90,10 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         overflow: hidden;
       }
       .label-inner {
-        width: 50mm; height: 100mm;
+        width: 100mm; height: 50mm;
         display: flex; flex-direction: column;
         border: 0.3mm solid #1a1d23;
         overflow: hidden;
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%) rotate(90deg);
-        transform-origin: center center;
       }
       .label-header {
         background: #1a1d23;
@@ -110,6 +106,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         font-size: 12mm; font-weight: 900; line-height: 1;
         padding: 0.4mm 4mm; border-radius: 1mm;
         letter-spacing: 0.3mm;
+        writing-mode: vertical-rl; text-orientation: mixed;
       }
       .label-body {
         flex: 1; display: flex; align-items: stretch;
@@ -133,12 +130,14 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .info-extra {
         font-size: 2.6mm; font-weight: 700; color: #b45309;
         line-height: 1.1; word-break: break-word;
+        writing-mode: vertical-rl; text-orientation: mixed;
       }
       .info-label {
         font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.2mm;
         min-width: 11mm;
+        writing-mode: vertical-rl; text-orientation: mixed;
       }
-      .info-value { font-size: 5mm; font-weight: 800; }
+      .info-value { font-size: 5mm; font-weight: 800; writing-mode: vertical-rl; text-orientation: mixed; }
       .client-name {
         white-space: normal; word-break: break-word; overflow-wrap: anywhere; line-height: 1.1;
       }
@@ -151,10 +150,12 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         font-size: 3.2mm; font-weight: 700; text-align: left;
         letter-spacing: 0.2mm; border-top: 0.3mm solid #ddd; padding-top: 0.8mm;
         display: flex; align-items: center; justify-content: space-between; gap: 2mm;
+        writing-mode: vertical-rl; text-orientation: mixed;
       }
       .seller-name {
         font-size: 3mm; font-weight: 700; color: #1a1d23;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30mm;
+        writing-mode: vertical-rl; text-orientation: mixed;
       }
       @media print { body { margin: 0; } }
     </style></head>
