@@ -33,12 +33,13 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
     if (!printWindow) return;
 
     // Each unit gets a UNIQUE QR with its unit index to prevent double-scan errors
-    const labels = (order.items || []).flatMap(item => {
+    const labels = (order.items || []).flatMap((item, idx) => {
       const qty = item.quantity || 0;
       return Array.from({ length: qty }, (_, i) => {
-        const unitId = `${order.order_number}-${item.size}-UN${i + 1}`;
+        const unitId = `${order.order_number}-I${idx}-${item.size}-UN${i + 1}`;
         const qrData = JSON.stringify({
           pedido: order.order_number,
+          item_idx: idx,
           tamanho: item.size,
           unidade: i + 1,
           total: qty,
@@ -233,6 +234,27 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                           <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1.5 w-full">
                             <div className="h-full bg-primary rounded-full" style={{ width: `${item.quantity > 0 ? ((item.produced || 0) / item.quantity) * 100 : 0}%` }} />
                           </div>
+                          {item.quantity > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {Array.from({ length: item.quantity }, (_, u) => {
+                                const done = (item.scanned_units || []).includes(u + 1);
+                                return (
+                                  <span
+                                    key={u}
+                                    title={`Unidade ${u + 1}${done ? ' (escaneada)' : ' (pendente)'}`}
+                                    className={cn(
+                                      "text-[9px] font-bold px-1.5 py-0.5 rounded border",
+                                      done
+                                        ? "bg-green-100 text-green-700 border-green-200"
+                                        : "bg-muted text-muted-foreground border-border"
+                                    )}
+                                  >
+                                    {done ? '✓' : u + 1}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
                           <p className="text-[9px] text-muted-foreground mt-1 truncate">
                             {item.qr_code_id || `${order.order_number}-${item.size}-${idx}`}
                           </p>

@@ -79,6 +79,13 @@
             "type": "number",
             "default": 0
           },
+          "scanned_units": {
+            "type": "array",
+            "description": "Unidades j\u00e1 escaneadas (n\u00fameros 1..quantity)",
+            "items": {
+              "type": "number"
+            }
+          },
           "qr_code_id": {
             "type": "string"
           },

@@ -137,24 +137,35 @@ export default function Scanner() {
     setResult(null);
 
     let qrId = rawValue.trim();
-    // Try to parse JSON QR (from label format)
-    try {
-      const parsed = JSON.parse(rawValue);
-      qrId = parsed.id || parsed.qr_code_id || rawValue.trim();
-    } catch (_) {}
+    let parsed = null;
+    try { parsed = JSON.parse(rawValue); } catch (_) {}
+    const unitNum = parsed?.unidade != null ? Number(parsed.unidade) : null;
+    const itemIdxFromQR = parsed?.item_idx != null ? Number(parsed.item_idx) : null;
+    qrId = parsed?.id || parsed?.qr_code_id || rawValue.trim();
 
     let foundOrder = null;
     let foundItemIdx = -1;
 
-    for (const order of orders) {
-      const idx = order.items?.findIndex(item =>
-        item.qr_code_id === qrId ||
-        item.qr_code_id === rawValue.trim()
-      );
-      if (idx >= 0) { foundOrder = order; foundItemIdx = idx; break; }
+    if (parsed && parsed.pedido) {
+      foundOrder = orders.find(o => o.order_number === parsed.pedido) || null;
+      if (foundOrder && itemIdxFromQR != null && foundOrder.items?.[itemIdxFromQR]) {
+        foundItemIdx = itemIdxFromQR;
+      } else if (foundOrder && parsed.tamanho) {
+        foundItemIdx = foundOrder.items?.findIndex(i => i.size === parsed.tamanho) ?? -1;
+      }
     }
 
+    // Legacy fallback: match by item-level qr_code_id (old labels without per-unit data)
     if (!foundOrder) {
+      for (const order of orders) {
+        const idx = order.items?.findIndex(item =>
+          item.qr_code_id === qrId || item.qr_code_id === rawValue.trim()
+        );
+        if (idx >= 0) { foundOrder = order; foundItemIdx = idx; break; }
+      }
+    }
+
+    if (!foundOrder || foundItemIdx < 0) {
       setResult({ type: 'error', message: `QR Code não encontrado: ${qrId}` });
       setLoading(false);
       return;
@@ -162,7 +173,7 @@ export default function Scanner() {
 
     const item = foundOrder.items[foundItemIdx];
 
-    // If role has no status change (consulta), just show info
+    // Consulta role (no status change)
     if (!roleAction.toStatus) {
       setResult({
         type: 'info',
@@ -173,16 +184,42 @@ export default function Scanner() {
       return;
     }
 
-    if ((item.produced || 0) >= item.quantity) {
+    const scannedUnits = Array.isArray(item.scanned_units) ? [...item.scanned_units] : [];
+
+    // Per-unit path (new labels with unidade)
+    if (unitNum != null) {
+      if (scannedUnits.includes(unitNum)) {
+        setResult({
+          type: 'warning',
+          message: `Unidade ${unitNum}/${item.quantity} de "${item.size}" (pedido #${foundOrder.order_number}) JÁ foi escaneada. Etiqueta duplicada — não contada.`,
+          order: foundOrder, item,
+        });
+        setLoading(false);
+        setQrInput('');
+        inputRef.current?.focus();
+        return;
+      }
+      if (unitNum < 1 || unitNum > (item.quantity || 0)) {
+        setResult({ type: 'error', message: `Unidade ${unitNum} inválida para "${item.size}" (qtd ${item.quantity}).` });
+        setLoading(false);
+        return;
+      }
+      scannedUnits.push(unitNum);
+    } else if ((item.produced || 0) >= item.quantity) {
+      // Legacy path, no unit id — can't dedup, just block when complete
       setResult({ type: 'warning', message: `Todas as ${item.quantity} treliças "${item.size}" do pedido #${foundOrder.order_number} já foram registradas.`, order: foundOrder, item });
       setLoading(false);
       return;
     }
 
-    // Increment produced
+    const newProduced = unitNum != null ? scannedUnits.length : (item.produced || 0) + 1;
     const updatedItems = [...foundOrder.items];
-    updatedItems[foundItemIdx] = { ...item, produced: (item.produced || 0) + 1 };
-    const allDone = updatedItems.every(i => (i.produced || 0) >= i.quantity);
+    updatedItems[foundItemIdx] = {
+      ...item,
+      produced: newProduced,
+      ...(unitNum != null ? { scanned_units: scannedUnits } : {}),
+    };
+    const allDone = updatedItems.every(i => (i.scanned_units?.length ?? (i.produced || 0)) >= i.quantity);
     const nextStatus = allDone ? 'secagem' : roleAction.toStatus;
 
     await base44.entities.Order.update(foundOrder.id, {
@@ -202,14 +239,19 @@ export default function Scanner() {
     });
 
     queryClient.invalidateQueries({ queryKey: ['orders'] });
-    const newProduced = (item.produced || 0) + 1;
+
+    const missing = item.quantity > 0
+      ? Array.from({ length: item.quantity }, (_, u) => u + 1).filter(n => !scannedUnits.includes(n))
+      : [];
+
     setResult({
       type: 'success',
-      message: `[${roleAction.logLabel}] "${item.size}" registrada! ${newProduced}/${item.quantity}`,
+      message: `[${roleAction.logLabel}] "${item.size}" — unidade ${unitNum ?? '?'} registrada! ${newProduced}/${item.quantity}`,
       order: foundOrder,
-      item: { ...item, produced: newProduced },
+      item: { ...item, produced: newProduced, scanned_units: scannedUnits },
       allDone,
       nextStatus,
+      missing,
     });
     toast.success(`${roleAction.logLabel} registrada!`);
     setQrInput('');
@@ -327,6 +369,9 @@ export default function Scanner() {
                   <p><strong>Pedido:</strong> #{result.order.order_number}</p>
                   <p><strong>Cliente:</strong> {result.order.client_name}</p>
                   {result.nextStatus && <p><strong>Novo status:</strong> {result.nextStatus.replace(/_/g, ' ')}</p>}
+                  {result.missing?.length > 0 && (
+                    <p><strong>Faltam ({result.missing.length}):</strong> {result.missing.join(', ')}</p>
+                  )}
                   {result.allDone && (
                     <p className="text-green-700 font-semibold mt-2">✅ Todas as treliças produzidas! Pedido avançado.</p>
                   )}
