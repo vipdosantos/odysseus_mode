@@ -100,7 +100,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         display: flex; align-items: center; justify-content: space-between;
         padding: 1.2mm 3mm;
       }
-      .brand-logo { height: 5mm; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
+      .brand-logo { height: 8mm; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
       .size-band {
         background: #f59e0b; color: #1a1d23;
         font-size: 12mm; font-weight: 900; line-height: 1;
