@@ -111,7 +111,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         flex: 1; display: flex; align-items: stretch;
       }
       .qr-block {
-        flex: 0 0 30mm; display: flex; align-items: center; justify-content: center;
+        flex: 1; display: flex; align-items: center; justify-content: center;
         padding: 2mm;
         border-right: 0.3mm solid #1a1d23;
       }
