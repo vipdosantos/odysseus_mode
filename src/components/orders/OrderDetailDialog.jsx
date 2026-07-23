@@ -48,31 +48,35 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const extras = [];
         if (item.truss_type) extras.push(TRUSS_TYPE_LABEL(item.truss_type));
         (item.adicionais || []).forEach(a => { if (a.quantity > 0) extras.push(`${FERRO_LABEL(a.diametro)} ×${a.quantity}`); });
-        const extraHtml = extras.length ? `<div class="info-extra">${extras.join(' · ')}</div>` : '';
+        const specsHtml = extras.length ? `<div class="specs-line">${extras.join(' · ')}</div>` : '';
         return `
         <div class="label">
           <div class="label-inner">
-          <div class="label-header">
-            <span class="size-band">${item.size}</span>
-            <img src="https://media.base44.com/images/public/69e67ee13ca6bee2db939472/a733a5b7d_graph-paper-5mm-1-en.png" class="brand-logo" alt="Modelajes" />
-          </div>
-          <div class="label-body">
-            <div class="info-stack">
-              <div class="info-cell">
-                <span class="info-label">Cliente</span>
-                <span class="info-value client-name">${order.client_name}</span>
+            <div class="data-section">
+              <div class="seller-line">
+                ${seller ? `<span class="seller-name">${seller}</span>` : ''}
+                ${phone ? `<span class="seller-phone">${phone}</span>` : ''}
               </div>
-              ${extraHtml}
-              <div class="info-cell unit-cell">
-                <span class="info-label">Unidade</span>
-                <span class="info-value unit-value">${i + 1} / ${qty}</span>
+              <div class="unit-row">
+                <span class="field-label">Unidade</span>
+                <span class="unit-box">${i + 1} / ${qty}</span>
               </div>
-              <div class="phone-row">${seller ? `<span class="seller-name">${seller}</span>` : ''}${phone}</div>
+              ${specsHtml}
+              <div class="client-block">
+                <span class="field-label">Cliente</span>
+                <span class="client-name">${order.client_name}</span>
+              </div>
             </div>
-            <div class="qr-block">
+            <div class="value-bar">
+              <span class="value-box">${item.size}</span>
+            </div>
+            <div class="brand-section">
+              <div class="logo-block">
+                <span class="logo-mark">M</span>
+                <span class="logo-text">MODELAJES</span>
+              </div>
               <img src="${qrUrl}" class="qr-img" />
             </div>
-          </div>
           </div>
         </div>`;
       });
@@ -82,76 +86,51 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
     <style>
       @page { size: 100mm 50mm landscape; margin: 0; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #1a1d23; }
+      body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #000; }
       .label {
-        width: 100mm; height: 50mm;
-        position: relative;
-        page-break-after: always;
-        overflow: hidden;
+        width: 100mm; height: 50mm; position: relative;
+        page-break-after: always; overflow: hidden;
       }
       .label-inner {
-        width: 100mm; height: 50mm;
+        position: absolute;
+        width: 50mm; height: 100mm;
+        top: 50mm; left: 0;
+        transform: rotate(-90deg);
+        transform-origin: top left;
         display: flex; flex-direction: column;
-        border: 0.3mm solid #1a1d23;
-        overflow: hidden;
+        border: 0.3mm solid #000;
       }
-      .label-header {
-        background: #1a1d23;
+      .data-section {
+        flex: 1; padding: 2mm 2.5mm;
+        display: flex; flex-direction: column; gap: 1.5mm;
+      }
+      .seller-line { display: flex; align-items: baseline; gap: 2mm; }
+      .seller-name { font-size: 3mm; font-weight: 700; }
+      .seller-phone { font-size: 2.8mm; font-weight: 600; color: #333; }
+      .unit-row { display: flex; align-items: center; gap: 2mm; }
+      .field-label { font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.3mm; }
+      .unit-box { background: #000; color: #fff; font-size: 3.2mm; font-weight: 800; padding: 0.5mm 2mm; border-radius: 1mm; }
+      .specs-line { font-size: 2.6mm; font-weight: 700; color: #b45309; line-height: 1.1; }
+      .client-block { margin-top: auto; }
+      .client-name { display: block; font-size: 5mm; font-weight: 800; line-height: 1.05; word-break: break-word; }
+      .value-bar {
+        background: #000; height: 18mm;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .value-box {
+        background: #a6a6a6; color: #000;
+        font-size: 9mm; font-weight: 800; line-height: 1;
+        padding: 1mm 4mm; border-radius: 1mm;
+      }
+      .brand-section {
+        background: #000; height: 30mm;
         display: flex; align-items: center; justify-content: space-between;
-        padding: 1.2mm 3mm;
-      }
-      .brand-logo { height: 8mm; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
-      .size-band {
-        background: #f59e0b; color: #1a1d23;
-        font-size: 12mm; font-weight: 900; line-height: 1;
-        padding: 0.4mm 4mm; border-radius: 1mm;
-        letter-spacing: 0.3mm;
-      }
-      .label-body {
-        flex: 1; display: flex; align-items: stretch;
-      }
-      .qr-block {
-        flex: 1; display: flex; align-items: center; justify-content: center;
         padding: 2mm;
-        border-left: 0.3mm solid #1a1d23;
       }
-      .qr-img {
-        width: 24mm; height: 24mm; display: block;
-        border: 0.4mm solid #1a1d23; border-radius: 1.5mm; padding: 0.5mm;
-      }
-      .info-stack {
-        flex: 1; display: flex; flex-direction: column; justify-content: space-between;
-        padding: 1.2mm 2mm; gap: 0.8mm;
-      }
-      .info-cell {
-        display: flex; align-items: center; gap: 1.5mm;
-      }
-      .info-extra {
-        font-size: 2.6mm; font-weight: 700; color: #b45309;
-        line-height: 1.1; word-break: break-word;
-      }
-      .info-label {
-        font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.2mm;
-        min-width: 11mm;
-      }
-      .info-value { font-size: 5mm; font-weight: 800; }
-      .client-name {
-        white-space: normal; word-break: break-word; overflow-wrap: anywhere; line-height: 1.1;
-      }
-      .unit-cell .info-label { color: #1a1d23; }
-      .unit-value {
-        background: #1a1d23; color: #f59e0b;
-        padding: 0.4mm 2mm; border-radius: 1mm; font-size: 3.2mm;
-      }
-      .phone-row {
-        font-size: 3.2mm; font-weight: 700; text-align: left;
-        letter-spacing: 0.2mm; border-top: 0.3mm solid #ddd; padding-top: 0.8mm;
-        display: flex; align-items: center; justify-content: space-between; gap: 2mm;
-      }
-      .seller-name {
-        font-size: 3mm; font-weight: 700; color: #1a1d23;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30mm;
-      }
+      .logo-block { display: flex; align-items: center; gap: 1.5mm; }
+      .logo-mark { color: #fff; font-size: 16mm; font-weight: 900; line-height: 1; }
+      .logo-text { color: #fff; font-size: 3mm; font-weight: 700; letter-spacing: 0.5mm; }
+      .qr-img { width: 22mm; height: 22mm; display: block; }
       @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}</body></html>`;
