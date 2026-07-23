@@ -44,6 +44,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         });
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&bgcolor=ffffff&data=${encodeURIComponent(qrData)}`;
         const phone = order.seller_phone || '';
+        const seller = order.seller_name || '';
         return `
         <div class="label">
           <div class="label-inner">
@@ -64,7 +65,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                 <span class="info-label">Unidade</span>
                 <span class="info-value unit-value">${i + 1} / ${qty}</span>
               </div>
-              <div class="phone-row">${phone}</div>
+              <div class="phone-row">${seller ? `<span class="seller-name">${seller}</span>` : ''}${phone}</div>
             </div>
           </div>
           </div>
@@ -135,6 +136,11 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .phone-row {
         font-size: 3.2mm; font-weight: 700; text-align: left;
         letter-spacing: 0.2mm; border-top: 0.3mm solid #ddd; padding-top: 0.8mm;
+        display: flex; align-items: center; justify-content: space-between; gap: 2mm;
+      }
+      .seller-name {
+        font-size: 3mm; font-weight: 700; color: #1a1d23;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30mm;
       }
       @media print { body { margin: 0; } }
     </style></head>
