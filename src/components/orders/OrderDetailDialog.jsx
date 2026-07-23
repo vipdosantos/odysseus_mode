@@ -91,7 +91,6 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       }
       .vt {
         writing-mode: vertical-rl;
-        transform: rotate(180deg);
         display: inline-block;
         line-height: 1.1;
       }
