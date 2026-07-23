@@ -90,10 +90,14 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         overflow: hidden;
       }
       .label-inner {
-        width: 100mm; height: 50mm;
+        width: 50mm; height: 100mm;
         display: flex; flex-direction: column;
         border: 0.3mm solid #1a1d23;
         overflow: hidden;
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center center;
       }
       .label-header {
         background: #1a1d23;
