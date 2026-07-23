@@ -104,7 +104,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         flex: 1; padding: 2mm 2.5mm;
         display: flex; flex-direction: column; gap: 1.5mm;
       }
-      .seller-line { display: flex; align-items: baseline; gap: 2mm; }
+      .seller-line { display: flex; flex-direction: column; gap: 0.5mm; }
       .seller-name { font-size: 3mm; font-weight: 700; }
       .seller-phone { font-size: 2.8mm; font-weight: 600; color: #333; }
       .unit-row { display: flex; align-items: center; gap: 2mm; }
@@ -114,23 +114,23 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .client-block { margin-top: auto; }
       .client-name { display: block; font-size: 5mm; font-weight: 800; line-height: 1.05; word-break: break-word; }
       .value-bar {
-        background: #000; height: 18mm;
+        background: #000; height: 16mm;
         display: flex; align-items: center; justify-content: center;
       }
       .value-box {
         background: #a6a6a6; color: #000;
-        font-size: 9mm; font-weight: 800; line-height: 1;
+        font-size: 8mm; font-weight: 800; line-height: 1;
         padding: 1mm 4mm; border-radius: 1mm;
       }
       .brand-section {
-        background: #000; height: 30mm;
+        background: #000; height: 32mm;
         display: flex; align-items: center; justify-content: space-between;
-        padding: 2mm;
+        padding: 2mm 2.5mm;
       }
-      .logo-block { display: flex; align-items: center; gap: 1.5mm; }
-      .logo-mark { color: #fff; font-size: 16mm; font-weight: 900; line-height: 1; }
-      .logo-text { color: #fff; font-size: 3mm; font-weight: 700; letter-spacing: 0.5mm; }
-      .qr-img { width: 22mm; height: 22mm; display: block; }
+      .logo-block { display: flex; align-items: center; gap: 1mm; }
+      .logo-mark { color: #fff; font-size: 18mm; font-weight: 900; line-height: 1; }
+      .logo-text { color: #fff; font-size: 2.8mm; font-weight: 700; letter-spacing: 0.5mm; }
+      .qr-img { width: 24mm; height: 24mm; display: block; }
       @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}</body></html>`;
