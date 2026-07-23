@@ -75,11 +75,11 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Etiquetas #${order.order_number}</title>
     <style>
-      @page { size: 100mm 60mm landscape; margin: 0; }
+      @page { size: 100mm 50mm landscape; margin: 0; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #1a1d23; }
       .label {
-        width: 100mm; height: 60mm;
+        width: 100mm; height: 50mm;
         display: flex; flex-direction: column;
         border: 0.3mm solid #1a1d23;
         page-break-after: always;
@@ -88,49 +88,49 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .label-header {
         background: #1a1d23;
         display: flex; align-items: center; justify-content: space-between;
-        padding: 1.5mm 3mm;
+        padding: 1.2mm 3mm;
       }
-      .brand-logo { height: 6mm; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
+      .brand-logo { height: 5mm; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
       .size-band {
         background: #f59e0b; color: #1a1d23;
-        font-size: 9mm; font-weight: 900; line-height: 1;
-        padding: 0.8mm 3mm; border-radius: 1mm;
+        font-size: 8mm; font-weight: 900; line-height: 1;
+        padding: 0.6mm 3mm; border-radius: 1mm;
       }
       .label-body {
         flex: 1; display: flex; align-items: stretch;
       }
       .qr-block {
         display: flex; align-items: center; justify-content: center;
-        padding: 2.5mm;
+        padding: 2mm;
         border-right: 0.3mm solid #1a1d23;
       }
       .qr-img {
-        width: 40mm; height: 40mm; display: block;
+        width: 33mm; height: 33mm; display: block;
         border: 0.4mm solid #1a1d23; border-radius: 1.5mm; padding: 0.5mm;
       }
       .info-stack {
         flex: 1; display: flex; flex-direction: column; justify-content: space-between;
-        padding: 1.5mm 2mm; gap: 1mm;
+        padding: 1.2mm 2mm; gap: 0.8mm;
       }
       .info-cell {
         display: flex; align-items: center; gap: 1.5mm;
       }
       .info-label {
-        font-size: 2.6mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.2mm;
-        min-width: 12mm;
+        font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.2mm;
+        min-width: 11mm;
       }
-      .info-value { font-size: 4mm; font-weight: 800; }
+      .info-value { font-size: 3.6mm; font-weight: 800; }
       .client-name {
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42mm;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 44mm;
       }
       .unit-cell .info-label { color: #1a1d23; }
       .unit-value {
         background: #1a1d23; color: #f59e0b;
-        padding: 0.5mm 2mm; border-radius: 1mm; font-size: 3.6mm;
+        padding: 0.4mm 2mm; border-radius: 1mm; font-size: 3.2mm;
       }
       .phone-row {
-        font-size: 3.6mm; font-weight: 700; text-align: left;
-        letter-spacing: 0.2mm; border-top: 0.3mm solid #ddd; padding-top: 1mm;
+        font-size: 3.2mm; font-weight: 700; text-align: left;
+        letter-spacing: 0.2mm; border-top: 0.3mm solid #ddd; padding-top: 0.8mm;
       }
       @media print { body { margin: 0; } }
     </style></head>
