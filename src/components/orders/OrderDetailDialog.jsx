@@ -107,7 +107,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .ubox { background: #000; color: #fff; font-size: 3.4mm; font-weight: 800; padding: 1.2mm 1.6mm; border-radius: 1.5mm; min-width: 7mm; text-align: center; }
       .specs { font-size: 2.6mm; font-weight: 700; color: #b45309; }
       .client { display: flex; flex-direction: row; gap: 1.5mm; margin-left: auto; align-items: flex-start; }
-      .cname { font-size: 5mm; font-weight: 800; max-height: 46mm; }
+      .cname { font-size: 6mm; font-weight: 800; max-height: 46mm; }
       .col-value {
         background: #000; width: 16mm;
         display: flex; align-items: center; justify-content: center;
