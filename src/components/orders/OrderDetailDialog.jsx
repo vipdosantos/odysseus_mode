@@ -43,36 +43,34 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           total: qty,
           id: unitId,
         });
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&bgcolor=ffffff&data=${encodeURIComponent(qrData)}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=000000&bgcolor=ffffff&margin=0&data=${encodeURIComponent(qrData)}`;
         const phone = order.seller_phone || '';
         const seller = order.seller_name || '';
         const extras = [];
         if (item.truss_type) extras.push(TRUSS_TYPE_LABEL(item.truss_type));
         (item.adicionais || []).forEach(a => { if (a.quantity > 0) extras.push(`${FERRO_LABEL(a.diametro)} ×${a.quantity}`); });
-        const specsHtml = extras.length ? `<span class="vt specs">${extras.join(' · ')}</span>` : '';
+        const specs = extras.join('   ·   ');
         return `
         <div class="label">
-          <div class="col-data">
-            <div class="seller">
-              <span class="vt name">${seller || ''}</span>
-              <span class="vt phone">${phone || ''}</span>
+          <div class="accent"></div>
+          <div class="body">
+            <div class="main">
+              <div class="top">
+                <img src="${LOGO_URL}" class="logo" />
+                <span class="meta">Pedido ${order.order_number}</span>
+              </div>
+              <div class="client">${order.client_name}</div>
+              <div class="specs">${specs}</div>
+              <div class="footer">
+                <div class="unit"><span class="u-label">Unidade</span><span class="u-val">${i + 1} / ${qty}</span></div>
+                <span class="dot">·</span>
+                <span class="seller">${seller}${phone ? ' · ' + phone : ''}</span>
+              </div>
             </div>
-            <div class="unit">
-              <span class="vt flabel">Unidade</span>
-              <span class="vt ubox">${i + 1} / ${qty}</span>
+            <div class="side">
+              <img src="${qrUrl}" class="qr" />
+              <span class="badge">${item.size}</span>
             </div>
-            ${specsHtml}
-            <div class="client">
-              <span class="vt flabel">Cliente</span>
-              <span class="vt cname">${order.client_name}</span>
-            </div>
-          </div>
-          <div class="col-value">
-            <span class="vt vbox">${item.size}</span>
-          </div>
-          <div class="col-brand">
-            <div class="logo-wrap"><img src="${LOGO_URL}" class="brand-logo" /></div>
-            <img src="${qrUrl}" class="qr" />
           </div>
         </div>`;
       });
@@ -82,45 +80,30 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
     <style>
       @page { size: 100mm 50mm; margin: 0; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #000; }
+      body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #111; }
       .label {
         width: 100mm; height: 50mm;
         page-break-after: always; overflow: hidden;
-        display: flex; flex-direction: row;
-        border: 0.3mm solid #000;
+        background: #fff; position: relative;
+        border: 0.2mm solid #e5e7eb;
       }
-      .vt {
-        writing-mode: vertical-rl;
-        transform: rotate(180deg);
-        display: inline-block;
-        line-height: 1.1;
-      }
-      .col-data {
-        flex: 1; background: #fff; padding: 2mm 2.5mm;
-        display: flex; flex-direction: row; align-items: flex-start; gap: 2.5mm;
-      }
-      .seller { display: flex; flex-direction: row; gap: 1.5mm; }
-      .seller .name { font-size: 3mm; font-weight: 700; }
-      .seller .phone { font-size: 2.8mm; font-weight: 600; color: #333; }
-      .unit { display: flex; flex-direction: column; gap: 1.5mm; align-items: center; padding: 0 0.5mm; }
-      .flabel { font-size: 2.4mm; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.3mm; }
-      .ubox { background: #000; color: #fff; font-size: 3.4mm; font-weight: 800; padding: 1.2mm 1.6mm; border-radius: 1.5mm; min-width: 7mm; text-align: center; }
-      .specs { font-size: 2.6mm; font-weight: 700; color: #b45309; }
-      .client { display: flex; flex-direction: row; gap: 1.5mm; margin-left: auto; align-items: flex-start; }
-      .cname { font-size: 6mm; font-weight: 800; max-height: 46mm; }
-      .col-value {
-        background: #000; width: 16mm;
-        display: flex; align-items: center; justify-content: center;
-      }
-      .vbox { background: #a6a6a6; color: #000; font-size: 8mm; font-weight: 800; padding: 1mm 4mm; border-radius: 1mm; }
-      .col-brand {
-        background: #fff; width: 38mm;
-        display: flex; flex-direction: row; align-items: center; justify-content: center;
-        gap: 2mm; padding: 1.5mm; overflow: hidden;
-      }
-      .logo-wrap { position: relative; width: 11mm; height: 42mm; overflow: hidden; }
-      .brand-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg); width: 42mm; height: auto; }
-      .qr { width: 26mm; height: 26mm; display: block; }
+      .accent { position: absolute; top: 0; left: 0; right: 0; height: 1.6mm; background: #f59e0b; }
+      .body { position: absolute; top: 1.6mm; left: 0; right: 0; bottom: 0; display: flex; flex-direction: row; }
+      .main { flex: 1; padding: 2.4mm 3.2mm; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+      .top { display: flex; align-items: center; gap: 2mm; }
+      .logo { height: 4.2mm; width: auto; }
+      .meta { font-size: 2.4mm; font-weight: 600; color: #9ca3af; letter-spacing: 0.3mm; text-transform: uppercase; margin-left: auto; }
+      .client { font-size: 6mm; font-weight: 700; color: #111; line-height: 1.05; word-break: break-word; }
+      .specs { font-size: 2.8mm; font-weight: 600; color: #6b7280; margin-top: 0.6mm; }
+      .footer { display: flex; align-items: baseline; gap: 2mm; margin-top: auto; }
+      .unit { display: flex; align-items: baseline; gap: 1.2mm; }
+      .u-label { font-size: 2.2mm; font-weight: 700; color: #9ca3af; letter-spacing: 0.3mm; text-transform: uppercase; }
+      .u-val { font-size: 3.6mm; font-weight: 800; color: #111; }
+      .dot { color: #d1d5db; font-size: 2.6mm; }
+      .seller { font-size: 2.6mm; font-weight: 600; color: #6b7280; }
+      .side { width: 30mm; padding: 2.4mm 3mm 2.4mm 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4mm; }
+      .qr { width: 22mm; height: 22mm; display: block; }
+      .badge { font-size: 4.6mm; font-weight: 800; color: #111; background: #f3f4f6; border-radius: 1.4mm; padding: 0.3mm 2.2mm; letter-spacing: 0.1mm; }
       @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}</body></html>`;
