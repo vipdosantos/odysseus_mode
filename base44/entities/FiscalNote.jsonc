@@ -64,6 +64,337 @@
         "cancelada"
       ],
       "default": "rascunho"
+    },
+    "cliente_cep": {
+      "type": "string",
+      "description": "CEP do destinat\u00e1rio"
+    },
+    "cliente_endereco": {
+      "type": "string",
+      "description": "Endere\u00e7o do destinat\u00e1rio"
+    },
+    "cliente_numero": {
+      "type": "string",
+      "description": "N\u00famero do endere\u00e7o"
+    },
+    "cliente_complemento": {
+      "type": "string",
+      "description": "Complemento"
+    },
+    "cliente_bairro": {
+      "type": "string",
+      "description": "Bairro do destinat\u00e1rio"
+    },
+    "cliente_municipio": {
+      "type": "string",
+      "description": "Munic\u00edpio do destinat\u00e1rio"
+    },
+    "cliente_uf": {
+      "type": "string",
+      "description": "UF do destinat\u00e1rio"
+    },
+    "cliente_fone": {
+      "type": "string",
+      "description": "Telefone do destinat\u00e1rio"
+    },
+    "cliente_email": {
+      "type": "string",
+      "description": "E-mail do destinat\u00e1rio"
+    },
+    "cliente_im": {
+      "type": "string",
+      "description": "Inscri\u00e7\u00e3o Municipal"
+    },
+    "cliente_pais": {
+      "type": "string",
+      "default": "Brasil"
+    },
+    "codigo_municipio": {
+      "type": "string",
+      "description": "C\u00f3digo IBGE do munic\u00edpio"
+    },
+    "emitente_razao": {
+      "type": "string",
+      "description": "Raz\u00e3o social do emitente"
+    },
+    "emitente_cnpj": {
+      "type": "string",
+      "description": "CNPJ do emitente"
+    },
+    "emitente_ie": {
+      "type": "string",
+      "description": "IE do emitente"
+    },
+    "emitente_im": {
+      "type": "string",
+      "description": "IM do emitente"
+    },
+    "emitente_cep": {
+      "type": "string"
+    },
+    "emitente_endereco": {
+      "type": "string"
+    },
+    "emitente_numero": {
+      "type": "string"
+    },
+    "emitente_bairro": {
+      "type": "string"
+    },
+    "emitente_municipio": {
+      "type": "string"
+    },
+    "emitente_uf": {
+      "type": "string"
+    },
+    "emitente_fone": {
+      "type": "string"
+    },
+    "itens": {
+      "type": "array",
+      "description": "Itens da nota fiscal",
+      "items": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "ncm": {
+            "type": "string",
+            "description": "C\u00f3digo NCM"
+          },
+          "cst": {
+            "type": "string",
+            "description": "C\u00f3digo de Situa\u00e7\u00e3o Tribut\u00e1ria",
+            "default": "00"
+          },
+          "cfop": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "unidade": {
+            "type": "string",
+            "default": "UN"
+          },
+          "quantidade": {
+            "type": "number",
+            "default": 0
+          },
+          "valor_unitario": {
+            "type": "number",
+            "default": 0
+          },
+          "valor_desconto": {
+            "type": "number",
+            "default": 0
+          },
+          "valor_frete": {
+            "type": "number",
+            "default": 0
+          },
+          "base_calculo_icms": {
+            "type": "number",
+            "default": 0
+          },
+          "aliquota_icms": {
+            "type": "number",
+            "default": 0
+          },
+          "valor_icms": {
+            "type": "number",
+            "default": 0
+          },
+          "aliquota_ipi": {
+            "type": "number",
+            "default": 0
+          },
+          "valor_ipi": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      }
+    },
+    "valor_produtos": {
+      "type": "number",
+      "default": 0,
+      "description": "Valor dos produtos"
+    },
+    "valor_desconto": {
+      "type": "number",
+      "default": 0
+    },
+    "valor_frete": {
+      "type": "number",
+      "default": 0
+    },
+    "valor_seguro": {
+      "type": "number",
+      "default": 0
+    },
+    "outras_despesas": {
+      "type": "number",
+      "default": 0
+    },
+    "valor_total_nfe": {
+      "type": "number",
+      "default": 0,
+      "description": "Valor total da NF-e"
+    },
+    "base_calculo_icms": {
+      "type": "number",
+      "default": 0
+    },
+    "valor_icms": {
+      "type": "number",
+      "default": 0
+    },
+    "base_calculo_icms_st": {
+      "type": "number",
+      "default": 0
+    },
+    "valor_icms_st": {
+      "type": "number",
+      "default": 0
+    },
+    "valor_ipi": {
+      "type": "number",
+      "default": 0
+    },
+    "modalidade_frete": {
+      "type": "string",
+      "enum": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "9"
+      ],
+      "default": "0",
+      "description": "0=Por conta emitente, 1=Por conta destinat\u00e1rio, 2=Por conta terceiros, 3=Pr\u00f3prio, 9=Sem frete"
+    },
+    "transportadora_nome": {
+      "type": "string"
+    },
+    "transportadora_cnpj": {
+      "type": "string"
+    },
+    "transportadora_ie": {
+      "type": "string"
+    },
+    "transportadora_endereco": {
+      "type": "string"
+    },
+    "transportadora_municipio": {
+      "type": "string"
+    },
+    "transportadora_uf": {
+      "type": "string"
+    },
+    "placa_veiculo": {
+      "type": "string"
+    },
+    "uf_placa": {
+      "type": "string"
+    },
+    "qtde_volumes": {
+      "type": "number",
+      "default": 0
+    },
+    "especie": {
+      "type": "string"
+    },
+    "peso_bruto": {
+      "type": "number",
+      "default": 0
+    },
+    "peso_liquido": {
+      "type": "number",
+      "default": 0
+    },
+    "forma_pagamento": {
+      "type": "string",
+      "enum": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "description": "0=Vista, 1=Prazo, 2=Outros"
+    },
+    "condicao_pagamento": {
+      "type": "string",
+      "description": "Condi\u00e7\u00e3o de pagamento"
+    },
+    "rps_numero": {
+      "type": "string",
+      "description": "N\u00famero do RPS"
+    },
+    "rps_serie": {
+      "type": "string",
+      "default": "A1"
+    },
+    "rps_tipo": {
+      "type": "string",
+      "enum": [
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "1",
+      "description": "1=RPS, 2=RPS Cupom, 3=Cupom"
+    },
+    "competencia": {
+      "type": "string",
+      "format": "date",
+      "description": "Compet\u00eancia (NFS-e)"
+    },
+    "codigo_servico": {
+      "type": "string",
+      "description": "C\u00f3digo do servi\u00e7o (NFS-e)"
+    },
+    "item_lista_servico": {
+      "type": "string",
+      "description": "Item da lista de servi\u00e7o (LC 116)"
+    },
+    "codigo_tributacao_municipio": {
+      "type": "string"
+    },
+    "base_calculo_iss": {
+      "type": "number",
+      "default": 0
+    },
+    "valor_iss": {
+      "type": "number",
+      "default": 0
+    },
+    "iss_retido": {
+      "type": "boolean",
+      "default": false
+    },
+    "deducoes": {
+      "type": "number",
+      "default": 0
+    },
+    "valor_liquido_nfs": {
+      "type": "number",
+      "default": 0,
+      "description": "Valor l\u00edquido (NFS-e)"
+    },
+    "chave_acesso": {
+      "type": "string",
+      "description": "Chave de acesso NF-e (44 d\u00edgitos)"
+    },
+    "protocolo": {
+      "type": "string",
+      "description": "Protocolo de autoriza\u00e7\u00e3o SEFAZ"
+    },
+    "observacoes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es / informa\u00e7\u00f5es complementares"
     }
   },
   "required": [
