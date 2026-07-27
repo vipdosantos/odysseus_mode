@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Printer, Save, CheckCircle2, Plus, Trash2, FileText } from 'lucide-react';
+import { Printer, Save, CheckCircle2, Plus, Trash2, FileText, Send } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import { DEFAULT_EMITENTE, recalcular, calcularTotaisNFe } from '@/lib/nfTax';
 import { buildDanfeHtml, buildNfseHtml } from '@/lib/nfPrintLayouts';
 
@@ -17,6 +18,8 @@ const camposNumericos = ['valor', 'aliquota_iss', 'deducoes', 'valor_frete', 'va
 
 export default function OrderNFTab({ order }) {
   const qc = useQueryClient();
+  const { toast } = useToast();
+  const [transmitting, setTransmitting] = useState(false);
   const { data: existingNotes = [] } = useQuery({
     queryKey: ['fiscal_notes', order?.id],
     queryFn: () => base44.entities.FiscalNote.filter({ order_id: order.id }),
@@ -58,6 +61,28 @@ export default function OrderNFTab({ order }) {
     const w = window.open('', '_blank');
     w.document.write(html);
     w.document.close();
+  };
+
+  const handleTransmit = async () => {
+    if (!existingNote?.id) { toast({ title: 'Salve a nota antes de transmitir', variant: 'destructive' }); return; }
+    if (nf.tipo !== 'nfe') { toast({ title: 'Transmissão SEFAZ disponível apenas para NF-e', variant: 'destructive' }); return; }
+    setTransmitting(true);
+    try {
+      const res = await base44.functions.invoke('emitirNFe', { fiscalNoteId: existingNote.id, ambiente: 2 });
+      const data = res?.data || res;
+      if (data?.cStat === '100' || data?.cStat === '150') {
+        toast({ title: 'NF-e autorizada pela SEFAZ', description: `Protocolo ${data.protocolo}` });
+      } else if (data?.error) {
+        toast({ title: 'Erro na transmissão', description: data.error, variant: 'destructive' });
+      } else {
+        toast({ title: `SEFAZ: ${data?.cStat || ''} — ${data?.xMotivo || ''}`, variant: 'destructive' });
+      }
+      qc.invalidateQueries({ queryKey: ['fiscal_notes'] });
+    } catch (e) {
+      toast({ title: 'Erro na transmissão', description: e.message, variant: 'destructive' });
+    } finally {
+      setTransmitting(false);
+    }
   };
 
   const isNFe = nf.tipo === 'nfe';
@@ -293,6 +318,11 @@ export default function OrderNFTab({ order }) {
           <Button variant="outline" onClick={handleSave} disabled={save.isPending}>
             <Save className="w-4 h-4 mr-1" /> {save.isPending ? 'Salvando...' : 'Salvar'}
           </Button>
+          {isNFe && (
+            <Button variant="outline" onClick={handleTransmit} disabled={transmitting} className="border-green-300 text-green-700 hover:bg-green-50">
+              <Send className="w-4 h-4 mr-1" /> {transmitting ? 'Transmitindo...' : 'Transmitir SEFAZ'}
+            </Button>
+          )}
           <Button onClick={handlePrint} className="bg-primary text-primary-foreground">
             <Printer className="w-4 h-4 mr-1" /> Imprimir
           </Button>
