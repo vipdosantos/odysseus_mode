@@ -86,7 +86,7 @@ export function canon(node, { apex = false } = {}) {
   if (typeof node === "string") return escText(node);
   let out = "<" + node.tag;
   if (apex && node.ns) out += ' xmlns="' + escAttr(node.ns) + '"';
-  const attrs = Object.entries(node.attrs || {}).sort((a, b) => a[0].localeCompare(b[0]));
+  const attrs = Object.entries(node.attrs || {}).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
   for (const [k, v] of attrs) out += " " + k + '="' + escAttr(v) + '"';
   if (!node.kids || node.kids.length === 0) { out += "/>"; return out; }
   out += ">";
@@ -302,6 +302,31 @@ export function buildInfNFe(nf, { ambiente } = {}) {
 export function buildNFeDocument(infNFeTree, signatureTree) {
   const nfe = el("NFe", NFE_NS, {}, [infNFeTree, signatureTree]);
   return '<?xml version="1.0" encoding="UTF-8"?>\n' + serializeXml(nfe, null);
+}
+
+// Validação prévia dos dados mínimos exigidos pelo leiaute SEFAZ antes de
+// assinar/transmitir. Devolve lista de mensagens de erro (vazia = OK).
+export function validateNFe(nf) {
+  const errs = [];
+  if (!onlyDigits(nf.emitente_cnpj)) errs.push("CNPJ do emitente é obrigatório");
+  if (!onlyDigits(nf.emitente_ie)) errs.push("Inscrição Estadual (IE) do emitente é obrigatória");
+  if (!nf.emitente_razao) errs.push("Razão social do emitente é obrigatória");
+  if (!nf.emitente_uf) errs.push("UF do emitente é obrigatória");
+  if (!nf.emitente_municipio) errs.push("Município do emitente é obrigatório");
+  if (!onlyDigits(nf.emitente_cep)) errs.push("CEP do emitente é obrigatório");
+  if (!onlyDigits(nf.cliente_cnpj)) errs.push("CPF/CNPJ do destinatário é obrigatório");
+  if (!nf.client_name) errs.push("Nome do destinatário é obrigatório");
+  if (!nf.cliente_uf) errs.push("UF do destinatário é obrigatório");
+  if (!nf.cliente_municipio) errs.push("Município do destinatário é obrigatório");
+  if (!onlyDigits(nf.cliente_cep)) errs.push("CEP do destinatário é obrigatório");
+  if (!(nf.itens || []).length) errs.push("A NF-e deve ter pelo menos um item");
+  (nf.itens || []).forEach((it, i) => {
+    if (!onlyDigits(it.ncm)) errs.push(`Item ${i + 1}: NCM é obrigatório`);
+    if (!(Number(it.quantidade) > 0)) errs.push(`Item ${i + 1}: quantidade deve ser maior que zero`);
+    if (!(Number(it.valor_unitario) > 0)) errs.push(`Item ${i + 1}: valor unitário deve ser maior que zero`);
+    if (!it.descricao) errs.push(`Item ${i + 1}: descrição é obrigatória`);
+  });
+  return errs;
 }
 
 // Recálculo server-side dos totais da NF-e — garante que ICMS/IPI/vNF estejam

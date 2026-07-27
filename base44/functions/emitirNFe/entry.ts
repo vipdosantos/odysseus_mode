@@ -1,6 +1,7 @@
 // Transmissão direta de NF-e (modelo 55, v4.00) à SEFAZ via SOAP.
-// Reusa o pipeline compartilhado (recálculo + geração + assinatura) e envia
-// ao webservice NfeAutorizacao (indSinc=1), gravando chave/protocolo.
+// Reusa o pipeline compartilhado (validação + recálculo + geração + assinatura)
+// e envia ao webservice NfeAutorizacao (indSinc=1), gravando chave/protocolo.
+// A autenticação perante a SEFAZ é dada pela assinatura XMLDSig do infNFe.
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { ufCode } from "../../shared/nfeXml.ts";
@@ -14,30 +15,44 @@ const ENDPOINTS = {
     2: "https://homologacao.nfe.fazenda.sp.gov.br/nfeweb/services/NfeAutorizacao",
   },
   SVRS: {
-    1: "https://nfe.sefaz.rs.gov.br/ws/NfeAutorizacao/NfeAutorizacao.asmx",
-    2: "https://homologacao.nfe.sefaz.rs.gov.br/ws/NfeAutorizacao/NfeAutorizacao.asmx",
+    1: "https://nfe.sefazrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
+    2: "https://homologacao.nfe.sefazrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
+  },
+  SVAN: {
+    1: "https://www.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
+    2: "https://homologacao.nfe.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
   },
 };
 
+// Roteamento por UF: SP usa webservice próprio; GO/MG/MS/MT usam SVAN
+// (Sefaz Virtual Ambiente Nacional); demais UFs usam SVRS (Sefaz Virtual RS).
 function endpointFor(uf, ambiente) {
-  const key = ENDPOINTS[(uf || "SP").toUpperCase()] ? uf.toUpperCase() : "SVRS";
-  return ENDPOINTS[key][ambiente] || ENDPOINTS.SVRS[2];
+  const u = (uf || "SP").toUpperCase();
+  if (u === "SP") return ENDPOINTS.SP[ambiente] || ENDPOINTS.SP[2];
+  if (["GO", "MG", "MS", "MT"].includes(u)) return ENDPOINTS.SVAN[ambiente] || ENDPOINTS.SVAN[2];
+  return ENDPOINTS.SVRS[ambiente] || ENDPOINTS.SVRS[2];
 }
 
-function stripNs(xml, tag) {
-  const m = xml.match(new RegExp("<(?:[a-zA-Z0-9]+:)?" + tag + ">([^<]*)</"));
-  return m ? m[1] : null;
+// Pega a última ocorrência de uma tag (sem prefixo de namespace) — assim
+// priorizamos o cStat dentro de infProt (autorização) sobre o do lote.
+function tag(xml, name) {
+  const re = new RegExp("<(?:[\\w]+:)?" + name + ">([^<]*)</(?:[\\w]+:)?" + name + ">", "g");
+  let m, last = null;
+  while ((m = re.exec(xml))) last = m[1];
+  return last;
 }
 
 function parseRetorno(xml) {
-  const protMatch = xml.match(/<(?:[a-zA-Z0-9]+:)?protNFe>[\s\S]*?<\/(?:[a-zA-Z0-9]+:)?protNFe>/);
-  const prot = protMatch ? protMatch[0] : xml;
+  const protMatch = xml.match(/<(?:[\w]+:)?protNFe>[\s\S]*?<\/(?:[\w]+:)?protNFe>/);
+  const prot = protMatch ? protMatch[0] : "";
+  const fault = xml.match(/<(?:[\w]+:)?Fault>[\s\S]*?<\/(?:[\w]+:)?Fault>/);
   return {
-    cStat: stripNs(prot, "cStat"),
-    xMotivo: stripNs(prot, "xMotivo"),
-    chNFe: stripNs(prot, "chNFe"),
-    nProt: stripNs(prot, "nProt"),
-    dhRecbto: stripNs(prot, "dhRecbto"),
+    cStat: tag(prot, "cStat") || tag(xml, "cStat"),
+    xMotivo: tag(prot, "xMotivo") || tag(xml, "xMotivo"),
+    chNFe: tag(prot, "chNFe") || tag(xml, "chNFe"),
+    nProt: tag(prot, "nProt") || tag(xml, "nProt"),
+    dhRecbto: tag(prot, "dhRecbto"),
+    faultText: fault ? (tag(fault[0], "faultstring") || tag(fault[0], "Reason") || tag(fault[0], "Text") || "Falha SOAP") : null,
   };
 }
 
@@ -98,9 +113,16 @@ export default async function (req) {
     });
     const respXml = await resp.text();
 
-    const { cStat, xMotivo, chNFe, nProt, dhRecbto } = parseRetorno(respXml);
-    const autorizada = cStat === "100" || cStat === "150";
+    const { cStat, xMotivo, chNFe, nProt, dhRecbto, faultText } = parseRetorno(respXml);
 
+    if (faultText) {
+      return Response.json({ error: "Falha SOAP da SEFAZ: " + faultText, xmlRetorno: respXml.slice(0, 4000) }, { status: 502 });
+    }
+    if (!cStat) {
+      return Response.json({ error: "Resposta SEFAZ sem código de status (HTTP " + resp.status + ")", xmlRetorno: respXml.slice(0, 4000) }, { status: 502 });
+    }
+
+    const autorizada = cStat === "100" || cStat === "150";
     const update = {
       chave_acesso: chNFe || nf.chave_acesso,
       protocolo: nProt || nf.protocolo,

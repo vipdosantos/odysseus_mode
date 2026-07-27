@@ -50,7 +50,12 @@ export function parsePfx(pfxArrayBuffer, senha) {
   const certPem = forge.pki.certificateToPem(cert);
   const certB64 = certPem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
 
-  return { pkcs8: pkcs8Bytes, certB64 };
+  // PEM da chave privada (PKCS#8) — usado para mTLS no handshake com a SEFAZ.
+  const pkcs8B64 = b64(pkcs8Bytes.buffer ? pkcs8Bytes : pkcs8Bytes);
+  const chunk = (s) => s.match(/.{1,64}/g).join("\n");
+  const keyPem = "-----BEGIN PRIVATE KEY-----\n" + chunk(pkcs8B64) + "\n-----END PRIVATE KEY-----";
+
+  return { pkcs8: pkcs8Bytes, certB64, certPem, keyPem };
 }
 
 export async function importSignKey(pkcs8) {
