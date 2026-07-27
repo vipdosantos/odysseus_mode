@@ -46,6 +46,16 @@ export default function Users() {
     queryFn: () => base44.entities.User.list(),
   });
 
+  const { data: kanbanColumns = [] } = useQuery({
+    queryKey: ['kanban-columns'],
+    queryFn: () => base44.entities.KanbanColumn.list('order', 50),
+  });
+
+  const updateStageMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+
   const updateRoleMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
@@ -145,6 +155,7 @@ export default function Users() {
               <th className="text-left p-3 font-medium">Usuário</th>
               <th className="text-left p-3 font-medium">Email</th>
               <th className="text-left p-3 font-medium">Função</th>
+              <th className="text-left p-3 font-medium">Etapa (Scanner)</th>
               <th className="text-right p-3 font-medium">Ações</th>
             </tr>
           </thead>
@@ -157,6 +168,24 @@ export default function Users() {
                   <td className="p-3 text-muted-foreground">{u.email}</td>
                   <td className="p-3">
                     <span className={cn("text-xs px-2 py-1 rounded-full font-medium", r.class)}>{r.label}</span>
+                  </td>
+                  <td className="p-3">
+                    {u.role === 'admin' ? (
+                      <span className="text-xs text-muted-foreground">Todas</span>
+                    ) : (
+                      <Select
+                        value={u.assigned_stage || 'nenhum'}
+                        onValueChange={v => updateStageMutation.mutate({ id: u.id, data: { assigned_stage: v === 'nenhum' ? '' : v } })}
+                      >
+                        <SelectTrigger className="w-40 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="nenhum">Nenhuma</SelectItem>
+                          {kanbanColumns.map(col => (
+                            <SelectItem key={col.key} value={col.key}>{col.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-2">

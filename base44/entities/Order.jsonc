@@ -69,7 +69,14 @@
           },
           "scanned_units": {
             "type": "array",
-            "description": "Unidades j\u00e1 escaneadas (n\u00fameros 1..quantity)",
+            "description": "Unidades j\u00e1 escaneadas na produ\u00e7\u00e3o (n\u00fameros 1..quantity)",
+            "items": {
+              "type": "number"
+            }
+          },
+          "delivered_units": {
+            "type": "array",
+            "description": "Unidades conferidas na entrega (n\u00fameros 1..quantity)",
             "items": {
               "type": "number"
             }
@@ -187,6 +194,19 @@
     "delivery_signed_at": {
       "type": "string",
       "description": "Data/hora da assinatura"
+    },
+    "delivery_conferido": {
+      "type": "boolean",
+      "default": false,
+      "description": "Confer\u00eancia de entrega conclu\u00edda (todas as treli\u00e7as bipadas)"
+    },
+    "delivery_conferido_at": {
+      "type": "string",
+      "description": "Data/hora da confer\u00eancia de entrega"
+    },
+    "delivery_conferido_by": {
+      "type": "string",
+      "description": "Quem fez a confer\u00eancia de entrega"
     }
   },
   "required": [
