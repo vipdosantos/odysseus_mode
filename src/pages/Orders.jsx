@@ -77,6 +77,15 @@ export default function Orders() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Order.update(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['orders'] });
+      const previous = queryClient.getQueryData(['orders']);
+      queryClient.setQueryData(['orders'], (old = []) => old.map(o => o.id === id ? { ...o, ...data } : o));
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['orders'], ctx.previous);
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); setEditOrder(null); setShowForm(false); },
   });
 
