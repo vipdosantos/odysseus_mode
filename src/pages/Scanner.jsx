@@ -280,6 +280,12 @@ export default function Scanner() {
       totalMissing,
       nextStatus,
     });
+    // Auto-advance to the next stage so the operator keeps conferencing
+    // the same labels there — otherwise the duplicate warning fires cross-stage.
+    if (allDone) {
+      const next = nextColumnKey(stage);
+      if (next && availableStages.includes(next)) setActiveStage(next);
+    }
     toast.success(allDone ? `Conferência de "${stageLabel}" completa!` : 'Unidade conferida');
     setQrInput('');
     setLoading(false);
