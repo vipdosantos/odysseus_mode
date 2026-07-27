@@ -8,6 +8,7 @@ import { Plus, Search, DollarSign, Clock, CheckCircle2, AlertTriangle, Trash2, P
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import BillFormDialog from '../components/finance/BillFormDialog';
+import TaxDashboard from '../components/finance/TaxDashboard';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const statusConfig = {
@@ -86,6 +87,9 @@ export default function Finance() {
           <Plus className="w-4 h-4 mr-1" /> Nova Conta
         </Button>
       </div>
+
+      {/* Dashboard de Impostos */}
+      <TaxDashboard bills={bills} />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
