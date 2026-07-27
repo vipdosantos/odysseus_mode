@@ -322,26 +322,68 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
 
           {/* ── ABA LOG DE BIPAGEM ── */}
           <TabsContent value="log">
-            <div className="space-y-2 mt-4">
-              {(!order.scan_log || order.scan_log.length === 0) ? (
-                <p className="text-sm text-muted-foreground">Nenhuma bipagem registrada ainda.</p>
-              ) : (
-                [...order.scan_log].reverse().map((e, i) => (
-                  <div key={i} className="flex items-center gap-3 text-sm border rounded-lg p-2">
-                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xs shrink-0">{e.unit}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{e.size} · unidade {e.unit}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {e.stage_label || (e.stage || '').replace(/_/g, ' ')} · {e.operator_name}{e.operator_email ? ` (${e.operator_email})` : ''}
-                      </p>
+            {(() => {
+              const items = order.items || [];
+              const logByKey = {};
+              (order.scan_log || []).forEach(e => {
+                logByKey[`${e.item_idx}:${e.unit}:${e.stage}`] = e;
+              });
+              const entries = [];
+              items.forEach((it, idx) => {
+                const sc = it.stage_conferencias || {};
+                const stages = new Set(Object.keys(sc));
+                if (Array.isArray(it.scanned_units) && it.scanned_units.length) stages.add('producao');
+                if (Array.isArray(it.delivered_units) && it.delivered_units.length) stages.add('entrega');
+                stages.forEach(stage => {
+                  let units = Array.isArray(sc[stage]) ? sc[stage]
+                    : (stage === 'producao' && Array.isArray(it.scanned_units) ? it.scanned_units
+                    : (stage === 'entrega' && Array.isArray(it.delivered_units) ? it.delivered_units : []));
+                  units.forEach(u => {
+                    const log = logByKey[`${idx}:${u}:${stage}`];
+                    entries.push({
+                      stage,
+                      stage_label: log?.stage_label || (stage || '').replace(/_/g, ' '),
+                      size: it.size,
+                      unit: u,
+                      operator_name: log?.operator_name || '',
+                      operator_email: log?.operator_email || '',
+                      at: log?.at || '',
+                    });
+                  });
+                });
+              });
+              entries.sort((a, b) => {
+                if (a.at && b.at) return b.at.localeCompare(a.at);
+                if (a.at) return -1;
+                if (b.at) return 1;
+                return 0;
+              });
+              if (entries.length === 0) {
+                return <p className="text-sm text-muted-foreground mt-4">Nenhuma bipagem registrada ainda.</p>;
+              }
+              return (
+                <div className="space-y-2 mt-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    {entries.length} bipagem(ns) registrada(s)
+                  </p>
+                  {entries.map((e, i) => (
+                    <div key={i} className="flex items-center gap-3 text-sm border rounded-lg p-2">
+                      <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xs shrink-0">{e.unit}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{e.size} · unidade {e.unit}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {e.stage_label}
+                          {e.operator_name ? ` · ${e.operator_name}${e.operator_email ? ` (${e.operator_email})` : ''}` : ' · sem registro de operador'}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {e.at ? format(new Date(e.at), 'dd/MM/yyyy HH:mm') : '—'}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {e.at ? format(new Date(e.at), 'dd/MM/yyyy HH:mm') : ''}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))}
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </DialogContent>
