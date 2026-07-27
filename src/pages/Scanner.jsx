@@ -274,7 +274,7 @@ export default function Scanner() {
     setResult({
       type: allDone ? 'success' : (totalMissing > 0 ? 'warning' : 'success'),
       message: `[${stageLabel}] "${item.size}" — unidade ${unitNum} conferida!`,
-      order: foundOrder,
+      order: { ...foundOrder, items: updatedItems },
       conference: breakdown,
       allDone,
       totalMissing,
@@ -476,12 +476,6 @@ export default function Scanner() {
                   <p><strong>Pedido:</strong> #{result.order.order_number}</p>
                   <p><strong>Cliente:</strong> {result.order.client_name}</p>
                   {result.nextStatus && <p><strong>Novo status:</strong> {result.nextStatus.replace(/_/g, ' ')}</p>}
-                  {result.missing?.length > 0 && (
-                    <p><strong>Faltam ({result.missing.length}):</strong> {result.missing.join(', ')}</p>
-                  )}
-                  {result.allDone && !result.conference && (
-                    <p className="text-green-700 font-semibold mt-2">✅ Conferência completa! Pedido avançou de etapa.</p>
-                  )}
                 </div>
               )}
 
@@ -496,34 +490,50 @@ export default function Scanner() {
                 </Button>
               )}
 
-              {/* Delivery conference breakdown */}
-              {result.conference && (
-                <div className="mt-4 space-y-2">
-                  {result.conference.map((b, idx) => (
-                    <div key={idx} className={cn(
-                      "rounded-lg border p-2 text-sm",
-                      b.missing.length === 0 ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"
-                    )}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{b.size}</span>
-                        <span className={cn("text-xs font-semibold", b.missing.length === 0 ? "text-green-700" : "text-amber-700")}>
-                          {b.delivered}/{b.expected}
-                        </span>
+              {/* Always-on conference breakdown for the active stage */}
+              {result.order && canScan && (() => {
+                const breakdown = (result.order.items || []).map(i => {
+                  const sc = i.stage_conferencias || {};
+                  let bipped = Array.isArray(sc[stageKey]) ? sc[stageKey]
+                    : (stageKey === 'producao' && Array.isArray(i.scanned_units) ? i.scanned_units
+                    : (stageKey === 'entrega' && Array.isArray(i.delivered_units) ? i.delivered_units : []));
+                  bipped = [...bipped].sort((a, b) => a - b);
+                  const q = i.quantity || 0;
+                  const missing = q > 0 ? Array.from({ length: q }, (_, u) => u + 1).filter(n => !bipped.includes(n)) : [];
+                  return { size: i.size, expected: q, bipped, missing };
+                });
+                const totalMissing = breakdown.reduce((s, b) => s + b.missing.length, 0);
+                const allDone = totalMissing === 0;
+                return (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Conferência — {stageLabel}</p>
+                    {breakdown.map((b, idx) => (
+                      <div key={idx} className={cn(
+                        "rounded-lg border p-2 text-sm",
+                        b.missing.length === 0 ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"
+                      )}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{b.size}</span>
+                          <span className={cn("text-xs font-semibold", b.missing.length === 0 ? "text-green-700" : "text-amber-700")}>
+                            {b.bipped.length}/{b.expected}
+                          </span>
+                        </div>
+                        <p className="text-xs text-green-700 mt-1">✓ Bipadas: {b.bipped.length ? b.bipped.join(', ') : '—'}</p>
+                        {b.missing.length > 0 ? (
+                          <p className="text-xs text-amber-700">⚠ Faltam: {b.missing.join(', ')}</p>
+                        ) : (
+                          <p className="text-xs text-green-700">Completo</p>
+                        )}
                       </div>
-                      {b.missing.length > 0 ? (
-                        <p className="text-xs text-amber-700 mt-1">Faltam: {b.missing.join(', ')}</p>
-                      ) : (
-                        <p className="text-xs text-green-700 mt-1">Completo</p>
-                      )}
-                    </div>
-                  ))}
-                  {result.allDone ? (
-                    <p className="text-green-700 font-semibold">✅ Conferência completa — nenhuma treliça faltando!</p>
-                  ) : (
-                    <p className="text-amber-700 font-semibold">⚠️ Faltam {result.totalMissing} treliça(s) no total.</p>
-                  )}
-                </div>
-              )}
+                    ))}
+                    {allDone ? (
+                      <p className="text-green-700 font-semibold">✅ Conferência completa — nenhuma treliça faltando!</p>
+                    ) : (
+                      <p className="text-amber-700 font-semibold">⚠️ Faltam {totalMissing} treliça(s) no total.</p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </Card>
