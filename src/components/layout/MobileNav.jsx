@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Boxes, Landmark, FileText, Users, Settings, Wrench, ClipboardList, ShoppingCart, ClipboardCheck, BookUser, LogOut, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Boxes, Landmark, FileText, Users, Settings, Wrench, ClipboardList, ShoppingCart, ClipboardCheck, BookUser, LogOut, TrendingUp, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const allItems = [
@@ -19,6 +19,7 @@ const allItems = [
   { path: '/patrimonio', icon: Wrench, label: 'Patrimônio' },
   { path: '/produtividade', icon: ClipboardList, label: 'Produtividade' },
   { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais' },
+  { path: '/relatorio-fiscal', icon: BarChart3, label: 'Relatório Fiscal' },
   { path: '/contas-bancarias', icon: Landmark, label: 'Contas Bancárias' },
   { path: '/cadastros', icon: BookUser, label: 'Cadastros' },
   { path: '/usuarios', icon: Users, label: 'Usuários' },
