@@ -3,7 +3,7 @@
 // envia ao webservice NfeAutorizacao (indSinc=1) e grava chave/protocolo.
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { buildInfNFe, buildNFeDocument } from "../../shared/nfeXml.ts";
+import { buildInfNFe, buildNFeDocument, ufCode } from "../../shared/nfeXml.ts";
 import { parsePfx, importSignKey, signInfNFe } from "../../shared/nfeSign.ts";
 
 const SOAP_ACTION = "http://www.portalfiscal.inf.br/nfe/wsdl/NfeAutorizacao/nfeAutorizacaoLote";
@@ -103,7 +103,7 @@ export default async function(req) {
     const signedXml = buildNFeDocument(infNFe, signature);
 
     const uf = (nf.emitente_uf || "SP").toUpperCase();
-    const cUF = String(uf === "SP" ? 35 : 35).padStart(2, "0");
+    const cUF = String(ufCode(uf)).padStart(2, "0");
     const endpoint = endpointFor(uf, ambiente);
     const soap = buildSoapEnvelope(cUF, signedXml);
 

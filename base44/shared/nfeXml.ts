@@ -221,30 +221,23 @@ export function buildInfNFe(nf, { ambiente } = {}) {
           el("vICMS", NFE_NS, {}, [fmtN(vICMS)]),
         ]),
       ]),
-      el("IPI", NFE_NS, {}, [
+      ...((Number(it.aliquota_ipi) || 0) > 0 ? [el("IPI", NFE_NS, {}, [
         el("cEnq", NFE_NS, {}, ["999"]),
         el("IPITrib", NFE_NS, {}, [
-          el("CST", NFE_NS, {}, ["99"]),
+          el("CST", NFE_NS, {}, ["50"]),
           el("vBC", NFE_NS, {}, [fmtN(vItem)]),
           el("pIPI", NFE_NS, {}, [fmtN(pIPI, 4)]),
           el("vIPI", NFE_NS, {}, [fmtN(vIPI)]),
         ]),
-      ]),
+      ])] : [el("IPI", NFE_NS, {}, [
+        el("cEnq", NFE_NS, {}, ["999"]),
+        el("IPINT", NFE_NS, {}, [el("CST", NFE_NS, {}, ["53"])]),
+      ])]),
       el("PIS", NFE_NS, {}, [
-        el("PISAliq", NFE_NS, {}, [
-          el("CST", NFE_NS, {}, ["01"]),
-          el("vBC", NFE_NS, {}, [fmtN(vItem)]),
-          el("pPIS", NFE_NS, {}, [fmtN(0, 4)]),
-          el("vPIS", NFE_NS, {}, [fmtN(0)]),
-        ]),
+        el("PISNT", NFE_NS, {}, [el("CST", NFE_NS, {}, ["04"])]),
       ]),
       el("COFINS", NFE_NS, {}, [
-        el("COFINSAliq", NFE_NS, {}, [
-          el("CST", NFE_NS, {}, ["01"]),
-          el("vBC", NFE_NS, {}, [fmtN(vItem)]),
-          el("pCOFINS", NFE_NS, {}, [fmtN(0, 4)]),
-          el("vCOFINS", NFE_NS, {}, [fmtN(0)]),
-        ]),
+        el("COFINSNT", NFE_NS, {}, [el("CST", NFE_NS, {}, ["04"])]),
       ]),
     ]);
     return el("det", NFE_NS, { nItem: String(idx + 1) }, [prod, imposto]);
