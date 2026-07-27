@@ -184,28 +184,26 @@ export default function Users() {
                     <span className={cn("text-xs px-2 py-1 rounded-full font-medium", r.class)}>{r.label}</span>
                   </td>
                   <td className="p-3">
-                    {u.role === 'admin' ? (
-                      <span className="text-xs text-muted-foreground">Todas</span>
-                    ) : (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-8 w-44 justify-start text-xs font-normal">
-                            <span className="truncate text-left">{stageSummary(u)}</span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-1" align="start">
-                          {kanbanColumns.map(col => {
-                            const checked = (u.assigned_stages || []).includes(col.key);
-                            return (
-                              <label key={col.key} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted rounded text-sm">
-                                <Checkbox checked={checked} onCheckedChange={v => toggleStage(u, col.key, !!v)} />
-                                <span>{col.label}</span>
-                              </label>
-                            );
-                          })}
-                        </PopoverContent>
-                      </Popover>
-                    )}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 w-44 justify-start text-xs font-normal">
+                          <span className="truncate text-left">
+                            {u.role === 'admin' && !(u.assigned_stages || []).length ? 'Todas' : stageSummary(u)}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-1" align="start">
+                        {kanbanColumns.map(col => {
+                          const checked = (u.assigned_stages || []).includes(col.key);
+                          return (
+                            <label key={col.key} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted rounded text-sm">
+                              <Checkbox checked={checked} onCheckedChange={v => toggleStage(u, col.key, !!v)} />
+                              <span>{col.label}</span>
+                            </label>
+                          );
+                        })}
+                      </PopoverContent>
+                    </Popover>
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-2">

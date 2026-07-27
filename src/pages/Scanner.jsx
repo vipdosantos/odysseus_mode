@@ -38,9 +38,9 @@ export default function Scanner() {
   const userStages = Array.isArray(user?.assigned_stages) && user.assigned_stages.length
     ? user.assigned_stages
     : (user?.assigned_stage ? [user.assigned_stage] : []);
-  const availableStages = role === 'admin'
-    ? kanbanColumns.map(c => c.key)
-    : (userStages.length ? userStages : (role === 'operador' ? ['producao'] : []));
+  const availableStages = userStages.length
+    ? userStages
+    : (role === 'admin' ? kanbanColumns.map(c => c.key) : (role === 'operador' ? ['producao'] : []));
   useEffect(() => {
     if (!availableStages.includes(activeStage)) setActiveStage(availableStages[0] || '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
