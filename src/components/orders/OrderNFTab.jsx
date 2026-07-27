@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Printer, Save, CheckCircle2, Plus, Trash2, FileText, Send } from 'lucide-react';
+import { Printer, Save, CheckCircle2, Plus, Trash2, FileText, Send, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { DEFAULT_EMITENTE, recalcular, calcularTotaisNFe } from '@/lib/nfTax';
 import { buildDanfeHtml, buildNfseHtml } from '@/lib/nfPrintLayouts';
@@ -63,6 +63,7 @@ export default function OrderNFTab({ order }) {
     w.document.close();
   };
 
+  const [downloading, setDownloading] = useState(false);
   const handleTransmit = async () => {
     if (!existingNote?.id) { toast({ title: 'Salve a nota antes de transmitir', variant: 'destructive' }); return; }
     if (nf.tipo !== 'nfe') { toast({ title: 'Transmissão SEFAZ disponível apenas para NF-e', variant: 'destructive' }); return; }
@@ -82,6 +83,31 @@ export default function OrderNFTab({ order }) {
       toast({ title: 'Erro na transmissão', description: e.message, variant: 'destructive' });
     } finally {
       setTransmitting(false);
+    }
+  };
+
+  const handleDownloadXml = async () => {
+    if (!existingNote?.id) { toast({ title: 'Salve a nota antes de gerar o XML', variant: 'destructive' }); return; }
+    if (nf.tipo !== 'nfe') { toast({ title: 'Geração de XML disponível apenas para NF-e', variant: 'destructive' }); return; }
+    setDownloading(true);
+    try {
+      const res = await base44.functions.invoke('gerarXmlNFe', { fiscalNoteId: existingNote.id, ambiente: 2 });
+      const data = res?.data || res;
+      if (data?.error) { toast({ title: 'Erro ao gerar XML', description: data.error, variant: 'destructive' }); return; }
+      const blob = new Blob([data.xml], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NFe-${data.chave || existingNote.numero}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'XML gerado e assinado', description: `Chave ${data.chave?.slice(-12) || ''}` });
+    } catch (e) {
+      toast({ title: 'Erro ao gerar XML', description: e.message, variant: 'destructive' });
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -319,9 +345,14 @@ export default function OrderNFTab({ order }) {
             <Save className="w-4 h-4 mr-1" /> {save.isPending ? 'Salvando...' : 'Salvar'}
           </Button>
           {isNFe && (
-            <Button variant="outline" onClick={handleTransmit} disabled={transmitting} className="border-green-300 text-green-700 hover:bg-green-50">
-              <Send className="w-4 h-4 mr-1" /> {transmitting ? 'Transmitindo...' : 'Transmitir SEFAZ'}
-            </Button>
+            <>
+              <Button variant="outline" onClick={handleDownloadXml} disabled={downloading} className="border-blue-300 text-blue-700 hover:bg-blue-50">
+                <Download className="w-4 h-4 mr-1" /> {downloading ? 'Gerando...' : 'Baixar XML'}
+              </Button>
+              <Button variant="outline" onClick={handleTransmit} disabled={transmitting} className="border-green-300 text-green-700 hover:bg-green-50">
+                <Send className="w-4 h-4 mr-1" /> {transmitting ? 'Transmitindo...' : 'Transmitir SEFAZ'}
+              </Button>
+            </>
           )}
           <Button onClick={handlePrint} className="bg-primary text-primary-foreground">
             <Printer className="w-4 h-4 mr-1" /> Imprimir

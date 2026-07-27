@@ -303,3 +303,45 @@ export function buildNFeDocument(infNFeTree, signatureTree) {
   const nfe = el("NFe", NFE_NS, {}, [infNFeTree, signatureTree]);
   return '<?xml version="1.0" encoding="UTF-8"?>\n' + serializeXml(nfe, null);
 }
+
+// Recálculo server-side dos totais da NF-e — garante que ICMS/IPI/vNF estejam
+// corretos no XML final mesmo se os valores salvos estiverem desatualizados.
+export function recalcTotaisNFe(nf) {
+  const itens = (nf.itens || []).map((it) => {
+    const q = Number(it.quantidade) || 0;
+    const vu = Number(it.valor_unitario) || 0;
+    const vDesc = Number(it.valor_desconto) || 0;
+    const vFrete = Number(it.valor_frete) || 0;
+    const vBruto = q * vu;
+    const vItem = vBruto - vDesc;
+    const aIcms = Number(it.aliquota_icms) || 0;
+    const baseIcms = vItem + vFrete;
+    const vIcms = (baseIcms * aIcms) / 100;
+    const aIpi = Number(it.aliquota_ipi) || 0;
+    const vIpi = (vItem * aIpi) / 100;
+    return { ...it, valor_bruto: vBruto, valor_item: vItem, base_calculo_icms: baseIcms, aliquota_icms: aIcms, valor_icms: vIcms, aliquota_ipi: aIpi, valor_ipi: vIpi };
+  });
+  const vProd = itens.reduce((s, i) => s + i.valor_bruto, 0);
+  const vDesc = itens.reduce((s, i) => s + (Number(i.valor_desconto) || 0), 0);
+  const vFrete = Number(nf.valor_frete) || 0;
+  const vSeg = Number(nf.valor_seguro) || 0;
+  const vOut = Number(nf.outras_despesas) || 0;
+  const baseIcms = itens.reduce((s, i) => s + i.base_calculo_icms, 0);
+  const vIcms = itens.reduce((s, i) => s + i.valor_icms, 0);
+  const vIpi = itens.reduce((s, i) => s + i.valor_ipi, 0);
+  const vTotal = vProd - vDesc + vFrete + vSeg + vOut + vIpi;
+  return {
+    ...nf,
+    itens,
+    valor_produtos: vProd,
+    valor_desconto: vDesc,
+    valor_frete: vFrete,
+    valor_seguro: vSeg,
+    outras_despesas: vOut,
+    base_calculo_icms: baseIcms,
+    valor_icms: vIcms,
+    valor_ipi: vIpi,
+    valor_total_nfe: vTotal,
+    valor: vTotal,
+  };
+}
