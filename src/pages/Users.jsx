@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Users as UsersIcon, UserPlus, Shield, Trash2, Info, Lock } from 'lucide-react';
@@ -55,6 +57,18 @@ export default function Users() {
     mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
+
+  const toggleStage = (u, key, checked) => {
+    const current = Array.isArray(u.assigned_stages) ? u.assigned_stages : [];
+    const next = checked ? [...current, key] : current.filter(k => k !== key);
+    updateStageMutation.mutate({ id: u.id, data: { assigned_stages: next } });
+  };
+
+  const stageSummary = (u) => {
+    const keys = Array.isArray(u.assigned_stages) ? u.assigned_stages : [];
+    if (!keys.length) return 'Nenhuma';
+    return keys.map(k => kanbanColumns.find(c => c.key === k)?.label || k.replace(/_/g, ' ')).join(', ');
+  };
 
   const updateRoleMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
@@ -173,18 +187,24 @@ export default function Users() {
                     {u.role === 'admin' ? (
                       <span className="text-xs text-muted-foreground">Todas</span>
                     ) : (
-                      <Select
-                        value={u.assigned_stage || 'nenhum'}
-                        onValueChange={v => updateStageMutation.mutate({ id: u.id, data: { assigned_stage: v === 'nenhum' ? '' : v } })}
-                      >
-                        <SelectTrigger className="w-40 h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="nenhum">Nenhuma</SelectItem>
-                          {kanbanColumns.map(col => (
-                            <SelectItem key={col.key} value={col.key}>{col.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 w-44 justify-start text-xs font-normal">
+                            <span className="truncate text-left">{stageSummary(u)}</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-1" align="start">
+                          {kanbanColumns.map(col => {
+                            const checked = (u.assigned_stages || []).includes(col.key);
+                            return (
+                              <label key={col.key} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted rounded text-sm">
+                                <Checkbox checked={checked} onCheckedChange={v => toggleStage(u, col.key, !!v)} />
+                                <span>{col.label}</span>
+                              </label>
+                            );
+                          })}
+                        </PopoverContent>
+                      </Popover>
                     )}
                   </td>
                   <td className="p-3 text-right">

@@ -5,6 +5,7 @@ import { useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScanLine, CheckCircle2, AlertCircle, Camera, CameraOff, Keyboard, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ export default function Scanner() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('keyboard'); // 'keyboard' | 'camera'
+  const [activeStage, setActiveStage] = useState('');
   const [cameraError, setCameraError] = useState('');
   const inputRef = useRef(null);
   const videoRef = useRef(null);
@@ -31,10 +33,19 @@ export default function Scanner() {
     queryFn: () => base44.entities.KanbanColumn.list('order', 50),
   });
 
-  // Resolve the stage this user is responsible for (set by the admin).
+  // Resolve which stage(s) this user is responsible for (set by the admin, multiple allowed).
   const role = user?.role || 'visualizador';
-  const fallbackStage = (role === 'admin' || role === 'operador') ? 'producao' : null;
-  const stageKey = user?.assigned_stage || fallbackStage;
+  const userStages = Array.isArray(user?.assigned_stages) && user.assigned_stages.length
+    ? user.assigned_stages
+    : (user?.assigned_stage ? [user.assigned_stage] : []);
+  const availableStages = role === 'admin'
+    ? kanbanColumns.map(c => c.key)
+    : (userStages.length ? userStages : (role === 'operador' ? ['producao'] : []));
+  useEffect(() => {
+    if (!availableStages.includes(activeStage)) setActiveStage(availableStages[0] || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableStages.join('|')]);
+  const stageKey = availableStages.includes(activeStage) ? activeStage : (availableStages[0] || '');
   const isDelivery = stageKey === 'entrega';
   const stageLabel = kanbanColumns.find(c => c.key === stageKey)?.label
     || (stageKey ? stageKey.replace(/_/g, ' ') : 'Consulta');
@@ -352,6 +363,18 @@ export default function Scanner() {
           {!canScan && <span className="ml-1 text-muted-foreground">(somente consulta)</span>}
           {canScan && !isDelivery && <span className="ml-1 text-muted-foreground">→ status <strong>{stageLabel}</strong></span>}
         </p>
+        {availableStages.length > 1 && (
+          <Select value={stageKey} onValueChange={setActiveStage}>
+            <SelectTrigger className="w-56 h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {availableStages.map(k => (
+                <SelectItem key={k} value={k}>
+                  {kanbanColumns.find(c => c.key === k)?.label || k.replace(/_/g, ' ')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {isDelivery && (
