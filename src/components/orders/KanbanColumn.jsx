@@ -1,4 +1,5 @@
 import React from 'react';
+import { Droppable } from '@hello-pangea/dnd';
 import OrderCard from './OrderCard';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +19,7 @@ export const ALL_STATUSES = [
 
 export const STATUS_MAP = Object.fromEntries(ALL_STATUSES.map(s => [s.key, s]));
 
-export default function KanbanColumn({ status, orders, onCardClick }) {
+export default function KanbanColumn({ status, orders, onCardClick, canEdit }) {
   const config = STATUS_MAP[status] || { label: status, color: 'bg-gray-500' };
 
   return (
@@ -28,14 +29,27 @@ export default function KanbanColumn({ status, orders, onCardClick }) {
         <h3 className="text-sm font-semibold">{config.label}</h3>
         <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{orders.length}</span>
       </div>
-      <div className="space-y-3 min-h-[200px] p-2 rounded-xl bg-muted/30">
-        {orders.map(order => (
-          <OrderCard key={order.id} order={order} onClick={onCardClick} />
-        ))}
-        {orders.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-8">Nenhum pedido</p>
+      <Droppable droppableId={status} isDropDisabled={!canEdit}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={cn(
+              "space-y-3 min-h-[200px] p-2 rounded-xl transition-colors",
+              snapshot.isDraggingOver ? "bg-primary/10 ring-2 ring-primary/40" : "bg-muted/30",
+              !canEdit && "cursor-default"
+            )}
+          >
+            {orders.map((order, index) => (
+              <OrderCard key={order.id} order={order} index={index} onClick={onCardClick} canEdit={canEdit} />
+            ))}
+            {orders.length === 0 && !snapshot.isDraggingOver && (
+              <p className="text-xs text-muted-foreground text-center py-8">Nenhum pedido</p>
+            )}
+            {provided.placeholder}
+          </div>
         )}
-      </div>
+      </Droppable>
     </div>
   );
 }

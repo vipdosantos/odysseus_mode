@@ -5,6 +5,7 @@ import { useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, Archive } from 'lucide-react';
 import { toast } from 'sonner';
+import { DragDropContext } from '@hello-pangea/dnd';
 import { Input } from '@/components/ui/input';
 import KanbanColumn, { ALL_STATUSES, STATUS_MAP } from '../components/orders/KanbanColumn';
 import OrderFormDialog from '../components/orders/OrderFormDialog';
@@ -105,6 +106,16 @@ export default function Orders() {
     setDetailOrder(null);
   };
 
+  const onDragEnd = (result) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId) return;
+    const order = filtered.find(o => o.id === draggableId);
+    if (order && order.status !== destination.droppableId) {
+      handleStatusChange(order, destination.droppableId);
+    }
+  };
+
   const handleDelete = (order) => {
     deleteMutation.mutate(order.id);
   };
@@ -184,16 +195,19 @@ export default function Orders() {
       <div className="flex-1 overflow-x-auto p-4 md:p-6 pt-4">
         {activeTab === 'pedidos' ? (
           // Full Kanban view
-          <div className="flex gap-4 pb-4">
-            {ALL_STATUSES.map(s => (
-              <KanbanColumn
-                key={s.key}
-                status={s.key}
-                orders={filtered.filter(o => o.status === s.key)}
-                onCardClick={handleCardClick}
-              />
-            ))}
-          </div>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="flex gap-4 pb-4">
+              {ALL_STATUSES.map(s => (
+                <KanbanColumn
+                  key={s.key}
+                  status={s.key}
+                  orders={filtered.filter(o => o.status === s.key)}
+                  onCardClick={handleCardClick}
+                  canEdit={canEdit}
+                />
+              ))}
+            </div>
+          </DragDropContext>
         ) : (
           // Single status filtered view
           <div className="max-w-2xl">
