@@ -231,7 +231,20 @@ export default function Scanner() {
     });
 
     const allDone = updatedItems.every(i => stageUnits(i, stage).length >= (i.quantity || 0));
-    const updateData = { items: updatedItems };
+    const logEntry = {
+      stage,
+      stage_label: stageLabel,
+      item_idx: foundItemIdx,
+      size: item.size,
+      unit: unitNum,
+      operator_name: user?.full_name || user?.email || '',
+      operator_email: user?.email || '',
+      at: new Date().toISOString(),
+    };
+    const updateData = {
+      items: updatedItems,
+      scan_log: [...(foundOrder.scan_log || []), logEntry],
+    };
 
     if (stage === 'entrega' && allDone) {
       updateData.delivery_conferido = true;

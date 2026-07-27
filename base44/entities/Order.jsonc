@@ -218,6 +218,48 @@
     "delivery_conferido_by": {
       "type": "string",
       "description": "Quem fez a confer\u00eancia de entrega"
+    },
+    "scan_log": {
+      "type": "array",
+      "description": "Log detalhado de cada bipagem (rastreio por etapa)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "description": "Chave da etapa do Kanban"
+          },
+          "stage_label": {
+            "type": "string",
+            "description": "Nome exibido da etapa"
+          },
+          "item_idx": {
+            "type": "number",
+            "description": "\u00cdndice do item no pedido"
+          },
+          "size": {
+            "type": "string",
+            "description": "Tamanho da treli\u00e7a"
+          },
+          "unit": {
+            "type": "number",
+            "description": "N\u00famero da unidade bipada"
+          },
+          "operator_name": {
+            "type": "string",
+            "description": "Nome de quem bipou"
+          },
+          "operator_email": {
+            "type": "string",
+            "description": "Email de quem bipou"
+          },
+          "at": {
+            "type": "string",
+            "description": "Data/hora da bipagem (ISO)"
+          }
+        }
+      },
+      "default": []
     }
   },
   "required": [

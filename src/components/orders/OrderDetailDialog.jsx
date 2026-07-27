@@ -143,6 +143,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
             <TabsTrigger value="pagamento" className="flex-1 text-xs">Pagamento</TabsTrigger>
             <TabsTrigger value="nota" className="flex-1 text-xs">Nota Fiscal</TabsTrigger>
             <TabsTrigger value="recibo" className="flex-1 text-xs">Recibo</TabsTrigger>
+            <TabsTrigger value="log" className="flex-1 text-xs">Log Bipagem</TabsTrigger>
           </TabsList>
 
           {/* ── ABA DETALHES ── */}
@@ -317,6 +318,30 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           {/* ── ABA RECIBO ── */}
           <TabsContent value="recibo">
             <DeliveryReceiptTab order={order} />
+          </TabsContent>
+
+          {/* ── ABA LOG DE BIPAGEM ── */}
+          <TabsContent value="log">
+            <div className="space-y-2 mt-4">
+              {(!order.scan_log || order.scan_log.length === 0) ? (
+                <p className="text-sm text-muted-foreground">Nenhuma bipagem registrada ainda.</p>
+              ) : (
+                [...order.scan_log].reverse().map((e, i) => (
+                  <div key={i} className="flex items-center gap-3 text-sm border rounded-lg p-2">
+                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xs shrink-0">{e.unit}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{e.size} · unidade {e.unit}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {e.stage_label || (e.stage || '').replace(/_/g, ' ')} · {e.operator_name}{e.operator_email ? ` (${e.operator_email})` : ''}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {e.at ? format(new Date(e.at), 'dd/MM/yyyy HH:mm') : ''}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
