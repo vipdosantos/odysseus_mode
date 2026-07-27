@@ -81,6 +81,17 @@
               "type": "number"
             }
           },
+          "stage_conferencias": {
+            "type": "object",
+            "description": "Confer\u00eancia por etapa do Kanban: stageKey -> [unidades bipadas]. Cada status exige bipe de todas as unidades para avan\u00e7ar.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "default": {}
+          },
           "qr_code_id": {
             "type": "string"
           },

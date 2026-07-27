@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScanLine, CheckCircle2, AlertCircle, Camera, CameraOff, Keyboard, Truck } from 'lucide-react';
+import { ScanLine, CheckCircle2, AlertCircle, Camera, CameraOff, Keyboard, Truck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -173,27 +173,31 @@ export default function Scanner() {
     return { foundOrder, foundItemIdx, unitNum, qrId };
   };
 
-  // --- Delivery conference: driver scans treliças at the client, system flags missing ---
-  const processDelivery = async (foundOrder, foundItemIdx, unitNum, qrId) => {
+  // Next Kanban column after a given stage key (by order)
+  const nextColumnKey = (key) => {
+    const sorted = [...kanbanColumns].sort((a, b) => (a.order || 0) - (b.order || 0));
+    const idx = sorted.findIndex(c => c.key === key);
+    if (idx < 0) return null;
+    return sorted[idx + 1]?.key || null;
+  };
+
+  // Units already conferidas for a given stage on an item (legacy-aware)
+  const stageUnits = (item, stage) => {
+    const sc = item.stage_conferencias || {};
+    if (Array.isArray(sc[stage])) return sc[stage];
+    if (stage === 'producao' && Array.isArray(item.scanned_units)) return item.scanned_units;
+    if (stage === 'entrega' && Array.isArray(item.delivered_units)) return item.delivered_units;
+    return [];
+  };
+
+  // --- Unified stage conference (works for any Kanban stage) ---
+  const processStage = async (foundOrder, foundItemIdx, unitNum, qrId) => {
+    const stage = stageKey;
     const item = foundOrder.items[foundItemIdx];
 
     if (unitNum == null) {
-      setResult({ type: 'error', message: 'Este QR não tem número de unidade. Use etiquetas com unidade para a conferência de entrega.' });
+      setResult({ type: 'error', message: 'Este QR não tem número de unidade. Use etiquetas com unidade para a conferência.' });
       setLoading(false);
-      return;
-    }
-
-    const deliveredUnits = Array.isArray(item.delivered_units) ? [...item.delivered_units] : [];
-
-    if (deliveredUnits.includes(unitNum)) {
-      setResult({
-        type: 'warning',
-        message: `Unidade ${unitNum}/${item.quantity} de "${item.size}" (pedido #${foundOrder.order_number}) JÁ foi conferida.`,
-        order: foundOrder, item,
-      });
-      setLoading(false);
-      setQrInput('');
-      inputRef.current?.focus();
       return;
     }
     if (unitNum < 1 || unitNum > (item.quantity || 0)) {
@@ -202,120 +206,107 @@ export default function Scanner() {
       return;
     }
 
-    deliveredUnits.push(unitNum);
-    const updatedItems = [...foundOrder.items];
-    updatedItems[foundItemIdx] = { ...item, delivered_units: deliveredUnits };
+    const current = [...stageUnits(item, stage)];
+    if (current.includes(unitNum)) {
+      setResult({
+        type: 'warning',
+        message: `Unidade ${unitNum}/${item.quantity} de "${item.size}" (pedido #${foundOrder.order_number}) JÁ foi conferida em "${stageLabel}". Etiqueta duplicada — não contada.`,
+        order: foundOrder, item,
+      });
+      setLoading(false);
+      setQrInput('');
+      inputRef.current?.focus();
+      return;
+    }
+    current.push(unitNum);
 
-    const allDelivered = updatedItems.every(i => (i.delivered_units?.length ?? 0) >= i.quantity);
+    const updatedItems = foundOrder.items.map((it, i) => {
+      if (i !== foundItemIdx) return it;
+      const sc = { ...(it.stage_conferencias || {}) };
+      sc[stage] = current;
+      const newItem = { ...it, stage_conferencias: sc };
+      if (stage === 'producao') { newItem.scanned_units = current; newItem.produced = current.length; }
+      if (stage === 'entrega') { newItem.delivered_units = current; }
+      return newItem;
+    });
+
+    const allDone = updatedItems.every(i => stageUnits(i, stage).length >= (i.quantity || 0));
     const updateData = { items: updatedItems };
-    if (allDelivered) {
+
+    if (stage === 'entrega' && allDone) {
       updateData.delivery_conferido = true;
       updateData.delivery_conferido_at = new Date().toISOString();
       updateData.delivery_conferido_by = user?.full_name || user?.email || '';
-      updateData.status = 'recebido';
+    }
+
+    if (allDone) {
+      updateData.status = stage === 'entrega' ? (nextColumnKey('entrega') || 'recebido') : (nextColumnKey(stage) || stage);
+    } else {
+      updateData.status = stage;
     }
 
     await base44.entities.Order.update(foundOrder.id, updateData);
     queryClient.invalidateQueries({ queryKey: ['orders'] });
 
+    if (stage === 'producao') {
+      await base44.entities.ProductionLog.create({
+        order_id: foundOrder.id,
+        order_number: foundOrder.order_number,
+        item_index: foundItemIdx,
+        truss_size: item.size,
+        quantity_produced: 1,
+        operator_email: user?.email || '',
+        operator_name: user?.full_name || '',
+        scanned_qr: qrId,
+      });
+    }
+
     const breakdown = updatedItems.map(i => {
-      const del = Array.isArray(i.delivered_units) ? i.delivered_units : [];
+      const del = stageUnits(i, stage);
       const missing = i.quantity > 0
         ? Array.from({ length: i.quantity }, (_, u) => u + 1).filter(n => !del.includes(n))
         : [];
       return { size: i.size, expected: i.quantity, delivered: del.length, missing };
     });
     const totalMissing = breakdown.reduce((s, b) => s + b.missing.length, 0);
+    const nextStatus = updateData.status;
 
     setResult({
-      type: allDelivered ? 'success' : (totalMissing > 0 ? 'warning' : 'success'),
-      message: `Conferência de entrega — "${item.size}" unidade ${unitNum} conferida!`,
+      type: allDone ? 'success' : (totalMissing > 0 ? 'warning' : 'success'),
+      message: `[${stageLabel}] "${item.size}" — unidade ${unitNum} conferida!`,
       order: foundOrder,
       conference: breakdown,
-      allDone: allDelivered,
+      allDone,
       totalMissing,
+      nextStatus,
     });
-    toast.success(allDelivered ? 'Conferência completa — nada faltando!' : 'Unidade conferida');
+    toast.success(allDone ? `Conferência de "${stageLabel}" completa!` : 'Unidade conferida');
     setQrInput('');
     setLoading(false);
     inputRef.current?.focus();
   };
 
-  // --- Production scanning ---
-  const processProduction = async (foundOrder, foundItemIdx, unitNum, qrId) => {
-    const item = foundOrder.items[foundItemIdx];
-
-    const scannedUnits = Array.isArray(item.scanned_units) ? [...item.scanned_units] : [];
-
-    if (unitNum != null) {
-      if (scannedUnits.includes(unitNum)) {
-        setResult({
-          type: 'warning',
-          message: `Unidade ${unitNum}/${item.quantity} de "${item.size}" (pedido #${foundOrder.order_number}) JÁ foi escaneada. Etiqueta duplicada — não contada.`,
-          order: foundOrder, item,
-        });
-        setLoading(false);
-        setQrInput('');
-        inputRef.current?.focus();
-        return;
-      }
-      if (unitNum < 1 || unitNum > (item.quantity || 0)) {
-        setResult({ type: 'error', message: `Unidade ${unitNum} inválida para "${item.size}" (qtd ${item.quantity}).` });
-        setLoading(false);
-        return;
-      }
-      scannedUnits.push(unitNum);
-    } else if ((item.produced || 0) >= item.quantity) {
-      setResult({ type: 'warning', message: `Todas as ${item.quantity} treliças "${item.size}" do pedido #${foundOrder.order_number} já foram registradas.`, order: foundOrder, item });
-      setLoading(false);
-      return;
+  // --- Admin: clear bipped labels for the active stage on an order ---
+  const clearScans = async (order) => {
+    const stage = stageKey;
+    const updatedItems = order.items.map(it => {
+      const sc = { ...(it.stage_conferencias || {}) };
+      delete sc[stage];
+      const newItem = { ...it, stage_conferencias: sc };
+      if (stage === 'producao') { newItem.scanned_units = []; newItem.produced = 0; }
+      if (stage === 'entrega') { newItem.delivered_units = []; }
+      return newItem;
+    });
+    const updateData = { items: updatedItems, status: stage };
+    if (stage === 'entrega') {
+      updateData.delivery_conferido = false;
+      updateData.delivery_conferido_at = '';
+      updateData.delivery_conferido_by = '';
     }
-
-    const newProduced = unitNum != null ? scannedUnits.length : (item.produced || 0) + 1;
-    const updatedItems = [...foundOrder.items];
-    updatedItems[foundItemIdx] = {
-      ...item,
-      produced: newProduced,
-      ...(unitNum != null ? { scanned_units: scannedUnits } : {}),
-    };
-    const allDone = updatedItems.every(i => (i.scanned_units?.length ?? (i.produced || 0)) >= i.quantity);
-    const nextStatus = allDone ? 'secagem' : stageKey;
-
-    await base44.entities.Order.update(foundOrder.id, {
-      items: updatedItems,
-      status: nextStatus,
-    });
-
-    await base44.entities.ProductionLog.create({
-      order_id: foundOrder.id,
-      order_number: foundOrder.order_number,
-      item_index: foundItemIdx,
-      truss_size: item.size,
-      quantity_produced: 1,
-      operator_email: user?.email || '',
-      operator_name: user?.full_name || '',
-      scanned_qr: qrId,
-    });
-
+    await base44.entities.Order.update(order.id, updateData);
     queryClient.invalidateQueries({ queryKey: ['orders'] });
-
-    const missing = item.quantity > 0
-      ? Array.from({ length: item.quantity }, (_, u) => u + 1).filter(n => !scannedUnits.includes(n))
-      : [];
-
-    setResult({
-      type: 'success',
-      message: `[${stageLabel}] "${item.size}" — unidade ${unitNum ?? '?'} registrada! ${newProduced}/${item.quantity}`,
-      order: foundOrder,
-      item: { ...item, produced: newProduced, scanned_units: scannedUnits },
-      allDone,
-      nextStatus,
-      missing,
-    });
-    toast.success(`${stageLabel} registrada!`);
-    setQrInput('');
-    setLoading(false);
-    inputRef.current?.focus();
+    toast.success(`Bipagens de "${stageLabel}" excluídas.`);
+    setResult(null);
   };
 
   const processScan = async (rawValue) => {
@@ -342,11 +333,7 @@ export default function Scanner() {
       return;
     }
 
-    if (isDelivery) {
-      await processDelivery(foundOrder, foundItemIdx, unitNum, qrId);
-    } else {
-      await processProduction(foundOrder, foundItemIdx, unitNum, qrId);
-    }
+    await processStage(foundOrder, foundItemIdx, unitNum, qrId);
   };
 
   const handleScan = () => processScan(qrInput);
@@ -487,9 +474,20 @@ export default function Scanner() {
                     <p><strong>Faltam ({result.missing.length}):</strong> {result.missing.join(', ')}</p>
                   )}
                   {result.allDone && !result.conference && (
-                    <p className="text-green-700 font-semibold mt-2">✅ Todas as treliças produzidas! Pedido avançado.</p>
+                    <p className="text-green-700 font-semibold mt-2">✅ Conferência completa! Pedido avançou de etapa.</p>
                   )}
                 </div>
+              )}
+
+              {role === 'admin' && result.order && canScan && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 text-destructive hover:bg-destructive/10 border-destructive/30"
+                  onClick={() => clearScans(result.order)}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" /> Excluir bipagens de "{stageLabel}"
+                </Button>
               )}
 
               {/* Delivery conference breakdown */}
