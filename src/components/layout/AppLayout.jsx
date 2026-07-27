@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { base44 } from '@/api/base44Client';
+import { canView } from '@/lib/userPermissions';
 
 export default function AppLayout() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     base44.auth.me()
@@ -20,6 +22,10 @@ export default function AppLayout() {
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
       </div>
     );
+  }
+
+  if (user && user.role !== 'admin' && !canView(user, location.pathname) && canView(user, '/')) {
+    return <Navigate to="/" replace />;
   }
 
   return (

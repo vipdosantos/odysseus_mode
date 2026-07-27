@@ -8,6 +8,7 @@
         "admin",
         "operador",
         "financeiro",
+        "vendedor",
         "visualizador"
       ],
       "default": "visualizador",
@@ -20,6 +21,11 @@
     "phone": {
       "type": "string",
       "description": "Telefone"
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Permiss\u00f5es por tela: path -> 'oculto' | 'ver' | 'editar'. Vazio usa o padr\u00e3o da fun\u00e7\u00e3o (role).",
+      "default": {}
     }
   },
   "required": [

@@ -9,6 +9,7 @@ import {
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import ModelajesLogo from './ModelajesLogo';
+import { canView } from '@/lib/userPermissions';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'operador', 'financeiro', 'visualizador'] },
@@ -38,7 +39,7 @@ export default function Sidebar({ user }) {
   const location = useLocation();
   const userRole = user?.role || 'visualizador';
 
-  const filteredNav = navItems.filter(item => item.roles.includes(userRole));
+  const filteredNav = navItems.filter(item => canView(user, item.path));
 
   return (
     <aside className={cn(

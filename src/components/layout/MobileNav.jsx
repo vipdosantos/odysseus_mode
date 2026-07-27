@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Boxes, Landmark, FileText, Users, Settings, Wrench, ClipboardList, ShoppingCart, ClipboardCheck, BookUser, LogOut, TrendingUp, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { canView } from '@/lib/userPermissions';
 
 const allItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -25,11 +26,13 @@ const allItems = [
   { path: '/usuarios', icon: Users, label: 'Usuários' },
 ];
 
-const mainItems = allItems.slice(0, 4);
+// mainItems is computed per-user inside the component (see below)
 
 export default function MobileNav({ user }) {
   const location = useLocation();
   const [showMore, setShowMore] = useState(false);
+  const accessibleItems = allItems.filter(item => canView(user, item.path));
+  const mainItems = accessibleItems.slice(0, 4);
 
   return (
     <>
@@ -43,7 +46,7 @@ export default function MobileNav({ user }) {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 grid grid-cols-3 sm:grid-cols-4 gap-3 content-start">
-            {allItems.map(item => {
+            {accessibleItems.map(item => {
               const isActive = location.pathname === item.path;
               return (
                 <Link

@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Users as UsersIcon, UserPlus, Shield, Trash2, Info } from 'lucide-react';
+import { Users as UsersIcon, UserPlus, Shield, Trash2, Info, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SCREENS, ACCESS_OCULTO, ACCESS_VER, ACCESS_EDITAR, buildDefaultPermissions } from '@/lib/userPermissions';
 import { toast } from 'sonner';
 
 const roleLabels = {
@@ -35,6 +36,9 @@ export default function Users() {
   const [inviteRole, setInviteRole] = useState('visualizador');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [showRoles, setShowRoles] = useState(false);
+  const [permTarget, setPermTarget] = useState(null);
+  const [workingPerms, setWorkingPerms] = useState({});
+  const [savingPerms, setSavingPerms] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: users = [] } = useQuery({
@@ -46,6 +50,26 @@ export default function Users() {
     mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
+
+  const openPermissions = (u) => {
+    setPermTarget(u);
+    const base = buildDefaultPermissions(u.role);
+    setWorkingPerms({ ...base, ...(u.permissions || {}) });
+  };
+
+  const savePermissions = async () => {
+    setSavingPerms(true);
+    try {
+      await base44.entities.User.update(permTarget.id, { permissions: workingPerms });
+      toast.success('Permissões atualizadas!');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setPermTarget(null);
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao salvar permissões');
+    } finally {
+      setSavingPerms(false);
+    }
+  };
 
   const deleteUserMutation = useMutation({
     mutationFn: (id) => base44.entities.User.delete(id),
@@ -152,6 +176,11 @@ export default function Users() {
                           <SelectItem value="visualizador">Visualizador</SelectItem>
                         </SelectContent>
                       </Select>
+                      {u.role !== 'admin' && (
+                        <Button variant="outline" size="sm" className="h-8" onClick={() => openPermissions(u)}>
+                          <Lock className="w-3.5 h-3.5 mr-1" /> Permissões
+                        </Button>
+                      )}
                       {u.id !== user?.id && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(u)}>
                           <Trash2 className="w-4 h-4" />
@@ -211,6 +240,47 @@ export default function Users() {
             <Button variant="outline" onClick={() => setShowInvite(false)}>Cancelar</Button>
             <Button onClick={handleInvite} disabled={inviting} className="bg-primary text-primary-foreground">
               {inviting ? 'Enviando...' : 'Enviar Convite'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!permTarget} onOpenChange={open => !open && setPermTarget(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Permissões — {permTarget?.full_name || permTarget?.email}</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Defina o que este usuário pode <strong>ver</strong> e <strong>editar</strong> em cada tela.
+            "Oculto" esconde a tela do menu e bloqueia o acesso direto pela URL.
+          </p>
+          <div className="space-y-1.5 mt-2">
+            {SCREENS.map(s => {
+              const val = workingPerms[s.path] || ACCESS_OCULTO;
+              return (
+                <div key={s.path} className="flex items-center justify-between gap-3 py-1.5 border-b last:border-0">
+                  <span className="text-sm font-medium">{s.label}</span>
+                  <Select
+                    value={val}
+                    onValueChange={v => setWorkingPerms(prev => ({ ...prev, [s.path]: v }))}
+                  >
+                    <SelectTrigger className="w-36 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ACCESS_OCULTO}>Oculto</SelectItem>
+                      <SelectItem value={ACCESS_VER}>Visualizar</SelectItem>
+                      <SelectItem value={ACCESS_EDITAR}>Editar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPermTarget(null)}>Cancelar</Button>
+            <Button onClick={savePermissions} disabled={savingPerms} className="bg-primary text-primary-foreground">
+              {savingPerms ? 'Salvando...' : 'Salvar Permissões'}
             </Button>
           </DialogFooter>
         </DialogContent>
