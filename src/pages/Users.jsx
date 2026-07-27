@@ -53,12 +53,27 @@ export default function Users() {
     onError: () => toast.error('Não foi possível remover o usuário.'),
   });
 
+  const [inviting, setInviting] = useState(false);
   const handleInvite = async () => {
     if (!inviteEmail) return;
-    await base44.users.inviteUser(inviteEmail, inviteRole === 'admin' ? 'admin' : 'user');
-    toast.success('Convite enviado!');
-    setShowInvite(false);
-    setInviteEmail('');
+    setInviting(true);
+    try {
+      await base44.users.inviteUser(inviteEmail, inviteRole === 'admin' ? 'admin' : 'user');
+      toast.success('Convite enviado!');
+      setShowInvite(false);
+      setInviteEmail('');
+    } catch (e) {
+      const msg = e?.message || String(e);
+      if (/access request already exists/i.test(msg)) {
+        toast.error('Já existe um convite pendente para este e-mail. Aguarde o usuário aceitar.');
+      } else if (/already/i.test(msg) || /registered/i.test(msg)) {
+        toast.error('Este e-mail já está cadastrado ou possui convite pendente.');
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setInviting(false);
+    }
   };
 
   if (user?.role !== 'admin') {
@@ -194,7 +209,9 @@ export default function Users() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInvite(false)}>Cancelar</Button>
-            <Button onClick={handleInvite} className="bg-primary text-primary-foreground">Enviar Convite</Button>
+            <Button onClick={handleInvite} disabled={inviting} className="bg-primary text-primary-foreground">
+              {inviting ? 'Enviando...' : 'Enviar Convite'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
