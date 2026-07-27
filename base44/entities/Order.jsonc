@@ -36,20 +36,8 @@
     },
     "status": {
       "type": "string",
-      "enum": [
-        "of_etiquetas",
-        "corte_vigas",
-        "producao",
-        "secagem",
-        "expedicao",
-        "aguardando_entrega",
-        "entrega",
-        "a_caminho",
-        "recebido",
-        "pagamento_pendente",
-        "finalizado"
-      ],
-      "default": "of_etiquetas"
+      "default": "of_etiquetas",
+      "description": "Etapa do pedido (chave da coluna Kanban)"
     },
     "items": {
       "type": "array",

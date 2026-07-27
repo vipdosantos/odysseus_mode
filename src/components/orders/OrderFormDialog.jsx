@@ -13,6 +13,7 @@ import { TRUSS_TYPES, FERRO_DIAMETERS } from '@/lib/trussTypes';
 import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
+import { DEFAULT_STATUSES } from './KanbanColumn';
 
 function generateAccessKey() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -88,6 +89,14 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
   }, [order, open]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const { data: kanbanCols = [] } = useQuery({
+    queryKey: ['kanban-columns'],
+    queryFn: () => base44.entities.KanbanColumn.list('order', 100),
+  });
+  const statusOptions = (kanbanCols.length > 0 ? kanbanCols : DEFAULT_STATUSES)
+    .filter(c => c.active !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const updateItem = (idx, field, value) => {
     const items = [...form.items];
@@ -258,17 +267,9 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                   <Select value={form.status} onValueChange={v => set('status', v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="of_etiquetas">OF e Etiquetas</SelectItem>
-                      <SelectItem value="corte_vigas">Corte Vigas</SelectItem>
-                      <SelectItem value="producao">Produção</SelectItem>
-                      <SelectItem value="secagem">Secagem</SelectItem>
-                      <SelectItem value="expedicao">Expedição</SelectItem>
-                      <SelectItem value="aguardando_entrega">Aguardando Entrega</SelectItem>
-                      <SelectItem value="entrega">Entrega</SelectItem>
-                      <SelectItem value="a_caminho">A Caminho</SelectItem>
-                      <SelectItem value="recebido">Recebido</SelectItem>
-                      <SelectItem value="pagamento_pendente">Pagamento Pendente</SelectItem>
-                      <SelectItem value="finalizado">Finalizado</SelectItem>
+                      {statusOptions.map(c => (
+                        <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

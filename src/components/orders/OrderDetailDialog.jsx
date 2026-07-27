@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Pencil, Printer, Calendar, Phone, User, ChevronRight, Trash2, Archive, Link2, Check } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ALL_STATUSES, STATUS_MAP } from './KanbanColumn';
+import { DEFAULT_STATUSES } from './KanbanColumn';
 import OrderPaymentTab from './OrderPaymentTab';
 import OrderNFTab from './OrderNFTab';
 import QRZoomModal from './QRZoomModal';
@@ -13,10 +13,12 @@ import DeliveryReceiptTab from './DeliveryReceiptTab';
 import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 
-export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive }) {
+export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive, columns }) {
   const [zoomQR, setZoomQR] = useState(null); // { url, label }
   const [linkCopied, setLinkCopied] = useState(false);
   if (!order) return null;
+  const cols = (columns && columns.length > 0) ? columns : DEFAULT_STATUSES;
+  const STATUS_MAP = Object.fromEntries(cols.map(c => [c.key, c]));
 
   const handleCopyStatusLink = () => {
     const url = `${window.location.origin}/status/${order.access_key}`;
@@ -25,9 +27,9 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
     setTimeout(() => setLinkCopied(false), 2000);
   };
   const st = STATUS_MAP[order.status] || { label: order.status, color: 'bg-gray-400' };
-  const currentIdx = ALL_STATUSES.findIndex(s => s.key === order.status);
-  const nextStatus = ALL_STATUSES[currentIdx + 1];
-  const prevStatus = ALL_STATUSES[currentIdx - 1];
+  const currentIdx = cols.findIndex(s => s.key === order.status);
+  const nextStatus = cols[currentIdx + 1];
+  const prevStatus = cols[currentIdx - 1];
 
   const handlePrintLabels = () => {
     // Each unit gets a UNIQUE QR with its unit index to prevent double-scan errors

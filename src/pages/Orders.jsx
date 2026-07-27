@@ -7,17 +7,13 @@ import { Plus, Search, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { Input } from '@/components/ui/input';
-import KanbanColumn, { ALL_STATUSES, STATUS_MAP } from '../components/orders/KanbanColumn';
+import KanbanColumn, { DEFAULT_STATUSES } from '../components/orders/KanbanColumn';
+import KanbanColumnEditor from '../components/orders/KanbanColumnEditor';
 import OrderFormDialog from '../components/orders/OrderFormDialog';
 import OrderDetailDialog from '../components/orders/OrderDetailDialog';
 import { applyStockDecrement } from '@/lib/stockSync';
 import { cn } from '@/lib/utils';
-
-// "Pedidos" tab = all statuses (kanban), others = filtered single-column view
-const TABS = [
-  { key: 'pedidos', label: 'Pedidos' },
-  ...ALL_STATUSES.map(s => ({ key: s.key, label: s.label })),
-];
+import { Settings2 } from 'lucide-react';
 
 export default function Orders() {
   const { user } = useOutletContext();
@@ -26,11 +22,48 @@ export default function Orders() {
   const [editOrder, setEditOrder] = useState(null);
   const [detailOrder, setDetailOrder] = useState(null);
   const [search, setSearch] = useState('');
+  const [showColumnsEditor, setShowColumnsEditor] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
     queryFn: () => base44.entities.Order.list('-created_date', 200),
+  });
+
+  const { data: rawColumns = [] } = useQuery({
+    queryKey: ['kanban-columns'],
+    queryFn: () => base44.entities.KanbanColumn.list('order', 100),
+  });
+
+  // Colunas dinâmicas: usa configuração do banco, senão fallback p/ defaults
+  const columns = (rawColumns.length > 0 ? rawColumns : DEFAULT_STATUSES)
+    .filter(c => c.active !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const columnsAll = (rawColumns.length > 0 ? rawColumns : DEFAULT_STATUSES)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const STATUS_MAP = Object.fromEntries(columnsAll.map(c => [c.key, c]));
+
+  // "Pedidos" tab = all statuses (kanban), others = filtered single-column view
+  const TABS = [
+    { key: 'pedidos', label: 'Pedidos' },
+    ...columnsAll.filter(c => c.active !== false).map(s => ({ key: s.key, label: s.label })),
+  ];
+
+  const saveColumnsMutation = useMutation({
+    mutationFn: async (list) => {
+      // Substitui toda a configuração: apaga tudo e recria na nova ordem
+      await base44.entities.KanbanColumn.deleteMany({});
+      if (list.length > 0) {
+        await base44.entities.KanbanColumn.bulkCreate(
+          list.map((c, i) => ({ key: c.key, label: c.label, color: c.color, active: c.active !== false, order: i }))
+        );
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns'] });
+      toast.success('Colunas atualizadas');
+    },
+    onError: () => toast.error('Falha ao salvar colunas'),
   });
 
   const createReceivableMutation = useMutation({
@@ -163,9 +196,14 @@ export default function Orders() {
               <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar pedido..." className="pl-9" />
             </div>
             {canEdit && (
-              <Button onClick={() => { setEditOrder(null); setShowForm(true); }} className="bg-primary text-primary-foreground shrink-0">
-                <Plus className="w-4 h-4 mr-1" /> Novo Pedido
-              </Button>
+              <>
+                <Button onClick={() => setShowColumnsEditor(true)} variant="outline" size="icon" title="Editar colunas" className="shrink-0">
+                  <Settings2 className="w-4 h-4" />
+                </Button>
+                <Button onClick={() => { setEditOrder(null); setShowForm(true); }} className="bg-primary text-primary-foreground shrink-0">
+                  <Plus className="w-4 h-4 mr-1" /> Novo Pedido
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -206,13 +244,14 @@ export default function Orders() {
           // Full Kanban view
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-4 pb-4">
-              {ALL_STATUSES.map(s => (
+              {columns.map(s => (
                 <KanbanColumn
                   key={s.key}
                   status={s.key}
                   orders={filtered.filter(o => o.status === s.key)}
                   onCardClick={handleCardClick}
                   canEdit={canEdit}
+                  columns={columnsAll}
                 />
               ))}
             </div>
@@ -226,6 +265,7 @@ export default function Orders() {
               onCardClick={handleCardClick}
               canEdit={canEdit}
               onStatusChange={handleStatusChange}
+              columns={columns}
             />
           </div>
         )}
@@ -247,15 +287,23 @@ export default function Orders() {
         onStatusChange={handleStatusChange}
         onDelete={handleDelete}
         onArchive={handleArchive}
+        columns={columnsAll}
+      />
+
+      <KanbanColumnEditor
+        open={showColumnsEditor}
+        onOpenChange={setShowColumnsEditor}
+        columns={columnsAll}
+        onSave={(list) => saveColumnsMutation.mutate(list)}
       />
     </div>
   );
 }
 
-function SingleStatusView({ orders, status, onCardClick, canEdit, onStatusChange }) {
-  const cfg = STATUS_MAP[status];
-  const currentIdx = ALL_STATUSES.findIndex(s => s.key === status);
-  const nextStatus = ALL_STATUSES[currentIdx + 1];
+function SingleStatusView({ orders, status, onCardClick, canEdit, onStatusChange, columns }) {
+  const cfg = (columns || []).find(c => c.key === status);
+  const currentIdx = (columns || []).findIndex(s => s.key === status);
+  const nextStatus = currentIdx >= 0 ? (columns || [])[currentIdx + 1] : undefined;
 
   if (orders.length === 0) {
     return (

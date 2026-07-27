@@ -3,7 +3,8 @@ import { Droppable } from '@hello-pangea/dnd';
 import OrderCard from './OrderCard';
 import { cn } from '@/lib/utils';
 
-export const ALL_STATUSES = [
+// Defaults usados quando não há configuração salva no banco
+export const DEFAULT_STATUSES = [
   { key: 'of_etiquetas',       label: 'OF e Etiquetas',          color: 'bg-blue-400' },
   { key: 'corte_vigas',        label: 'Corte Vigas',             color: 'bg-orange-400' },
   { key: 'producao',           label: 'Produção',                color: 'bg-amber-500' },
@@ -17,16 +18,19 @@ export const ALL_STATUSES = [
   { key: 'finalizado',         label: 'Finalizado',              color: 'bg-green-500' },
 ];
 
-export const STATUS_MAP = Object.fromEntries(ALL_STATUSES.map(s => [s.key, s]));
+// Backward compat — componentes que ainda importam ALL_STATUSES / STATUS_MAP
+export const ALL_STATUSES = DEFAULT_STATUSES;
+export const DEFAULT_STATUS_MAP = Object.fromEntries(DEFAULT_STATUSES.map(s => [s.key, s]));
+export const STATUS_MAP = DEFAULT_STATUS_MAP;
 
-export default function KanbanColumn({ status, orders, onCardClick, canEdit }) {
-  const config = STATUS_MAP[status] || { label: status, color: 'bg-gray-500' };
+export default function KanbanColumn({ status, orders, onCardClick, canEdit, columns }) {
+  const cfg = (columns || []).find(c => c.key === status) || DEFAULT_STATUS_MAP[status] || { label: status, color: 'bg-gray-500' };
 
   return (
     <div className="flex-shrink-0 w-72 md:w-80">
       <div className="flex items-center gap-2 mb-3 px-1">
-        <div className={cn("w-2.5 h-2.5 rounded-full", config.color)} />
-        <h3 className="text-sm font-semibold">{config.label}</h3>
+        <div className={cn("w-2.5 h-2.5 rounded-full", cfg.color)} />
+        <h3 className="text-sm font-semibold">{cfg.label}</h3>
         <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{orders.length}</span>
       </div>
       <Droppable droppableId={status} isDropDisabled={!canEdit}>

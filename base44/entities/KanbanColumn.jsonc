@@ -1,0 +1,33 @@
+{
+  "name": "KanbanColumn",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Chave \u00fanica da etapa (status do pedido)"
+    },
+    "label": {
+      "type": "string",
+      "description": "Nome exibido na coluna"
+    },
+    "color": {
+      "type": "string",
+      "description": "Cor da coluna (classe tailwind bg-...)",
+      "default": "bg-gray-400"
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordem de exibi\u00e7\u00e3o",
+      "default": 0
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Coluna ativa"
+    }
+  },
+  "required": [
+    "key",
+    "label"
+  ]
+}
