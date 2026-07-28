@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Factory, DollarSign, Users, 
   ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser,
   TrendingUp, CalendarDays, ClipboardList, Wrench, FlaskConical,
-  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck, Ruler, Code2, BarChart3
+  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck, Ruler, Code2, BarChart3, Truck
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ const navItems = [
   { path: '/sobra-trelica', icon: Ruler, label: 'Sobra de Treliça', roles: ['admin', 'operador', 'encarregado'] },
   { path: '/producao', icon: Factory, label: 'Produção', roles: ['admin', 'operador', 'encarregado'] },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR', roles: ['admin', 'operador', 'motorista', 'encarregado'] },
+  { path: '/motorista', icon: Truck, label: 'Entregas', roles: ['admin', 'operador', 'motorista', 'encarregado'] },
   { path: '/financeiro', icon: DollarSign, label: 'Contas a Pagar', roles: ['admin', 'financeiro'] },
   { path: '/receber', icon: TrendingUp, label: 'Contas a Receber', roles: ['admin', 'financeiro'] },
   { path: '/contas-bancarias', icon: Landmark, label: 'Contas Bancárias', roles: ['admin', 'financeiro'] },

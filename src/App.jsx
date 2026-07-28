@@ -26,6 +26,7 @@ import OrdemCompra from './pages/OrdemCompra';
 import ControleEstoque from './pages/ControleEstoque';
 import SobraTrelica from './pages/SobraTrelica';
 import ApiConfig from './pages/ApiConfig';
+import Motorista from './pages/Motorista';
 import OrderStatusLookup from './pages/OrderStatusLookup';
 
 const AuthenticatedApp = () => {
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
         <Route path="/aprovacoes" element={<OrdemCompra />} />
         <Route path="/estoque" element={<ControleEstoque />} />
         <Route path="/sobra-trelica" element={<SobraTrelica />} />
+        <Route path="/motorista" element={<Motorista />} />
         <Route path="/api-config" element={<ApiConfig />} />
         <Route path="/usuarios" element={<Users />} />
       </Route>

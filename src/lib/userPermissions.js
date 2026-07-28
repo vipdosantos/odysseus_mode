@@ -14,6 +14,7 @@ export const SCREENS = [
   { path: '/sobra-trelica', label: 'Sobra de Treliça' },
   { path: '/producao', label: 'Produção' },
   { path: '/scanner', label: 'Scanner QR' },
+  { path: '/motorista', label: 'Entregas' },
   { path: '/financeiro', label: 'Contas a Pagar' },
   { path: '/receber', label: 'Contas a Receber' },
   { path: '/contas-bancarias', label: 'Contas Bancárias' },
@@ -69,6 +70,7 @@ const ROLE_DEFAULTS = {
     '/pedidos': ACCESS_VER,
     '/calendario': ACCESS_EDITAR,
     '/scanner': ACCESS_VER,
+    '/motorista': ACCESS_VER,
   },
   encarregado: {
     '/': ACCESS_VER,
@@ -83,6 +85,7 @@ const ROLE_DEFAULTS = {
     '/produtividade': ACCESS_EDITAR,
     '/patrimonio': ACCESS_VER,
     '/cadastros': ACCESS_EDITAR,
+    '/motorista': ACCESS_VER,
   },
 };
 
