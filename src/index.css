@@ -88,9 +88,11 @@
 }
 
 @media print {
+  @page { size: A4 portrait; margin: 10mm; }
   .no-print { display: none !important; }
   .print-only { display: block !important; }
   body * { visibility: hidden; }
   .romaneio-print, .romaneio-print * { visibility: visible; }
   .romaneio-print { position: absolute; left: 0; top: 0; width: 100%; }
+  .romaneio-page { break-after: page; }
 }
