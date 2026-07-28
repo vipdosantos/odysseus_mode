@@ -72,7 +72,7 @@ export default function BankAccounts() {
               ) : (
                 <p className="text-sm text-muted-foreground mt-1">{acc.banco} — Ag: {acc.agencia} | Conta: {acc.conta} | {acc.titular}</p>
               )}
-              {acc.type === 'conta_bancaria' && acc.integration_type && acc.integration_type !== 'nenhum' && (
+              {acc.integration_type && acc.integration_type !== 'nenhum' && (
                 <div className="mt-2 flex items-center gap-2">
                   <Badge variant="outline" className={acc.sync_status === 'conectado' ? 'text-green-700 border-green-300' : acc.sync_status === 'erro' ? 'text-red-700 border-red-300' : 'text-muted-foreground'}>
                     {acc.sync_status === 'conectado' ? <><CheckCircle2 className="w-3 h-3 mr-1" />Open Finance ativo</> : acc.sync_status === 'erro' ? <><AlertTriangle className="w-3 h-3 mr-1" />Erro</> : 'Desconectado'}
@@ -86,12 +86,10 @@ export default function BankAccounts() {
               )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              {acc.type === 'conta_bancaria' && (
-                <Button variant="outline" size="sm" onClick={() => setConnectAcc(acc)} className="text-xs">
-                  {acc.sync_status === 'conectado' ? <RefreshCw className="w-3.5 h-3.5 mr-1 text-green-600" /> : <Link2 className="w-3.5 h-3.5 mr-1" />}
-                  {acc.sync_status === 'conectado' ? 'Sincronizar' : 'Conectar'}
-                </Button>
-              )}
+              <Button variant="outline" size="sm" onClick={() => setConnectAcc(acc)} className="text-xs">
+                {acc.sync_status === 'conectado' ? <RefreshCw className="w-3.5 h-3.5 mr-1 text-green-600" /> : <Link2 className="w-3.5 h-3.5 mr-1" />}
+                {acc.sync_status === 'conectado' ? 'Sincronizar' : 'Conectar'}
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => openEdit(acc)}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" className="text-destructive" onClick={() => remove.mutate(acc.id)}><Trash2 className="w-4 h-4" /></Button>
             </div>
