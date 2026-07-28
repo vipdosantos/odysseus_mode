@@ -1,11 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, AlertTriangle, ClipboardList, RotateCcw, Truck } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ClipboardList, RotateCcw, Truck, Camera, Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import LoadQRScanner from '@/components/motorista/LoadQRScanner';
 
 // Alertas sonoros via Web Audio API (sem arquivos externos)
 function beep(type) {
@@ -41,6 +42,7 @@ export default function LoadChecklist({ order }) {
   const [loaded, setLoaded] = useState(() => items.map(i => (i.loaded_units || []).slice()));
   const [inputs, setInputs] = useState(() => items.map(() => ''));
   const [alerta, setAlerta] = useState(null);
+  const [mode, setMode] = useState('camera'); // 'camera' | 'teclado'
   const inputRefs = useRef([]);
 
   useEffect(() => {
@@ -64,32 +66,69 @@ export default function LoadChecklist({ order }) {
     saveMutation.mutate({ items: newItems });
   };
 
-  const handleScan = (idx) => {
-    const raw = (inputs[idx] || '').trim();
-    if (!raw) return;
-    const unit = Number(raw);
+  // Núcleo de conferência — usado pelo teclado e pela câmera QR.
+  const markUnit = useCallback((idx, unit, opts = {}) => {
+    if (idx < 0 || idx >= items.length) {
+      beep('erro');
+      setAlerta({ type: 'erro', msg: 'QR não pertence a este pedido.' });
+      return;
+    }
     const item = items[idx];
     const qtd = Number(item.quantity || 0);
     const label = `${item.truss_type}${item.size ? ' ' + item.size : ''}`;
     if (!unit || unit < 1 || unit > qtd) {
       beep('erro');
-      setAlerta({ type: 'erro', msg: `Unidade "${raw}" inválida para ${label}. Informe de 1 a ${qtd}.` });
-      setInputs(inputs.map((v, j) => (j === idx ? '' : v)));
+      setAlerta({ type: 'erro', msg: `Unidade ${unit} inválida para ${label} (1 a ${qtd}).` });
       return;
     }
-    if (loaded[idx].includes(unit)) {
-      beep('dup');
-      setAlerta({ type: 'erro', msg: `Unidade ${unit} de ${label} já foi conferida.` });
-      setInputs(inputs.map((v, j) => (j === idx ? '' : v)));
+    setLoaded(prev => {
+      if (prev[idx].includes(unit)) {
+        beep('dup');
+        setAlerta({ type: 'erro', msg: `Unidade ${unit} de ${label} já foi conferida.` });
+        return prev;
+      }
+      const nova = prev.map((l, j) => (j === idx ? [...l, unit].sort((a, b) => a - b) : l));
+      setAlerta({ type: 'ok', msg: `Unidade ${unit} de ${label} conferida (${nova[idx].length}/${qtd}).` });
+      beep('ok');
+      persist(nova);
+      return nova;
+    });
+    if (opts.keepFocus) setTimeout(() => inputRefs.current[idx]?.focus(), 10);
+  }, [items, order.id]);
+
+  // Resolve o conteúdo do QR (mesmo formato das etiquetas do Scanner):
+  // { pedido, item_idx, unidade, tamanho, id, qr_code_id }
+  const resolveQR = useCallback((raw) => {
+    let parsed = null;
+    try { parsed = JSON.parse(raw); } catch { /* QR antigo/plano */ }
+    const unit = parsed?.unidade != null ? Number(parsed.unidade) : null;
+    if (parsed?.pedido && parsed.pedido !== order.order_number) {
+      beep('erro');
+      setAlerta({ type: 'erro', msg: `QR é do pedido #${parsed.pedido}, mas você está conferindo #${order.order_number}.` });
       return;
     }
-    const nova = loaded.map((l, j) => (j === idx ? [...l, unit].sort((a, b) => a - b) : l));
-    setLoaded(nova);
+    let idx = parsed?.item_idx != null ? Number(parsed.item_idx) : -1;
+    if (idx < 0 || idx >= items.length) {
+      if (parsed?.tamanho) idx = items.findIndex(i => i.size === parsed.tamanho);
+      if (idx < 0) {
+        const qrId = parsed?.id || parsed?.qr_code_id || raw.trim();
+        idx = items.findIndex(i => i.qr_code_id === qrId);
+      }
+    }
+    if (unit == null || idx < 0) {
+      beep('erro');
+      setAlerta({ type: 'erro', msg: 'QR não reconhecido para este pedido. Verifique a etiqueta.' });
+      return;
+    }
+    markUnit(idx, unit);
+  }, [items, order.order_number, markUnit]);
+
+  const handleScan = (idx) => {
+    const raw = (inputs[idx] || '').trim();
+    if (!raw) return;
+    const unit = Number(raw);
+    markUnit(idx, unit, { keepFocus: true });
     setInputs(inputs.map((v, j) => (j === idx ? '' : v)));
-    setAlerta({ type: 'ok', msg: `Unidade ${unit} de ${label} conferida (${nova[idx].length}/${qtd}).` });
-    beep('ok');
-    persist(nova);
-    setTimeout(() => inputRefs.current[idx]?.focus(), 10);
   };
 
   const finalizar = () => {
@@ -158,6 +197,30 @@ export default function LoadChecklist({ order }) {
           <div className={cn("h-full rounded-full transition-all", tudoConferido ? "bg-green-500" : "bg-primary")} style={{ width: `${pct}%` }} />
         </div>
       </div>
+
+      {/* Modo de bipagem: câmera (QR) ou teclado */}
+      <div className="px-4 pt-3 flex gap-2">
+        <button
+          onClick={() => setMode('camera')}
+          className={cn("flex-1 flex items-center justify-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors",
+            mode === 'camera' ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted")}
+        >
+          <Camera className="w-4 h-4" /> Câmera QR
+        </button>
+        <button
+          onClick={() => setMode('teclado')}
+          className={cn("flex-1 flex items-center justify-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors",
+            mode === 'teclado' ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted")}
+        >
+          <Keyboard className="w-4 h-4" /> Teclado
+        </button>
+      </div>
+
+      {mode === 'camera' && (
+        <div className="px-4 pt-3">
+          <LoadQRScanner active={mode === 'camera'} onDetect={resolveQR} />
+        </div>
+      )}
 
       {/* Alerta visual */}
       {alerta && (
