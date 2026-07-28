@@ -206,13 +206,13 @@ export default function Scanner() {
 
     if (unitNum == null) {
       beep('erro');
-      setResult({ type: 'error', message: 'Este QR não tem número de unidade. Use etiquetas com unidade para a conferência.' });
+      setResult({ type: 'error', stage, message: 'Este QR não tem número de unidade. Use etiquetas com unidade para a conferência.' });
       setLoading(false);
       return;
     }
     if (unitNum < 1 || unitNum > (item.quantity || 0)) {
       beep('erro');
-      setResult({ type: 'error', message: `Unidade ${unitNum} inválida para "${item.size}" (qtd ${item.quantity}).` });
+      setResult({ type: 'error', stage, message: `Unidade ${unitNum} inválida para "${item.size}" (qtd ${item.quantity}).` });
       setLoading(false);
       return;
     }
@@ -222,6 +222,7 @@ export default function Scanner() {
       beep('dup');
       setResult({
         type: 'warning',
+        stage,
         message: `Unidade ${unitNum}/${item.quantity} de "${item.size}" (pedido #${foundOrder.order_number}) JÁ foi conferida em "${stageLabel}". Etiqueta duplicada — não contada.`,
         order: foundOrder, item,
       });
@@ -302,6 +303,7 @@ export default function Scanner() {
 
     setResult({
       type: allDone ? 'success' : (totalMissing > 0 ? 'warning' : 'success'),
+      stage,
       message: `[${stageLabel}] "${item.size}" — unidade ${unitNum} conferida!`,
       order: { ...foundOrder, items: updatedItems },
       conference: breakdown,
@@ -490,7 +492,7 @@ export default function Scanner() {
 
     if (!foundOrder || foundItemIdx < 0) {
       beep('erro');
-      setResult({ type: 'error', message: `QR Code não encontrado: ${qrId}` });
+      setResult({ type: 'error', stage: stageKey, message: `QR Code não encontrado: ${qrId}` });
       setLoading(false);
       return;
     }
@@ -500,6 +502,7 @@ export default function Scanner() {
       const item = foundOrder.items[foundItemIdx];
       setResult({
         type: 'info',
+        stage: stageKey,
         message: `Pedido #${foundOrder.order_number} — ${item.size}`,
         order: foundOrder, item,
       });
@@ -623,8 +626,8 @@ export default function Scanner() {
         </Card>
       )}
 
-      {/* Result */}
-      {result && (
+      {/* Result — só exibe se pertencer à etapa atual (nunca vaza de outra etapa) */}
+      {result && result.stage === stageKey && (
         <Card className={cn(
           "p-6",
           result.type === 'success' && "border-green-200 bg-green-50",
