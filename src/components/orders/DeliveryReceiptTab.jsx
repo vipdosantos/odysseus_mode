@@ -289,7 +289,7 @@ export default function DeliveryReceiptTab({ order }) {
       {/* Dados do recebedor */}
       <div className="space-y-3">
         <h4 className="text-sm font-semibold">Dados do Recebedor <span className="text-destructive">*</span></h4>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Nome completo</label>
             <Input
