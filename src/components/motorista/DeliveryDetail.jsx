@@ -1,8 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Truck, MapPin, Navigation, ExternalLink, Package, Weight } from 'lucide-react';
+import { Truck, MapPin, Navigation, ExternalLink, Package, Weight, Pen } from 'lucide-react';
 import { buildCargo, distributeCargo } from '@/lib/trussWeights';
 import LoadChecklist from '@/components/motorista/LoadChecklist';
+import DeliveryReceiptTab from '@/components/orders/DeliveryReceiptTab';
 
 export default function DeliveryDetail({ order, trucks }) {
   if (!order) return null;
@@ -150,6 +151,17 @@ export default function DeliveryDetail({ order, trucks }) {
 
       {/* Conferência de carga no caminhão (bipagem) */}
       <LoadChecklist order={order} />
+
+      {/* Confirmação de entrega: fotos + assinatura do recebedor (CPF/RG) */}
+      <div className="bg-card rounded-2xl border p-4">
+        <h3 className="font-semibold text-sm flex items-center gap-2 mb-1">
+          <Pen className="w-4 h-4 text-primary" /> Confirmação de Entrega
+        </h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          Anexe fotos da entrega e colete a assinatura do cliente com CPF/RG.
+        </p>
+        <DeliveryReceiptTab order={order} />
+      </div>
     </div>
   );
 }
