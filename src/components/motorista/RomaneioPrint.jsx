@@ -55,7 +55,7 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
             <th className="border border-gray-800 px-1 py-1 text-left">Cliente</th>
             <th className="border border-gray-800 px-1 py-1 w-16">Hora<br/>Chegada</th>
             <th className="border border-gray-800 px-1 py-1 w-16">Hora<br/>Saída</th>
-            <th className="border border-gray-800 px-1 py-1 w-14">Mode</th>
+            <th className="border border-gray-800 px-1 py-1 w-16">Mode<br/>(peso kg)</th>
             <th className="border border-gray-800 px-1 py-1 w-40">Carimbo ou Assinatura</th>
             <th className="border border-gray-800 px-1 py-1 w-28">Ocorrência (opcional)</th>
           </tr>
@@ -77,7 +77,9 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
                 </td>
                 <td className="border border-gray-800" style={{ height: 52 }}></td>
                 <td className="border border-gray-800"></td>
-                <td className="border border-gray-800"></td>
+                <td className="border border-gray-800 px-1 py-1 text-center font-semibold">
+                  {orderTotalWeight(o, weights).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                </td>
                 <td className="border border-gray-800"></td>
                 <td className="border border-gray-800"></td>
               </tr>
