@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, QrCode, Landmark, CheckCircle2, RefreshCw, AlertTriangle, Link2, Link2Off } from 'lucide-react';
+import { Plus, Pencil, Trash2, QrCode, Landmark, CheckCircle2, RefreshCw, AlertTriangle, Link2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import ConnectBankDialog from '@/components/bank/ConnectBankDialog';
 
 const empty = { label: '', type: 'pix', pix_key_type: 'cnpj', pix_key: '', banco: '', agencia: '', conta: '', titular: '', cnpj_cpf: '', active: true };
 
@@ -183,41 +184,7 @@ export default function BankAccounts() {
       </Dialog>
 
       {/* Conectar via API Banking / Open Finance */}
-      <Dialog open={!!connectAcc} onOpenChange={(o) => !o && setConnectAcc(null)}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Conectar via API Banking / Open Finance</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-2 text-sm">
-            <p className="text-muted-foreground">
-              Para confirmar PIX e TED recebidos automaticamente nesta conta, é preciso contratar o acesso à API do banco.
-            </p>
-            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
-              <p className="font-medium">O que é necessário (Bradesco API Banking):</p>
-              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                <li>Contratar a API com o gerente da conta PJ</li>
-                <li><code>client_id</code> e <code>client_secret</code></li>
-                <li>Certificado digital para mTLS (.pfx/.pem)</li>
-                <li>Escopos liberados (extrato, saldo, PIX)</li>
-              </ul>
-            </div>
-            {connectAcc?.sync_status === 'conectado' ? (
-              <p className="text-green-700 font-medium flex items-center gap-1"><CheckCircle2 className="w-4 h-4" /> Conta já conectada.</p>
-            ) : (
-              <p className="text-amber-700 flex items-start gap-1"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> A integração ainda não está ativa — aguardando credenciais do banco.</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Alternativa: agregadores como Belvo ou Pluggy integram Bradesco (e outros bancos) via Open Finance, com consentimento do titular.
-            </p>
-            <div className="flex gap-2 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setConnectAcc(null)}>Fechar</Button>
-              <Button variant="secondary" className="flex-1" disabled>
-                <Link2 className="w-4 h-4 mr-1" /> Conectar (indisponível)
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConnectBankDialog account={connectAcc} onClose={() => setConnectAcc(null)} />
     </div>
   );
 }
