@@ -380,9 +380,25 @@ export default function DeliveryReceiptTab({ order }) {
         {capturedPhotos.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {capturedPhotos.map((url, i) => (
-              <a key={i} href={url} target="_blank" rel="noreferrer">
-                <img src={url} alt={`Foto ${i+1}`} className="w-16 h-16 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity" />
-              </a>
+              <div key={i} className="relative group">
+                <a href={url} target="_blank" rel="noreferrer">
+                  <img src={url} alt={`Foto ${i+1}`} className="w-16 h-16 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity" />
+                </a>
+                <button
+                  type="button"
+                  disabled={uploadingDoc}
+                  onClick={async () => {
+                    const updated = capturedPhotos.filter((_, idx) => idx !== i);
+                    setCapturedPhotos(updated);
+                    await base44.entities.Order.update(order.id, { delivery_photos: updated });
+                    toast.success('Foto removida.');
+                  }}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center shadow-sm hover:bg-destructive/90 disabled:opacity-50"
+                  title="Excluir foto"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
             ))}
           </div>
         )}
