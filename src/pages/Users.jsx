@@ -21,6 +21,8 @@ const roleLabels = {
   financeiro: { label: 'Financeiro', class: 'bg-green-100 text-green-700' },
   vendedor: { label: 'Vendedor', class: 'bg-purple-100 text-purple-700' },
   visualizador: { label: 'Visualizador', class: 'bg-gray-100 text-gray-600' },
+  motorista: { label: 'Motorista', class: 'bg-amber-100 text-amber-700' },
+  encarregado: { label: 'Encarregado', class: 'bg-teal-100 text-teal-700' },
 };
 
 const roleDescriptions = [
@@ -29,6 +31,8 @@ const roleDescriptions = [
   { role: 'financeiro', label: 'Financeiro', color: 'bg-green-100 text-green-700 border-green-200', desc: 'Acessa financeiro, contas a receber, notas fiscais, ordens de compra e aprovações.' },
   { role: 'vendedor', label: 'Vendedor', color: 'bg-purple-100 text-purple-700 border-purple-200', desc: 'Vê apenas seus próprios pedidos. Pode criar pedidos, mas não acessa financeiro ou produção.' },
   { role: 'visualizador', label: 'Visualizador', color: 'bg-gray-100 text-gray-600 border-gray-200', desc: 'Apenas visualiza pedidos e dashboard. Não pode criar, editar ou excluir nada.' },
+  { role: 'motorista', label: 'Motorista', color: 'bg-amber-100 text-amber-700 border-amber-200', desc: 'Acessa calendário de entregas e pedidos para conferir cargas e rotas.' },
+  { role: 'encarregado', label: 'Encarregado', color: 'bg-teal-100 text-teal-700 border-teal-200', desc: 'Supervisiona produção, scanner, pedidos, estoque e cadastros. Sem acesso financeiro.' },
 ];
 
 export default function Users() {
@@ -221,6 +225,8 @@ export default function Users() {
                           <SelectItem value="financeiro">Financeiro</SelectItem>
                           <SelectItem value="vendedor">Vendedor</SelectItem>
                           <SelectItem value="visualizador">Visualizador</SelectItem>
+                          <SelectItem value="motorista">Motorista</SelectItem>
+                          <SelectItem value="encarregado">Encarregado</SelectItem>
                         </SelectContent>
                       </Select>
                       {u.role !== 'admin' && (
@@ -279,6 +285,8 @@ export default function Users() {
                   <SelectItem value="financeiro">Financeiro</SelectItem>
                   <SelectItem value="vendedor">Vendedor</SelectItem>
                   <SelectItem value="visualizador">Visualizador</SelectItem>
+                  <SelectItem value="motorista">Motorista</SelectItem>
+                  <SelectItem value="encarregado">Encarregado</SelectItem>
                 </SelectContent>
               </Select>
             </div>

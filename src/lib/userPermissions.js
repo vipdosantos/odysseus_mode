@@ -64,6 +64,26 @@ const ROLE_DEFAULTS = {
     '/pedidos': ACCESS_VER,
     '/calendario': ACCESS_VER,
   },
+  motorista: {
+    '/': ACCESS_VER,
+    '/pedidos': ACCESS_VER,
+    '/calendario': ACCESS_EDITAR,
+    '/scanner': ACCESS_VER,
+  },
+  encarregado: {
+    '/': ACCESS_VER,
+    '/pedidos': ACCESS_EDITAR,
+    '/aprovacoes': ACCESS_VER,
+    '/estoque': ACCESS_EDITAR,
+    '/sobra-trelica': ACCESS_EDITAR,
+    '/producao': ACCESS_EDITAR,
+    '/scanner': ACCESS_EDITAR,
+    '/calendario': ACCESS_EDITAR,
+    '/insumos': ACCESS_EDITAR,
+    '/produtividade': ACCESS_EDITAR,
+    '/patrimonio': ACCESS_VER,
+    '/cadastros': ACCESS_EDITAR,
+  },
 };
 
 // Resolves the effective access level for a user on a screen.
