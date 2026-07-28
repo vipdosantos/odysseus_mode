@@ -81,6 +81,14 @@
               "type": "number"
             }
           },
+          "loaded_units": {
+            "type": "array",
+            "description": "Unidades conferidas no carregamento do caminh\u00e3o (n\u00fameros 1..quantity)",
+            "items": {
+              "type": "number"
+            },
+            "default": []
+          },
           "stage_conferencias": {
             "type": "object",
             "description": "Confer\u00eancia por etapa do Kanban: stageKey -> [unidades bipadas]. Cada status exige bipe de todas as unidades para avan\u00e7ar.",
@@ -231,6 +239,19 @@
     "delivery_conferido_by": {
       "type": "string",
       "description": "Quem fez a confer\u00eancia de entrega"
+    },
+    "load_conferido": {
+      "type": "boolean",
+      "default": false,
+      "description": "Confer\u00eancia de carregamento do caminh\u00e3o conclu\u00edda (todas as treli\u00e7as bipadas)"
+    },
+    "load_conferido_at": {
+      "type": "string",
+      "description": "Data/hora da confer\u00eancia de carregamento"
+    },
+    "load_conferido_by": {
+      "type": "string",
+      "description": "Quem fez a confer\u00eancia de carregamento"
     },
     "scan_log": {
       "type": "array",

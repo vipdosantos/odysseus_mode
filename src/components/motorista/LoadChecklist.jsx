@@ -1,0 +1,253 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, AlertTriangle, ClipboardList, RotateCcw, Truck } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Alertas sonoros via Web Audio API (sem arquivos externos)
+function beep(type) {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = (beep._ctx = beep._ctx || new Ctx());
+    if (ctx.state === 'suspended') ctx.resume();
+    const play = (freq, start, dur) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + start + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+      o.start(ctx.currentTime + start);
+      o.stop(ctx.currentTime + start + dur + 0.02);
+    };
+    if (type === 'ok') { play(880, 0, 0.1); play(1320, 0.11, 0.12); }
+    else if (type === 'erro') { play(200, 0, 0.18); play(160, 0.2, 0.22); play(130, 0.44, 0.28); }
+    else if (type === 'dup') { play(420, 0, 0.09); play(420, 0.14, 0.09); }
+    else if (type === 'sucesso') { play(660, 0, 0.1); play(880, 0.11, 0.1); play(1320, 0.22, 0.18); }
+  } catch { /* ignore */ }
+}
+
+export default function LoadChecklist({ order }) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const items = order.items || [];
+
+  const [loaded, setLoaded] = useState(() => items.map(i => (i.loaded_units || []).slice()));
+  const [inputs, setInputs] = useState(() => items.map(() => ''));
+  const [alerta, setAlerta] = useState(null);
+  const inputRefs = useRef([]);
+
+  useEffect(() => {
+    setLoaded(items.map(i => (i.loaded_units || []).slice()));
+    setInputs(items.map(() => ''));
+    setAlerta(null);
+  }, [order.id]);
+
+  const saveMutation = useMutation({
+    mutationFn: (data) => base44.entities.Order.update(order.id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
+  });
+
+  const totalUnidades = items.reduce((a, i) => a + (i.quantity || 0), 0);
+  const conferidas = loaded.reduce((a, l) => a + l.length, 0);
+  const pct = totalUnidades ? Math.round((conferidas / totalUnidades) * 100) : 0;
+  const tudoConferido = totalUnidades > 0 && items.every((i, idx) => loaded[idx].length >= (i.quantity || 0));
+
+  const persist = (novaLoaded) => {
+    const newItems = items.map((it, idx) => ({ ...it, loaded_units: novaLoaded[idx] }));
+    saveMutation.mutate({ items: newItems });
+  };
+
+  const handleScan = (idx) => {
+    const raw = (inputs[idx] || '').trim();
+    if (!raw) return;
+    const unit = Number(raw);
+    const item = items[idx];
+    const qtd = Number(item.quantity || 0);
+    const label = `${item.truss_type}${item.size ? ' ' + item.size : ''}`;
+    if (!unit || unit < 1 || unit > qtd) {
+      beep('erro');
+      setAlerta({ type: 'erro', msg: `Unidade "${raw}" inválida para ${label}. Informe de 1 a ${qtd}.` });
+      setInputs(inputs.map((v, j) => (j === idx ? '' : v)));
+      return;
+    }
+    if (loaded[idx].includes(unit)) {
+      beep('dup');
+      setAlerta({ type: 'erro', msg: `Unidade ${unit} de ${label} já foi conferida.` });
+      setInputs(inputs.map((v, j) => (j === idx ? '' : v)));
+      return;
+    }
+    const nova = loaded.map((l, j) => (j === idx ? [...l, unit].sort((a, b) => a - b) : l));
+    setLoaded(nova);
+    setInputs(inputs.map((v, j) => (j === idx ? '' : v)));
+    setAlerta({ type: 'ok', msg: `Unidade ${unit} de ${label} conferida (${nova[idx].length}/${qtd}).` });
+    beep('ok');
+    persist(nova);
+    setTimeout(() => inputRefs.current[idx]?.focus(), 10);
+  };
+
+  const finalizar = () => {
+    const missing = items
+      .map((it, idx) => {
+        const faltam = [];
+        for (let u = 1; u <= (it.quantity || 0); u++) if (!loaded[idx].includes(u)) faltam.push(u);
+        return { idx, truss_type: it.truss_type, size: it.size, faltam };
+      })
+      .filter(m => m.faltam.length > 0);
+
+    if (missing.length > 0) {
+      beep('erro');
+      const totalFaltam = missing.reduce((a, m) => a + m.faltam.length, 0);
+      setAlerta({
+        type: 'erro',
+        msg: `FALTAM ${totalFaltam} unidade(s) não conferidas no caminhão!`,
+        missing,
+      });
+      return;
+    }
+    beep('sucesso');
+    setAlerta({ type: 'ok', msg: 'Carga 100% conferida. Pode seguir viagem!' });
+    const newItems = items.map((it, idx) => ({ ...it, loaded_units: loaded[idx] }));
+    saveMutation.mutate({
+      items: newItems,
+      load_conferido: true,
+      load_conferido_at: new Date().toISOString(),
+      load_conferido_by: user?.full_name || user?.email || '',
+    });
+  };
+
+  const resetar = () => {
+    const vazia = items.map(() => []);
+    setLoaded(vazia);
+    setInputs(items.map(() => ''));
+    setAlerta(null);
+    saveMutation.mutate({ items: items.map(it => ({ ...it, loaded_units: [] })), load_conferido: false });
+    inputRefs.current[0]?.focus();
+  };
+
+  if (!items.length) return null;
+
+  return (
+    <div className="bg-card rounded-2xl border overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <Truck className="w-4 h-4 text-primary" /> Conferência de Carga do Caminhão
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full",
+            tudoConferido ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700")}>
+            {conferidas}/{totalUnidades}
+          </span>
+          {order.load_conferido && (
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Conferido
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Progresso */}
+      <div className="px-4 pt-3">
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div className={cn("h-full rounded-full transition-all", tudoConferido ? "bg-green-500" : "bg-primary")} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      {/* Alerta visual */}
+      {alerta && (
+        <div className={cn("mx-4 mt-3 p-3 rounded-xl border flex items-start gap-2 animate-in fade-in",
+          alerta.type === 'erro' ? "bg-red-50 border-red-300 text-red-800" : "bg-green-50 border-green-300 text-green-800")}>
+          {alerta.type === 'erro' ? <AlertTriangle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
+          <div className="flex-1 text-sm">
+            <p className="font-semibold">{alerta.msg}</p>
+            {alerta.missing && (
+              <ul className="mt-1 space-y-0.5">
+                {alerta.missing.map(m => (
+                  <li key={m.idx}>
+                    {m.truss_type}{m.size ? ' ' + m.size : ''}: faltam {m.faltam.join(', ')}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Itens / bipagem */}
+      <div className="p-4 space-y-3">
+        {items.map((item, idx) => {
+          const qtd = Number(item.quantity || 0);
+          const done = loaded[idx].length >= qtd;
+          const label = `${item.truss_type}${item.size ? ' ' + item.size : ''}`;
+          return (
+            <div key={idx} className={cn("rounded-xl border p-3", done ? "border-green-300 bg-green-50/40" : "border-border")}>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm">{label}</span>
+                  <span className="text-xs text-muted-foreground">Qtd: {qtd}</span>
+                </div>
+                <span className={cn("text-xs font-semibold", done ? "text-green-600" : "text-muted-foreground")}>
+                  {loaded[idx].length}/{qtd}
+                </span>
+              </div>
+
+              <div className="flex gap-2 mt-2">
+                <Input
+                  ref={el => (inputRefs.current[idx] = el)}
+                  value={inputs[idx] || ''}
+                  onChange={e => setInputs(inputs.map((v, j) => (j === idx ? e.target.value : v)))}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleScan(idx); } }}
+                  placeholder={done ? 'Conferido' : 'Bipar unidade (1 a ' + qtd + ')'}
+                  disabled={done}
+                  className="h-9"
+                  inputMode="numeric"
+                />
+                <Button
+                  size="sm"
+                  variant={done ? 'secondary' : 'default'}
+                  disabled={done}
+                  onClick={() => handleScan(idx)}
+                >
+                  Biper
+                </Button>
+              </div>
+
+              {/* Slots de unidades */}
+              <div className="flex flex-wrap gap-1 mt-2">
+                {Array.from({ length: qtd }, (_, u) => u + 1).map(u => {
+                  const ok = loaded[idx].includes(u);
+                  return (
+                    <span key={u} className={cn(
+                      "w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-semibold border",
+                      ok ? "bg-green-500 text-white border-green-500" : "bg-muted/40 text-muted-foreground border-dashed border-muted-foreground/30"
+                    )}>
+                      {ok ? '✓' : u}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        <div className="flex gap-2 pt-1">
+          <Button onClick={finalizar} className="flex-1 bg-primary text-primary-foreground">
+            <CheckCircle2 className="w-4 h-4" /> Finalizar Conferência
+          </Button>
+          <Button variant="outline" onClick={resetar}>
+            <RotateCcw className="w-4 h-4" /> Reiniciar
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <ClipboardList className="w-3 h-3" /> Bipar todas as treliças ao subir no caminhão. Se faltar algo, soará um alarme e mostrará o que falta.
+        </p>
+      </div>
+    </div>
+  );
+}

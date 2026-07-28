@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Truck, MapPin, Navigation, ExternalLink, Package, Weight } from 'lucide-react';
 import { buildCargo, distributeCargo } from '@/lib/trussWeights';
+import LoadChecklist from '@/components/motorista/LoadChecklist';
 
 export default function DeliveryDetail({ order, trucks }) {
   if (!order) return null;
@@ -146,6 +147,9 @@ export default function DeliveryDetail({ order, trucks }) {
           );
         })}
       </div>
+
+      {/* Conferência de carga no caminhão (bipagem) */}
+      <LoadChecklist order={order} />
     </div>
   );
 }
