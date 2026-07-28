@@ -27,6 +27,7 @@ export default function RomaneioPrint({ deliveries, drivers, trucks, weights, on
   });
 
   const totalWeight = ordered.reduce((a, o) => a + orderTotalWeight(o, weights), 0);
+  const responsavel = [...new Set(ordered.map(o => driverNameOf(o, drivers)).filter(n => n && n !== '—'))].join(', ');
 
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
@@ -54,7 +55,7 @@ export default function RomaneioPrint({ deliveries, drivers, trucks, weights, on
             <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-3 text-[12px]">
               <div className="flex"><Field label="Data" value={new Date().toLocaleDateString('pt-BR')} /></div>
               <div className="flex"><Field label="Placa" /></div>
-              <div className="flex"><Field label="Responsável" /></div>
+              <div className="flex"><Field label="Responsável" value={responsavel} /></div>
               <div className="flex"><Field label="Ajudantes" /></div>
               <div className="flex"><Field label="Km Inicial" /></div>
               <div className="flex gap-4"><Field label="Hora Inicial" /><Field label="Hora Final" /></div>
