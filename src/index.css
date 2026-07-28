@@ -90,4 +90,7 @@
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
+  body * { visibility: hidden; }
+  .romaneio-print, .romaneio-print * { visibility: visible; }
+  .romaneio-print { position: absolute; left: 0; top: 0; width: 100%; }
 }

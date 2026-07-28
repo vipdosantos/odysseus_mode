@@ -142,6 +142,19 @@
       "default": "nenhum",
       "description": "C\u00f3digo do tipo de caminh\u00e3o (vinculado ao cadastro TruckType)"
     },
+    "motorista_id": {
+      "type": "string",
+      "description": "ID do motorista atribu\u00eddo \u00e0 entrega"
+    },
+    "motorista_name": {
+      "type": "string",
+      "description": "Nome do motorista atribu\u00eddo \u00e0 entrega"
+    },
+    "delivery_priority": {
+      "type": "number",
+      "default": 0,
+      "description": "Prioridade de entrega definida pelo admin (maior = entregue primeiro)"
+    },
     "total_value": {
       "type": "number"
     },
