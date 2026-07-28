@@ -64,6 +64,24 @@ export default function OrderNFTab({ order }) {
   };
 
   const [downloading, setDownloading] = useState(false);
+  const [transmittingNfse, setTransmittingNfse] = useState(false);
+
+  const handleTransmitNfse = async () => {
+    if (!existingNote?.id) { toast({ title: 'Salve a nota antes de transmitir', variant: 'destructive' }); return; }
+    if (nf.tipo !== 'nfs') { toast({ title: 'Transmissão municipal disponível apenas para NFS-e', variant: 'destructive' }); return; }
+    setTransmittingNfse(true);
+    try {
+      const res = await base44.functions.invoke('emitirNFSe', { fiscalNoteId: existingNote.id, ambiente: 2 });
+      const data = res?.data || res;
+      if (data?.ok) toast({ title: 'NFS-e autorizada!', description: `Nº ${data.numero}` });
+      else toast({ title: 'Erro na transmissão', description: data?.error || 'Falha', variant: 'destructive' });
+      qc.invalidateQueries({ queryKey: ['fiscal_notes'] });
+    } catch (e) {
+      toast({ title: 'Erro na transmissão', description: e?.response?.data?.error || e.message, variant: 'destructive' });
+    } finally {
+      setTransmittingNfse(false);
+    }
+  };
   const handleTransmit = async () => {
     if (!existingNote?.id) { toast({ title: 'Salve a nota antes de transmitir', variant: 'destructive' }); return; }
     if (nf.tipo !== 'nfe') { toast({ title: 'Transmissão SEFAZ disponível apenas para NF-e', variant: 'destructive' }); return; }
@@ -344,7 +362,7 @@ export default function OrderNFTab({ order }) {
           <Button variant="outline" onClick={handleSave} disabled={save.isPending}>
             <Save className="w-4 h-4 mr-1" /> {save.isPending ? 'Salvando...' : 'Salvar'}
           </Button>
-          {isNFe && (
+          {isNFe ? (
             <>
               <Button variant="outline" onClick={handleDownloadXml} disabled={downloading} className="border-blue-300 text-blue-700 hover:bg-blue-50">
                 <Download className="w-4 h-4 mr-1" /> {downloading ? 'Gerando...' : 'Baixar XML'}
@@ -353,6 +371,10 @@ export default function OrderNFTab({ order }) {
                 <Send className="w-4 h-4 mr-1" /> {transmitting ? 'Transmitindo...' : 'Transmitir SEFAZ'}
               </Button>
             </>
+          ) : (
+            <Button variant="outline" onClick={handleTransmitNfse} disabled={transmittingNfse} className="border-green-300 text-green-700 hover:bg-green-50">
+              <Send className="w-4 h-4 mr-1" /> {transmittingNfse ? 'Transmitindo...' : 'Transmitir NFS-e'}
+            </Button>
           )}
           <Button onClick={handlePrint} className="bg-primary text-primary-foreground">
             <Printer className="w-4 h-4 mr-1" /> Imprimir

@@ -4,9 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Search, Printer, CheckCircle2, Clock, XCircle, Send, Loader2 } from 'lucide-react';
+import { FileText, Search, Printer, CheckCircle2, Clock, XCircle, Send, Loader2, FileCheck2, Zap } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { DEFAULT_EMITENTE, recalcular } from '@/lib/nfTax';
+import { buildDanfeHtml, buildNfseHtml } from '@/lib/nfPrintLayouts';
+import { toast } from 'sonner';
 
 const STATUS_MAP = {
   rascunho: { label: 'Rascunho', color: 'bg-amber-100 text-amber-700', icon: Clock },
@@ -33,33 +35,76 @@ export default function FiscalNotes() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['fiscal_notes'] }),
   });
 
-  const emitNF = useMutation({
+  // Cria NF-e a partir do pedido (items com valor distribuído) e tenta transmitir à SEFAZ.
+  const emitNFe = useMutation({
     mutationFn: async (order) => {
-      const descricao = order.items?.map(i => `${i.size} x ${i.quantity} un`).join(', ') || '';
+      const totalQty = (order.items || []).reduce((s, i) => s + (Number(i.quantity) || 0), 0) || 1;
+      const unitPrice = (order.total_value || 0) / totalQty;
+      const itens = (order.items || []).map((it, idx) => ({
+        codigo: it.qr_code_id || `${order.order_number}-${idx}`,
+        ncm: '',
+        cst: '00',
+        cfop: '5.102',
+        descricao: [it.size, it.truss_type].filter(Boolean).join(' '),
+        unidade: 'UN',
+        quantidade: Number(it.quantity) || 0,
+        valor_unitario: Number(unitPrice.toFixed(2)) || 0,
+        valor_desconto: 0,
+        aliquota_icms: 0,
+        aliquota_ipi: 0,
+      }));
       const nf = recalcular({
         ...DEFAULT_EMITENTE,
         order_id: order.id,
         order_number: order.order_number,
         client_name: order.client_name,
+        cliente_cnpj: '',
         numero: `NF-${order.order_number}`,
         natureza: 'Venda de Mercadoria',
         cfop: '5.102',
-        tipo: 'nfs',
-        descricao,
+        tipo: 'nfe',
+        itens,
         valor: order.total_value || 0,
-        aliquota_iss: 5,
         data_emissao: new Date().toISOString().split('T')[0],
-        competencia: new Date().toISOString().split('T')[0],
-        status: 'emitida',
-        rps_serie: 'A1',
-        rps_tipo: '1',
+        status: 'rascunho',
       });
-      return base44.entities.FiscalNote.create(nf);
+      const created = await base44.entities.FiscalNote.create(nf);
+      // Tenta transmitir; se faltar dados do destinatário, mantém como rascunho.
+      try {
+        const res = await base44.functions.invoke('emitirNFe', { fiscalNoteId: created.id, ambiente: 2 });
+        const data = res?.data || res;
+        return { created, transmit: data };
+      } catch (e) {
+        return { created, transmit: { error: e?.response?.data?.error || e.message } };
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ['fiscal_notes'] });
       qc.invalidateQueries({ queryKey: ['orders_for_nf'] });
+      const t = result.transmit;
+      if (t?.cStat === '100' || t?.cStat === '150') {
+        toast.success(`NF-e autorizada pela SEFAZ! Protocolo ${t.protocolo}`);
+      } else if (t?.error) {
+        toast.error('NF-e criada como rascunho', { description: 'Complete os dados do destinatário na aba Nota Fiscal do pedido e transmita novamente.' });
+      } else {
+        toast(`SEFAZ: ${t?.cStat || ''} — ${t?.xMotivo || ''}`);
+      }
     },
+    onError: (e) => toast.error('Erro ao emitir NF-e', { description: e.message }),
+  });
+
+  // Transmite NFS-e ao webservice municipal.
+  const transmitNfse = useMutation({
+    mutationFn: async (note) => {
+      const res = await base44.functions.invoke('emitirNFSe', { fiscalNoteId: note.id, ambiente: 2 });
+      return res?.data || res;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['fiscal_notes'] });
+      if (data?.ok) toast.success(`NFS-e autorizada! Nº ${data.numero}`);
+      else toast.error(data?.error || 'Falha na transmissão da NFS-e');
+    },
+    onError: (e) => toast.error('Erro na transmissão', { description: e?.response?.data?.error || e.message }),
   });
 
   // Find orders WITHOUT a nota
@@ -74,34 +119,9 @@ export default function FiscalNotes() {
   );
 
   const handlePrint = (note) => {
-    const valorFmt = Number(note.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const issValor = (Number(note.valor) * (note.aliquota_iss || 5) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-    const html = `<html><head><title>NF ${note.numero}</title>
-    <style>body{font-family:Arial,sans-serif;font-size:12px;margin:24px;color:#111}
-    h2{color:#F47920;margin:12px 0 6px;border-bottom:1px solid #eee;padding-bottom:4px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .label{color:#666;font-size:10px}.value{font-weight:bold}</style></head><body>
-    <h1 style="color:#2B3A8F">MODELAJES — ${note.tipo === 'nfs' ? 'NFS-e' : 'NF-e'} #${note.numero}</h1>
-    <h2>Cliente</h2>
-    <div class="grid2">
-      <div><div class="label">Nome</div><div class="value">${note.client_name}</div></div>
-      <div><div class="label">Pedido</div><div class="value">#${note.order_number}</div></div>
-      <div><div class="label">CPF/CNPJ</div><div class="value">${note.cliente_cnpj || '—'}</div></div>
-      <div><div class="label">Data</div><div class="value">${note.data_emissao ? format(parseISO(note.data_emissao), 'dd/MM/yyyy') : '—'}</div></div>
-    </div>
-    <h2>Discriminação</h2><p>${note.descricao || '—'}</p>
-    <h2>Valores</h2>
-    <div class="grid2">
-      <div><div class="label">CFOP</div><div class="value">${note.cfop}</div></div>
-      <div><div class="label">Natureza</div><div class="value">${note.natureza}</div></div>
-      <div><div class="label">Valor Total</div><div class="value" style="font-size:18px;color:#F47920">${valorFmt}</div></div>
-      <div><div class="label">ISS/ICMS (${note.aliquota_iss}%)</div><div class="value">${issValor}</div></div>
-    </div>
-    <div style="margin-top:24px;border-top:1px solid #eee;padding-top:12px;font-size:10px;color:#999">
-      Prévia gerada pelo sistema Modelajes. Para validade fiscal, use emissor homologado SEFAZ.
-    </div>
-    <script>setTimeout(()=>window.print(),400)</script></body></html>`;
+    const order = orders.find(o => o.id === note.order_id) || null;
+    const nfCalc = recalcular(note);
+    const html = note.tipo === 'nfe' ? buildDanfeHtml(nfCalc, order) : buildNfseHtml(nfCalc, order);
     const w = window.open('', '_blank');
     w.document.write(html);
     w.document.close();
@@ -155,12 +175,12 @@ export default function FiscalNotes() {
                       <Button
                         size="sm"
                         className="bg-primary text-primary-foreground text-xs h-7"
-                        disabled={emitNF.isPending}
-                        onClick={() => emitNF.mutate(o)}
+                        disabled={emitNFe.isPending}
+                        onClick={() => emitNFe.mutate(o)}
                       >
-                        {emitNF.isPending && emitNF.variables?.id === o.id
+                        {emitNFe.isPending && emitNFe.variables?.id === o.id
                           ? <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Emitindo...</span>
-                          : <span className="flex items-center gap-1"><Send className="w-3 h-3" /> Emitir NF</span>}
+                          : <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> Emitir NF-e</span>}
                       </Button>
                     </td>
                   </tr>
@@ -215,10 +235,27 @@ export default function FiscalNotes() {
                       </td>
                       <td className="p-3">
                         <div className="flex gap-1">
-                          {note.status === 'rascunho' && (
+                          {note.status === 'rascunho' && note.tipo === 'nfs' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7 border-green-300 text-green-700 hover:bg-green-50"
+                              disabled={transmitNfse.isPending}
+                              onClick={() => transmitNfse.mutate(note)}
+                            >
+                              {transmitNfse.isPending && transmitNfse.variables?.id === note.id
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : <Send className="w-3 h-3" />}
+                              Transmitir
+                            </Button>
+                          )}
+                          {note.status === 'rascunho' && note.tipo === 'nfe' && (
                             <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => updateStatus.mutate({ id: note.id, status: 'emitida' })}>
                               Marcar Emitida
                             </Button>
+                          )}
+                          {note.status === 'emitida' && (
+                            <span className="text-xs text-green-600 flex items-center gap-1"><FileCheck2 className="w-3 h-3" /> Autorizada</span>
                           )}
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handlePrint(note)}>
                             <Printer className="w-3.5 h-3.5" />

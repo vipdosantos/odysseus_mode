@@ -5,6 +5,7 @@ import CadastroTable from '@/components/cadastros/CadastroTable';
 import SellerPriceTables from '@/components/cadastros/SellerPriceTables';
 import ProductsWithCategory from '@/components/cadastros/ProductsWithCategory';
 import CertificadoDigital from '@/components/cadastros/CertificadoDigital';
+import NfseConfig from '@/components/cadastros/NfseConfig';
 
 // ─── Clientes ───────────────────────────────────────────────
 const clientFields = [
@@ -135,6 +136,7 @@ export default function Cadastros() {
           <TabsTrigger value="caminhoes">Tipos de Caminhão</TabsTrigger>
           <TabsTrigger value="cat-insumos">Cat. Produtos</TabsTrigger>
           <TabsTrigger value="certificado">Certificado Digital</TabsTrigger>
+          <TabsTrigger value="nfse">NFS-e</TabsTrigger>
         </TabsList>
 
         <TabsContent value="clientes">
@@ -197,6 +199,10 @@ export default function Cadastros() {
 
         <TabsContent value="certificado">
           <CertificadoDigital />
+        </TabsContent>
+
+        <TabsContent value="nfse">
+          <NfseConfig />
         </TabsContent>
       </Tabs>
     </div>
