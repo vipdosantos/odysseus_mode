@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Telefone do cliente"
     },
+    "client_email": {
+      "type": "string",
+      "description": "E-mail do cliente (para envio do link de status)"
+    },
     "client_photo": {
       "type": "string",
       "description": "Foto do cliente (URL)"

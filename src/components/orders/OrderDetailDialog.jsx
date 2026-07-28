@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Pencil, Printer, Calendar, Phone, User, ChevronRight, Trash2, Archive, Link2, Check } from 'lucide-react';
+import { Pencil, Printer, Calendar, Phone, Mail, User, ChevronRight, Trash2, Archive, Link2, Check } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DEFAULT_STATUSES } from './KanbanColumn';
@@ -158,6 +158,12 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                   <div className="flex items-center gap-2 text-sm">
                     <Phone className="w-4 h-4 text-muted-foreground" />
                     <span>{order.client_phone}</span>
+                  </div>
+                )}
+                {order.client_email && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    <span className="truncate">{order.client_email}</span>
                   </div>
                 )}
                 {order.delivery_date && (

@@ -26,7 +26,7 @@ const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_cod
 
 export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
   const [form, setForm] = useState({
-    order_number: '', client_name: '', client_phone: '',
+    order_number: '', client_name: '', client_phone: '', client_email: '',
     seller_id: '', seller_name: '', seller_phone: '',
     status: 'of_etiquetas', priority: 'normal',
     delivery_date: '', delivery_address: '', delivery_lat: null, delivery_lng: null,
@@ -73,7 +73,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     } else {
       setForm({
         order_number: `PED-${Date.now().toString().slice(-6)}`,
-        client_name: '', client_phone: '',
+        client_name: '', client_phone: '', client_email: '',
         seller_id: '', seller_name: '', seller_phone: '',
         status: 'of_etiquetas', priority: 'normal',
         delivery_date: '', delivery_address: '', delivery_lat: null, delivery_lng: null,
@@ -190,12 +190,14 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
                           onMouseDown={() => {
                             set('client_name', c.name);
                             set('client_phone', c.phone || form.client_phone);
+                            set('client_email', c.email || form.client_email);
                             setClientSearch('');
                             setShowClientDropdown(false);
                           }}
                         >
                           <span className="font-medium">{c.name}</span>
                           {c.phone && <span className="text-muted-foreground ml-2 text-xs">{c.phone}</span>}
+                          {c.email && <span className="text-muted-foreground ml-2 text-xs">{c.email}</span>}
                         </button>
                       ))}
                   </div>
@@ -204,6 +206,10 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
               <div>
                 <Label>Telefone</Label>
                 <Input value={form.client_phone} onChange={e => set('client_phone', e.target.value)} />
+              </div>
+              <div className="col-span-2">
+                <Label>E-mail do Cliente</Label>
+                <Input type="email" value={form.client_email || ''} onChange={e => set('client_email', e.target.value)} placeholder="cliente@email.com" />
               </div>
               <div>
                 <Label>Vendedor</Label>
