@@ -278,12 +278,10 @@ export default function Scanner() {
       updateData.delivery_conferido_by = user?.full_name || user?.email || '';
     }
 
-    // Conferência por etapa: ao concluir, o pedido NÃO avança automaticamente para
-    // a próxima etapa do kanban. Cada etapa tem sua própria conferência; a
-    // movimentação do pedido entre colunas é feita separadamente (manualmente).
-    // Exceção: na entrega, conclui para "recebido".
-    if (stage === 'entrega' && allDone) {
-      updateData.status = nextColumnKey('entrega') || 'recebido';
+    // Ao concluir a conferência de todas as unidades na etapa atual, o pedido
+    // avança automaticamente para a próxima etapa do kanban.
+    if (allDone) {
+      updateData.status = nextColumnKey(stage) || stage;
     } else {
       updateData.status = stage;
     }
