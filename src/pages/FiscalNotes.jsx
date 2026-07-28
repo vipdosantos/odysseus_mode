@@ -4,8 +4,9 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Search, Printer, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { FileText, Search, Printer, CheckCircle2, Clock, XCircle, Send, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { DEFAULT_EMITENTE, recalcular } from '@/lib/nfTax';
 
 const STATUS_MAP = {
   rascunho: { label: 'Rascunho', color: 'bg-amber-100 text-amber-700', icon: Clock },
@@ -30,6 +31,35 @@ export default function FiscalNotes() {
   const updateStatus = useMutation({
     mutationFn: ({ id, status }) => base44.entities.FiscalNote.update(id, { status }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['fiscal_notes'] }),
+  });
+
+  const emitNF = useMutation({
+    mutationFn: async (order) => {
+      const descricao = order.items?.map(i => `${i.size} x ${i.quantity} un`).join(', ') || '';
+      const nf = recalcular({
+        ...DEFAULT_EMITENTE,
+        order_id: order.id,
+        order_number: order.order_number,
+        client_name: order.client_name,
+        numero: `NF-${order.order_number}`,
+        natureza: 'Venda de Mercadoria',
+        cfop: '5.102',
+        tipo: 'nfs',
+        descricao,
+        valor: order.total_value || 0,
+        aliquota_iss: 5,
+        data_emissao: new Date().toISOString().split('T')[0],
+        competencia: new Date().toISOString().split('T')[0],
+        status: 'emitida',
+        rps_serie: 'A1',
+        rps_tipo: '1',
+      });
+      return base44.entities.FiscalNote.create(nf);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fiscal_notes'] });
+      qc.invalidateQueries({ queryKey: ['orders_for_nf'] });
+    },
   });
 
   // Find orders WITHOUT a nota
@@ -111,6 +141,7 @@ export default function FiscalNotes() {
                   <th className="text-left p-3 font-semibold text-xs">Cliente</th>
                   <th className="text-left p-3 font-semibold text-xs">Valor</th>
                   <th className="text-left p-3 font-semibold text-xs">Status</th>
+                  <th className="p-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -120,6 +151,18 @@ export default function FiscalNotes() {
                     <td className="p-3">{o.client_name}</td>
                     <td className="p-3">{o.total_value ? `R$ ${Number(o.total_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</td>
                     <td className="p-3 text-xs text-muted-foreground capitalize">{o.status?.replace(/_/g, ' ')}</td>
+                    <td className="p-3 text-right">
+                      <Button
+                        size="sm"
+                        className="bg-primary text-primary-foreground text-xs h-7"
+                        disabled={emitNF.isPending}
+                        onClick={() => emitNF.mutate(o)}
+                      >
+                        {emitNF.isPending && emitNF.variables?.id === o.id
+                          ? <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Emitindo...</span>
+                          : <span className="flex items-center gap-1"><Send className="w-3 h-3" /> Emitir NF</span>}
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
