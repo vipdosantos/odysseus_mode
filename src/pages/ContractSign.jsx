@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Package, Pen, Trash2, CheckCircle2, Loader2, AlertCircle, FileText, ExternalLink } from 'lucide-react';
+import { Package, Pen, Trash2, CheckCircle2, Loader2, AlertCircle, FileText, ExternalLink, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ContractSign() {
@@ -92,7 +92,7 @@ export default function ContractSign() {
       const res = await base44.functions.invoke('salvarAssinaturaContrato', {
         access_key: accessKey.trim(), rg: rg.trim(), cpf: cpf.trim(), signature,
       });
-      setDone({ driveLink: res.data?.driveLink });
+      setDone({ driveLink: res.data?.driveLink, pdfBase64: res.data?.pdfBase64 });
     } catch (e) {
       alert('Não foi possível salvar a assinatura. Tente novamente.');
     } finally {
@@ -169,12 +169,23 @@ export default function ContractSign() {
                 <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
                 <p className="text-lg font-bold text-green-800">Contrato assinado com sucesso!</p>
                 <p className="text-sm text-green-700 mt-1">O documento foi salvo no Google Drive da Modelajes.</p>
-                {done.driveLink && (
-                  <a href={done.driveLink} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-amber-600 hover:underline">
-                    <ExternalLink className="w-4 h-4" /> Ver documento assinado
-                  </a>
-                )}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+                  {done.pdfBase64 && (
+                    <a
+                      href={`data:application/pdf;base64,${done.pdfBase64}`}
+                      download={`Contrato_${order.order_number || 'pedido'}.pdf`}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold"
+                    >
+                      <Download className="w-4 h-4" /> Baixar PDF do Contrato
+                    </a>
+                  )}
+                  {done.driveLink && (
+                    <a href={done.driveLink} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white border border-amber-200 text-amber-700 text-sm font-semibold hover:bg-amber-50">
+                      <ExternalLink className="w-4 h-4" /> Ver no Google Drive
+                    </a>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">

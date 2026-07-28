@@ -37,7 +37,16 @@ export default async function (req: Request): Promise<Response> {
       contract_drive_link: webViewLink,
     });
 
-    return Response.json({ ok: true, driveLink: webViewLink });
+    // Devolve o PDF em base64 para o cliente baixar uma cópia
+    const bytes = new Uint8Array(pdfBytes);
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    const pdfBase64 = btoa(binary);
+
+    return Response.json({ ok: true, driveLink: webViewLink, pdfBase64 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
