@@ -9,7 +9,7 @@ function Field({ label, value, wide }) {
   return (
     <div className={wide ? "flex-1" : ""}>
       <span className="font-semibold text-xs">{label}: </span>
-      <span className="border-b border-dashed border-gray-400 inline-block min-w-[80px] px-1">{value || '\u00A0'}</span>
+      <span className="border-b border-dashed border-gray-400 inline-block min-w-[140px] px-1">{value || '\u00A0'}</span>
     </div>
   );
 }
@@ -28,7 +28,7 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
       </div>
 
       {/* Cabeçalho */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-2">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-3 text-[12px]">
         <div className="flex"><Field label="Data" value={new Date().toLocaleDateString('pt-BR')} /></div>
         <div className="flex"><Field label="Placa" /></div>
         <div className="flex"><Field label="Motorista" value={driverName} /></div>
@@ -56,8 +56,8 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
             <th className="border border-gray-800 px-1 py-1 w-16">Hora<br/>Chegada</th>
             <th className="border border-gray-800 px-1 py-1 w-16">Hora<br/>Saída</th>
             <th className="border border-gray-800 px-1 py-1 w-16">Mode<br/>(peso kg)</th>
-            <th className="border border-gray-800 px-1 py-1 w-40">Carimbo ou Assinatura</th>
-            <th className="border border-gray-800 px-1 py-1 w-28">Ocorrência (opcional)</th>
+            <th className="border border-gray-800 px-1 py-1 w-56">Carimbo ou Assinatura</th>
+            <th className="border border-gray-800 px-1 py-1 w-36">Ocorrência (opcional)</th>
           </tr>
         </thead>
         <tbody>
@@ -75,7 +75,7 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
                   {o.delivery_address && <div className="text-[9px] text-gray-600">{o.delivery_address}</div>}
                   <div className="text-[9px] text-gray-500">{cargo.map(c => `${c.quantity}× ${c.truss_type}${c.size ? ' ' + c.size : ''}`).join(', ')}</div>
                 </td>
-                <td className="border border-gray-800" style={{ height: 70 }}></td>
+                <td className="border border-gray-800" style={{ height: 90 }}></td>
                 <td className="border border-gray-800"></td>
                 <td className="border border-gray-800 px-1 py-1 text-center font-semibold">
                   {orderTotalWeight(o, weights).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
@@ -95,10 +95,10 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
       </div>
 
       {/* Rodapé */}
-      <div className="flex gap-6 mt-3 text-xs">
-        <div><span className="font-semibold">Km por dia:</span> <span className="border-b border-dashed border-gray-400 inline-block min-w-[70px]">&nbsp;</span></div>
-        <div><span className="font-semibold">Litros por dia:</span> <span className="border-b border-dashed border-gray-400 inline-block min-w-[70px]">&nbsp;</span></div>
-        <div><span className="font-semibold">Km/L por dia:</span> <span className="border-b border-dashed border-gray-400 inline-block min-w-[70px]">&nbsp;</span></div>
+      <div className="flex gap-10 mt-4 text-[12px]">
+        <div><span className="font-semibold">Km por dia:</span> <span className="border-b border-dashed border-gray-400 inline-block min-w-[100px]">&nbsp;</span></div>
+        <div><span className="font-semibold">Litros por dia:</span> <span className="border-b border-dashed border-gray-400 inline-block min-w-[100px]">&nbsp;</span></div>
+        <div><span className="font-semibold">Km/L por dia:</span> <span className="border-b border-dashed border-gray-400 inline-block min-w-[100px]">&nbsp;</span></div>
       </div>
     </div>
   );
@@ -129,7 +129,7 @@ export default function RomaneioPrint({ deliveries, drivers, trucks, weights, on
         </div>
       </div>
 
-      <div className="romaneio-print p-4 max-w-[210mm] mx-auto">
+      <div className="romaneio-print p-4 max-w-[281mm] mx-auto w-full">
         {groupEntries.length === 0 && (
           <p className="text-center text-muted-foreground py-10">Nenhuma entrega atribuída a motoristas.</p>
         )}
