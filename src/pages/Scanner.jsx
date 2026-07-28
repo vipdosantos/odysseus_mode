@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useOutletContext } from 'react-router-dom';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScanLine, CheckCircle2, AlertCircle, Camera, CameraOff, Keyboard, Truck, Trash2 } from 'lucide-react';
+import { ScanLine, CheckCircle2, AlertCircle, Camera, CameraOff, Keyboard, Truck, Trash2, Pencil, History, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,10 @@ export default function Scanner() {
   const [mode, setMode] = useState('keyboard'); // 'keyboard' | 'camera'
   const [activeStage, setActiveStage] = useState('');
   const [cameraError, setCameraError] = useState('');
+  const [historyStage, setHistoryStage] = useState('');
+  const [historyFilter, setHistoryFilter] = useState('');
+  const [editingKey, setEditingKey] = useState(null);
+  const [editValue, setEditValue] = useState('');
   const inputRef = useRef(null);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -328,6 +332,146 @@ export default function Scanner() {
     setResult(null);
   };
 
+  // --- Histórico de Bipagem (todas as unidades já conferidas em uma etapa) ---
+  const unitsForStage = (item, stage) => {
+    const sc = item.stage_conferencias || {};
+    if (Array.isArray(sc[stage])) return sc[stage];
+    if (stage === 'producao' && Array.isArray(item.scanned_units)) return item.scanned_units;
+    if (stage === 'entrega' && Array.isArray(item.delivered_units)) return item.delivered_units;
+    return [];
+  };
+
+  const historyEntries = useMemo(() => {
+    if (!orders.length) return [];
+    const stage = historyStage || stageKey;
+    if (!stage) return [];
+    const out = [];
+    orders.forEach(order => {
+      (order.items || []).forEach((it, idx) => {
+        const units = unitsForStage(it, stage);
+        units.forEach(u => {
+          const log = (order.scan_log || []).find(
+            e => e.item_idx === idx && e.unit === u && e.stage === stage
+          );
+          out.push({
+            key: `${order.id}:${idx}:${stage}:${u}`,
+            order_id: order.id,
+            order_number: order.order_number,
+            client_name: order.client_name,
+            item_idx: idx,
+            size: it.size,
+            quantity: it.quantity,
+            unit: u,
+            stage,
+            stage_label: log?.stage_label || stage.replace(/_/g, ' '),
+            operator_name: log?.operator_name || '',
+            operator_email: log?.operator_email || '',
+            at: log?.at || '',
+          });
+        });
+      });
+    });
+    out.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+    return out;
+  }, [orders, historyStage, stageKey]);
+
+  const filteredHistory = useMemo(() => {
+    if (!historyFilter.trim()) return historyEntries;
+    const q = historyFilter.trim().toLowerCase();
+    return historyEntries.filter(e =>
+      e.order_number?.toLowerCase().includes(q) ||
+      e.client_name?.toLowerCase().includes(q) ||
+      e.size?.toLowerCase().includes(q) ||
+      String(e.unit).includes(q) ||
+      e.operator_name?.toLowerCase().includes(q)
+    );
+  }, [historyEntries, historyFilter]);
+
+  const allDoneForStage = (items, stage) => items.every(i => unitsForStage(i, stage).length >= (i.quantity || 0));
+
+  const deleteBipe = async (entry) => {
+    const order = orders.find(o => o.id === entry.order_id);
+    if (!order) return;
+    const wasAllDone = allDoneForStage(order.items, entry.stage);
+    const updatedItems = order.items.map((it, i) => {
+      if (i !== entry.item_idx) return it;
+      const sc = { ...(it.stage_conferencias || {}) };
+      if (Array.isArray(sc[entry.stage])) {
+        sc[entry.stage] = sc[entry.stage].filter(u => u !== entry.unit);
+        if (sc[entry.stage].length === 0) delete sc[entry.stage];
+      }
+      const newItem = { ...it, stage_conferencias: sc };
+      if (entry.stage === 'producao') {
+        newItem.scanned_units = (it.scanned_units || []).filter(u => u !== entry.unit);
+        newItem.produced = newItem.scanned_units.length;
+      }
+      if (entry.stage === 'entrega') {
+        newItem.delivered_units = (it.delivered_units || []).filter(u => u !== entry.unit);
+      }
+      return newItem;
+    });
+    const updatedLog = (order.scan_log || []).filter(
+      e => !(e.item_idx === entry.item_idx && e.unit === entry.unit && e.stage === entry.stage)
+    );
+    const updateData = { items: updatedItems, scan_log: updatedLog };
+    const nowAllDone = allDoneForStage(updatedItems, entry.stage);
+    if (entry.stage === 'entrega') {
+      if (nowAllDone) {
+        updateData.delivery_conferido = true;
+        updateData.delivery_conferido_at = new Date().toISOString();
+        updateData.delivery_conferido_by = user?.full_name || user?.email || '';
+      } else {
+        updateData.delivery_conferido = false;
+        updateData.delivery_conferido_at = '';
+        updateData.delivery_conferido_by = '';
+      }
+    }
+    if (wasAllDone && !nowAllDone) {
+      updateData.status = entry.stage;
+    }
+    await base44.entities.Order.update(order.id, updateData);
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
+    toast.success('Bipagem excluída.');
+    setEditingKey(null);
+  };
+
+  const saveEdit = async (entry) => {
+    const newUnit = Number(editValue);
+    const order = orders.find(o => o.id === entry.order_id);
+    if (!order) return;
+    const item = order.items[entry.item_idx];
+    if (!item) return;
+    if (isNaN(newUnit) || newUnit < 1 || newUnit > (item.quantity || 0)) {
+      toast.error(`Unidade inválida (1 a ${item.quantity}).`);
+      return;
+    }
+    const current = unitsForStage(item, entry.stage);
+    if (newUnit !== entry.unit && current.includes(newUnit)) {
+      toast.error(`Unidade ${newUnit} já está bipada neste item.`);
+      return;
+    }
+    const updatedItems = order.items.map((it, i) => {
+      if (i !== entry.item_idx) return it;
+      const sc = { ...(it.stage_conferencias || {}) };
+      let arr = Array.isArray(sc[entry.stage]) ? [...sc[entry.stage]] : [];
+      arr = arr.map(u => (u === entry.unit ? newUnit : u)).sort((a, b) => a - b);
+      sc[entry.stage] = arr;
+      const newItem = { ...it, stage_conferencias: sc };
+      if (entry.stage === 'producao') { newItem.scanned_units = arr; newItem.produced = arr.length; }
+      if (entry.stage === 'entrega') { newItem.delivered_units = arr; }
+      return newItem;
+    });
+    const updatedLog = (order.scan_log || []).map(e =>
+      (e.item_idx === entry.item_idx && e.unit === entry.unit && e.stage === entry.stage)
+        ? { ...e, unit: newUnit }
+        : e
+    );
+    await base44.entities.Order.update(order.id, { items: updatedItems, scan_log: updatedLog });
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
+    toast.success('Bipagem alterada.');
+    setEditingKey(null);
+  };
+
   const processScan = async (rawValue) => {
     setLoading(true);
     setResult(null);
@@ -549,6 +693,114 @@ export default function Scanner() {
               })()}
             </div>
           </div>
+        </Card>
+      )}
+
+      {/* ── HISTÓRICO DE BIPAGEM ── */}
+      {canScan && (
+        <Card className="p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <History className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold">Histórico de Bipagem</h2>
+              <span className="text-xs text-muted-foreground">({filteredHistory.length})</span>
+            </div>
+            {availableStages.length > 1 && (
+              <Select value={historyStage || stageKey} onValueChange={setHistoryStage}>
+                <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {availableStages.map(k => (
+                    <SelectItem key={k} value={k}>
+                      {kanbanColumns.find(c => c.key === k)?.label || k.replace(/_/g, ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="relative mb-3">
+            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={historyFilter}
+              onChange={e => setHistoryFilter(e.target.value)}
+              placeholder="Buscar por pedido, cliente, tamanho, unidade..."
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+
+          {filteredHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Nenhuma bipagem registrada nesta etapa.
+            </p>
+          ) : (
+            <div className="space-y-1.5 max-h-[420px] overflow-y-auto">
+              {filteredHistory.map(e => {
+                const isEditing = editingKey === e.key;
+                return (
+                  <div key={e.key} className="flex items-center gap-2 text-sm border rounded-lg p-2 hover:bg-accent/40">
+                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xs shrink-0">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editValue}
+                          onChange={ev => setEditValue(ev.target.value)}
+                          onKeyDown={ev => ev.key === 'Enter' && saveEdit(e)}
+                          className="w-10 text-center bg-transparent outline-none"
+                          autoFocus
+                        />
+                      ) : e.unit}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">
+                        #{e.order_number} · {e.size} · unidade {e.unit}/{e.quantity}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {e.client_name} · {e.stage_label}
+                        {e.operator_name ? ` · ${e.operator_name}` : ' · sem operador'}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:block">
+                      {e.at ? new Date(e.at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </span>
+                    {role === 'admin' && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isEditing ? (
+                          <>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" onClick={() => saveEdit(e)}>
+                              <CheckCircle2 className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingKey(null)}>
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => { setEditingKey(e.key); setEditValue(String(e.unit)); }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteBipe(e)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Card>
       )}
     </div>
