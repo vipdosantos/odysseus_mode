@@ -28,10 +28,11 @@ export default function ContractSign() {
       setLoadingOrder(true); setOrder(null); setErrorOrder(null);
       if (!accessKey) { if (!cancelled) setErrorOrder('Link de assinatura inválido.'); setLoadingOrder(false); return; }
       try {
-        const results = await base44.entities.Order.filter({ access_key: accessKey.trim() }, '-created_date', 1);
+        const res = await base44.functions.invoke('buscarPedidoParaAssinatura', { access_key: accessKey.trim() });
         if (cancelled) return;
-        if (results && results.length > 0) setOrder(results[0]);
-        else setErrorOrder('Pedido não encontrado. Verifique o link recebido.');
+        const data = res?.data;
+        if (data && data.id) setOrder(data);
+        else setErrorOrder(data?.error || 'Pedido não encontrado. Verifique o link recebido.');
       } catch (e) {
         if (!cancelled) setErrorOrder('Não foi possível carregar o pedido.');
       } finally {
