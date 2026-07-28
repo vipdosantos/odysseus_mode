@@ -52,6 +52,7 @@ export default function OrdemCompra() {
   });
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'financeiro';
+  const canApprove = currentUser?.role === 'admin';
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.OrdemCompra.create(data),
@@ -165,7 +166,7 @@ export default function OrdemCompra() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {o.status === 'aguardando_aprovacao' && isAdmin && (
+            {o.status === 'aguardando_aprovacao' && canApprove && (
               <>
                 <Button size="sm" className="bg-green-600 text-white text-xs" onClick={() => handleApprove(o)}>
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Aprovar
@@ -223,11 +224,9 @@ export default function OrdemCompra() {
           </h1>
           <p className="text-sm text-muted-foreground">Aprove ou rejeite ordens de compra de insumos e materiais</p>
         </div>
-        {isAdmin && (
-          <Button onClick={() => openNew('insumo')} className="bg-primary text-primary-foreground w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" /> Nova Ordem
-          </Button>
-        )}
+        <Button onClick={() => openNew('insumo')} className="bg-primary text-primary-foreground w-full sm:w-auto">
+          <Plus className="w-4 h-4 mr-2" /> Nova Ordem
+        </Button>
       </div>
 
       {/* Summary */}
@@ -246,7 +245,7 @@ export default function OrdemCompra() {
       </div>
 
       {/* Alert for pending */}
-      {pending.length > 0 && isAdmin && (
+      {pending.length > 0 && canApprove && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
           <div>
