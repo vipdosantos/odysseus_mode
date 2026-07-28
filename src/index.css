@@ -94,8 +94,8 @@
   body * { visibility: hidden; }
   .romaneio-print, .romaneio-print * { visibility: visible; }
   .romaneio-print { position: absolute; left: 0; top: 0; width: 100%; }
-  .romaneio-page { display: flex; flex-direction: column; max-height: 192mm; overflow: hidden; break-after: page; page-break-after: always; page-break-inside: avoid; break-inside: avoid; }
+  .romaneio-page { display: flex; flex-direction: column; min-height: 170mm; max-height: 192mm; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
   .romaneio-page .romaneio-table-wrap { flex: 0 0 auto; }
-  .romaneio-page .romaneio-obs { flex: 0 0 auto; }
-  .romaneio-page .romaneio-obs-box { min-height: 22mm; max-height: 22mm; }
+  .romaneio-page .romaneio-obs { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+  .romaneio-page .romaneio-obs-box { flex: 1 1 auto; min-height: 20mm; }
 }

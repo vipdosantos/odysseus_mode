@@ -97,7 +97,7 @@ export default function RomaneioPrint({ deliveries, drivers, trucks, weights, on
                         <div className="text-[9px] text-gray-500">{cargo.map(c => `${c.quantity}× ${c.truss_type}${c.size ? ' ' + c.size : ''}`).join(', ')}</div>
                       </td>
                       <td className="border border-gray-800 px-1 py-1 text-[10px]">{driverNameOf(o, drivers)}</td>
-                      <td className="border border-gray-800" style={{ height: 46 }}></td>
+                      <td className="border border-gray-800" style={{ height: 90 }}></td>
                       <td className="border border-gray-800"></td>
                       <td className="border border-gray-800 px-1 py-1 text-center font-semibold">
                         {orderTotalWeight(o, weights).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
