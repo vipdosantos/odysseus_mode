@@ -40,11 +40,11 @@ export default function RomaneioPrint({ deliveries, drivers, trucks, weights, on
         </div>
       </div>
 
-      <div className="romaneio-print p-4 max-w-[281mm] mx-auto w-full">
+      <div className="romaneio-print p-4 max-w-[281mm] mx-auto w-full" style={{ breakInside: 'avoid' }}>
         {ordered.length === 0 ? (
           <p className="text-center text-muted-foreground py-10">Nenhuma entrega atribuída a motoristas.</p>
         ) : (
-          <div className="romaneio-page border border-gray-800 p-5 mb-6 text-[11px] text-gray-900">
+          <div className="romaneio-page border border-gray-800 p-5 mb-6 text-[11px] text-gray-900" style={{ breakInside: 'avoid', pageBreakInside: 'avoid', overflow: 'hidden' }}>
             <div className="flex items-center gap-3 border-b border-gray-800 pb-2 mb-2">
               <img src={LOGO_URL} alt="Modelajes" className="h-12 w-auto object-contain" />
               <div className="flex-1 text-center font-bold text-base">ROMANEIO DE ENTREGA</div>
@@ -97,7 +97,7 @@ export default function RomaneioPrint({ deliveries, drivers, trucks, weights, on
                         <div className="text-[9px] text-gray-500">{cargo.map(c => `${c.quantity}× ${c.truss_type}${c.size ? ' ' + c.size : ''}`).join(', ')}</div>
                       </td>
                       <td className="border border-gray-800 px-1 py-1 text-[10px]">{driverNameOf(o, drivers)}</td>
-                      <td className="border border-gray-800" style={{ height: 90 }}></td>
+                      <td className="border border-gray-800" style={{ height: 46 }}></td>
                       <td className="border border-gray-800"></td>
                       <td className="border border-gray-800 px-1 py-1 text-center font-semibold">
                         {orderTotalWeight(o, weights).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
