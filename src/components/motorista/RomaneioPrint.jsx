@@ -16,7 +16,7 @@ function Field({ label, value, wide }) {
 
 function driverNameOf(order, drivers) {
   if (!order.motorista_id) return '—';
-  return drivers.find(d => d.id === order.motorista_id)?.full_name || order.motorista_name || 'Motorista';
+  return order.motorista_name || drivers.find(d => d.id === order.motorista_id)?.full_name || 'Motorista';
 }
 
 export default function RomaneioPrint({ deliveries, drivers, trucks, weights, onClose }) {
