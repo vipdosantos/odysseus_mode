@@ -86,6 +86,10 @@ export default function Scanner() {
     return () => stopCamera();
   }, [mode]);
 
+  // Ao trocar de etapa, limpa o card de resultado anterior para não deixar
+  // a conferência de outra etapa aparecendo como "já conferido".
+  useEffect(() => { setResult(null); setQrInput(''); }, [stageKey]);
+
   // --- QR Decode from video frame ---
   const canvasRef = useRef(null);
   const scanIntervalRef = useRef(null);
@@ -301,12 +305,8 @@ export default function Scanner() {
       totalMissing,
       nextStatus,
     });
-    // Auto-advance to the next stage so the operator keeps conferencing
-    // the same labels there — otherwise the duplicate warning fires cross-stage.
-    if (allDone) {
-      const next = nextColumnKey(stage);
-      if (next && availableStages.includes(next)) setActiveStage(next);
-    }
+    // A conferência é por etapa: NÃO avançar automaticamente de etapa.
+    // O operador escolhe a etapa manualmente e bipa as etiquetas daquela etapa.
     if (allDone) beep('sucesso'); else beep('ok');
     toast.success(allDone ? `Conferência de "${stageLabel}" completa!` : 'Unidade conferida');
     setQrInput('');
