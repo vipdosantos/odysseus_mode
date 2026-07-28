@@ -120,6 +120,14 @@ export default function DeliveryReceiptTab({ order }) {
   };
 
   const handleSave = async () => {
+    if (!signerDoc.trim()) {
+      toast.error('CPF/RG do recebedor é obrigatório para salvar o recibo.');
+      return;
+    }
+    if (!signerName.trim()) {
+      toast.error('Informe o nome do recebedor.');
+      return;
+    }
     setSaving(true);
     const signatureDataUrl = hasSignature ? canvasRef.current.toDataURL('image/png') : null;
     await base44.entities.Order.update(order.id, {
@@ -131,6 +139,31 @@ export default function DeliveryReceiptTab({ order }) {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const [returning, setReturning] = useState(false);
+
+  const handleClientRefusedDoc = async () => {
+    const confirm = window.confirm(
+      'O cliente se recusou a fornecer o documento (CPF/RG)?\n\n' +
+      'O pedido voltará para "Aguardando Entrega" e precisará ser reprogramado.'
+    );
+    if (!confirm) return;
+    setReturning(true);
+    try {
+      await base44.entities.Order.update(order.id, {
+        status: 'aguardando_entrega',
+        delivery_signed_by: null,
+        delivery_signer_doc: null,
+        delivery_signature: null,
+        delivery_signed_at: null,
+      });
+      toast.success('Pedido retornado para "Aguardando Entrega".');
+    } catch (e) {
+      toast.error('Não foi possível retornar o pedido.');
+    } finally {
+      setReturning(false);
+    }
   };
 
   const handleUploadDoc = async (e) => {
@@ -255,7 +288,7 @@ export default function DeliveryReceiptTab({ order }) {
 
       {/* Dados do recebedor */}
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold">Dados do Recebedor</h4>
+        <h4 className="text-sm font-semibold">Dados do Recebedor <span className="text-destructive">*</span></h4>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Nome completo</label>
@@ -266,14 +299,26 @@ export default function DeliveryReceiptTab({ order }) {
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">CPF / RG</label>
+            <label className="text-xs text-muted-foreground mb-1 block">CPF / RG <span className="text-destructive">*</span></label>
             <Input
-              placeholder="Documento"
+              placeholder="Documento (obrigatório)"
               value={signerDoc}
               onChange={e => setSignerDoc(e.target.value)}
             />
           </div>
         </div>
+        <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
+          O CPF/RG é obrigatório para salvar o recibo. Se o cliente recusar fornecer o documento, use a opção abaixo.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleClientRefusedDoc}
+          disabled={returning}
+          className="text-destructive border-destructive/40 hover:bg-destructive/10"
+        >
+          {returning ? 'Retornando...' : 'Cliente não forneceu documento'}
+        </Button>
       </div>
 
       {/* Assinatura */}
