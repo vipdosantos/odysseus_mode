@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScanLine, CheckCircle2, AlertCircle, Camera, CameraOff, Keyboard, Truck, Trash2, Pencil, History, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { beep, unlockAudio } from '@/lib/beep';
 
 export default function Scanner() {
   const { user } = useOutletContext();
@@ -200,11 +201,13 @@ export default function Scanner() {
     const item = foundOrder.items[foundItemIdx];
 
     if (unitNum == null) {
+      beep('erro');
       setResult({ type: 'error', message: 'Este QR não tem número de unidade. Use etiquetas com unidade para a conferência.' });
       setLoading(false);
       return;
     }
     if (unitNum < 1 || unitNum > (item.quantity || 0)) {
+      beep('erro');
       setResult({ type: 'error', message: `Unidade ${unitNum} inválida para "${item.size}" (qtd ${item.quantity}).` });
       setLoading(false);
       return;
@@ -212,6 +215,7 @@ export default function Scanner() {
 
     const current = [...stageUnits(item, stage)];
     if (current.includes(unitNum)) {
+      beep('dup');
       setResult({
         type: 'warning',
         message: `Unidade ${unitNum}/${item.quantity} de "${item.size}" (pedido #${foundOrder.order_number}) JÁ foi conferida em "${stageLabel}". Etiqueta duplicada — não contada.`,
@@ -303,6 +307,7 @@ export default function Scanner() {
       const next = nextColumnKey(stage);
       if (next && availableStages.includes(next)) setActiveStage(next);
     }
+    if (allDone) beep('sucesso'); else beep('ok');
     toast.success(allDone ? `Conferência de "${stageLabel}" completa!` : 'Unidade conferida');
     setQrInput('');
     setLoading(false);
@@ -473,12 +478,14 @@ export default function Scanner() {
   };
 
   const processScan = async (rawValue) => {
+    unlockAudio();
     setLoading(true);
     setResult(null);
 
     const { foundOrder, foundItemIdx, unitNum, qrId } = resolveOrderItem(rawValue);
 
     if (!foundOrder || foundItemIdx < 0) {
+      beep('erro');
       setResult({ type: 'error', message: `QR Code não encontrado: ${qrId}` });
       setLoading(false);
       return;

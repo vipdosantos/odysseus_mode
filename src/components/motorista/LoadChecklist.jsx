@@ -7,32 +7,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, AlertTriangle, ClipboardList, RotateCcw, Truck, Camera, Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import LoadQRScanner from '@/components/motorista/LoadQRScanner';
-
-// Alertas sonoros via Web Audio API (sem arquivos externos)
-function beep(type) {
-  try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = (beep._ctx = beep._ctx || new Ctx());
-    if (ctx.state === 'suspended') ctx.resume();
-    const play = (freq, start, dur) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.type = 'sine';
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
-      g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + start + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
-      o.start(ctx.currentTime + start);
-      o.stop(ctx.currentTime + start + dur + 0.02);
-    };
-    if (type === 'ok') { play(880, 0, 0.1); play(1320, 0.11, 0.12); }
-    else if (type === 'erro') { play(200, 0, 0.18); play(160, 0.2, 0.22); play(130, 0.44, 0.28); }
-    else if (type === 'dup') { play(420, 0, 0.09); play(420, 0.14, 0.09); }
-    else if (type === 'sucesso') { play(660, 0, 0.1); play(880, 0.11, 0.1); play(1320, 0.22, 0.18); }
-  } catch { /* ignore */ }
-}
+import { beep, unlockAudio } from '@/lib/beep';
 
 export default function LoadChecklist({ order }) {
   const { user } = useAuth();
