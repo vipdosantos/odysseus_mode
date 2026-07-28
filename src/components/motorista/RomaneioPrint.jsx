@@ -47,7 +47,7 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
       </div>
 
       {/* Tabela de paradas */}
-      <table className="w-full border-collapse border border-gray-800">
+      <table className="w-full border-collapse border border-gray-800 romaneio-table-wrap">
         <thead>
           <tr className="bg-gray-100">
             <th className="border border-gray-800 px-1 py-1 w-6">#</th>
@@ -75,7 +75,7 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
                   {o.delivery_address && <div className="text-[9px] text-gray-600">{o.delivery_address}</div>}
                   <div className="text-[9px] text-gray-500">{cargo.map(c => `${c.quantity}× ${c.truss_type}${c.size ? ' ' + c.size : ''}`).join(', ')}</div>
                 </td>
-                <td className="border border-gray-800" style={{ height: 52 }}></td>
+                <td className="border border-gray-800" style={{ height: 70 }}></td>
                 <td className="border border-gray-800"></td>
                 <td className="border border-gray-800 px-1 py-1 text-center font-semibold">
                   {orderTotalWeight(o, weights).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
@@ -89,9 +89,9 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
       </table>
 
       {/* Observação */}
-      <div className="mt-2">
+      <div className="mt-2 romaneio-obs">
         <span className="font-semibold text-xs">Observação:</span>
-        <div className="border border-gray-400 mt-1" style={{ height: 44 }}></div>
+        <div className="border border-gray-400 mt-1 romaneio-obs-box"></div>
       </div>
 
       {/* Rodapé */}
