@@ -244,6 +244,14 @@
       "type": "string",
       "description": "Quem fez a confer\u00eancia de entrega"
     },
+    "delivery_drive_id": {
+      "type": "string",
+      "description": "ID do recibo de entrega salvo no Google Drive"
+    },
+    "delivery_drive_link": {
+      "type": "string",
+      "description": "Link do recibo de entrega no Google Drive"
+    },
     "load_conferido": {
       "type": "boolean",
       "default": false,
@@ -256,6 +264,38 @@
     "load_conferido_by": {
       "type": "string",
       "description": "Quem fez a confer\u00eancia de carregamento"
+    },
+    "contract_rg": {
+      "type": "string",
+      "description": "RG do cliente (contrato)"
+    },
+    "contract_cpf": {
+      "type": "string",
+      "description": "CPF do cliente (contrato)"
+    },
+    "contract_signature": {
+      "type": "string",
+      "description": "Assinatura do contrato (base64 PNG)"
+    },
+    "contract_signed_by": {
+      "type": "string",
+      "description": "Quem assinou o contrato (cliente)"
+    },
+    "contract_signed_at": {
+      "type": "string",
+      "description": "Data/hora da assinatura do contrato"
+    },
+    "contract_drive_id": {
+      "type": "string",
+      "description": "ID do contrato assinado no Google Drive"
+    },
+    "contract_drive_link": {
+      "type": "string",
+      "description": "Link do contrato assinado no Google Drive"
+    },
+    "contract_link_sent_at": {
+      "type": "string",
+      "description": "Data/hora em que o link de assinatura do contrato foi enviado"
     },
     "scan_log": {
       "type": "array",

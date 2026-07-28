@@ -216,8 +216,43 @@ export default function DeliveryReceiptTab({ order }) {
     w.document.close();
   };
 
+  const [driveSaving, setDriveSaving] = useState(false);
+  const [driveLink, setDriveLink] = useState(order.delivery_drive_link || '');
+
+  const handleSaveToDrive = async () => {
+    if (!order.delivery_signature && !hasSignature) {
+      toast.error('Assine e salve o recibo antes de enviar ao Google Drive.');
+      return;
+    }
+    setDriveSaving(true);
+    try {
+      const res = await base44.functions.invoke('salvarReciboEntrega', { order_id: order.id });
+      if (res.data?.driveLink) {
+        setDriveLink(res.data.driveLink);
+        toast.success('Recibo salvo no Google Drive!');
+      } else {
+        toast.error(res.data?.error || 'Falha ao salvar no Drive.');
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.error || 'Falha ao salvar no Drive.');
+    } finally {
+      setDriveSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-5 mt-4">
+      {/* Status Google Drive */}
+      {driveLink && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+          <p className="text-xs text-green-700 flex-1">Recibo já salvo no Google Drive.</p>
+          <a href={driveLink} target="_blank" rel="noreferrer" className="text-xs font-semibold text-amber-600 hover:underline flex items-center gap-1">
+            Abrir
+          </a>
+        </div>
+      )}
+
       {/* Dados do recebedor */}
       <div className="space-y-3">
         <h4 className="text-sm font-semibold">Dados do Recebedor</h4>
@@ -309,12 +344,17 @@ export default function DeliveryReceiptTab({ order }) {
       </div>
 
       {/* Ações */}
-      <div className="flex gap-2 pt-1">
-        <Button onClick={handleSave} disabled={saving} className="flex-1">
-          {saved ? <><CheckCircle className="w-4 h-4 mr-2 text-green-400" /> Salvo!</> : saving ? 'Salvando...' : 'Salvar Recibo'}
-        </Button>
-        <Button variant="outline" onClick={handlePrintReceipt} className="flex-1">
-          Imprimir Recibo
+      <div className="flex flex-col gap-2 pt-1">
+        <div className="flex gap-2">
+          <Button onClick={handleSave} disabled={saving} className="flex-1">
+            {saved ? <><CheckCircle className="w-4 h-4 mr-2 text-green-400" /> Salvo!</> : saving ? 'Salvando...' : 'Salvar Recibo'}
+          </Button>
+          <Button variant="outline" onClick={handlePrintReceipt} className="flex-1">
+            Imprimir Recibo
+          </Button>
+        </div>
+        <Button onClick={handleSaveToDrive} disabled={driveSaving} variant="outline" className="w-full text-amber-700 border-amber-200 hover:bg-amber-50">
+          {driveSaving ? 'Enviando ao Drive...' : 'Salvar no Google Drive'}
         </Button>
       </div>
     </div>

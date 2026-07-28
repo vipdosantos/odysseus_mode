@@ -28,6 +28,7 @@ import SobraTrelica from './pages/SobraTrelica';
 import ApiConfig from './pages/ApiConfig';
 import Motorista from './pages/Motorista';
 import OrderStatusLookup from './pages/OrderStatusLookup';
+import ContractSign from './pages/ContractSign';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
@@ -39,6 +40,16 @@ const AuthenticatedApp = () => {
       <Routes>
         <Route path="/status" element={<OrderStatusLookup />} />
         <Route path="/status/:accessKey" element={<OrderStatusLookup />} />
+      </Routes>
+    );
+  }
+
+  // Public contract signing — no auth required
+  if (location.pathname.startsWith('/contrato')) {
+    return (
+      <Routes>
+        <Route path="/contrato/:accessKey" element={<ContractSign />} />
+        <Route path="/contrato" element={<ContractSign />} />
       </Routes>
     );
   }
