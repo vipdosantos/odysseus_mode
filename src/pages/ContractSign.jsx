@@ -23,18 +23,22 @@ export default function ContractSign() {
   const [done, setDone] = useState(null); // { driveLink }
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      if (!accessKey) { setErrorOrder('Link de assinatura inválido.'); setLoadingOrder(false); return; }
+      setLoadingOrder(true); setOrder(null); setErrorOrder(null);
+      if (!accessKey) { if (!cancelled) setErrorOrder('Link de assinatura inválido.'); setLoadingOrder(false); return; }
       try {
         const results = await base44.entities.Order.filter({ access_key: accessKey.trim() }, '-created_date', 1);
+        if (cancelled) return;
         if (results && results.length > 0) setOrder(results[0]);
         else setErrorOrder('Pedido não encontrado. Verifique o link recebido.');
       } catch (e) {
-        setErrorOrder('Não foi possível carregar o pedido.');
+        if (!cancelled) setErrorOrder('Não foi possível carregar o pedido.');
       } finally {
-        setLoadingOrder(false);
+        if (!cancelled) setLoadingOrder(false);
       }
     })();
+    return () => { cancelled = true; };
   }, [accessKey]);
 
   // Pre-fill if already signed
