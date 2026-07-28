@@ -55,6 +55,35 @@
       "type": "boolean",
       "default": true,
       "description": "Conta ativa"
+    },
+    "integration_type": {
+      "type": "string",
+      "enum": [
+        "nenhum",
+        "bradesco_api_banking",
+        "belvo",
+        "pluggy"
+      ],
+      "default": "nenhum",
+      "description": "Tipo de integra\u00e7\u00e3o Open Finance / API Banking"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "desconectado",
+        "conectado",
+        "erro"
+      ],
+      "default": "desconectado",
+      "description": "Status da sincroniza\u00e7\u00e3o com o banco"
+    },
+    "last_sync_at": {
+      "type": "string",
+      "description": "Data/hora da \u00faltima sincroniza\u00e7\u00e3o (ISO)"
+    },
+    "sync_error": {
+      "type": "string",
+      "description": "Mensagem de erro da \u00faltima sincroniza\u00e7\u00e3o"
     }
   },
   "required": [

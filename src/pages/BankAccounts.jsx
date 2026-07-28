@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, QrCode, Landmark, CheckCircle2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, QrCode, Landmark, CheckCircle2, RefreshCw, AlertTriangle, Link2, Link2Off } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 
 const empty = { label: '', type: 'pix', pix_key_type: 'cnpj', pix_key: '', banco: '', agencia: '', conta: '', titular: '', cnpj_cpf: '', active: true };
 
@@ -16,6 +17,7 @@ export default function BankAccounts() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(empty);
+  const [connectAcc, setConnectAcc] = useState(null);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['bank_accounts'],
@@ -70,8 +72,26 @@ export default function BankAccounts() {
               ) : (
                 <p className="text-sm text-muted-foreground mt-1">{acc.banco} — Ag: {acc.agencia} | Conta: {acc.conta} | {acc.titular}</p>
               )}
+              {acc.type === 'conta_bancaria' && acc.integration_type && acc.integration_type !== 'nenhum' && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge variant="outline" className={acc.sync_status === 'conectado' ? 'text-green-700 border-green-300' : acc.sync_status === 'erro' ? 'text-red-700 border-red-300' : 'text-muted-foreground'}>
+                    {acc.sync_status === 'conectado' ? <><CheckCircle2 className="w-3 h-3 mr-1" />Open Finance ativo</> : acc.sync_status === 'erro' ? <><AlertTriangle className="w-3 h-3 mr-1" />Erro</> : 'Desconectado'}
+                  </Badge>
+                  {acc.last_sync_at && (
+                    <span className="text-xs text-muted-foreground">
+                      Última sinc.: {new Date(acc.last_sync_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="flex gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
+              {acc.type === 'conta_bancaria' && (
+                <Button variant="outline" size="sm" onClick={() => setConnectAcc(acc)} className="text-xs">
+                  {acc.sync_status === 'conectado' ? <RefreshCw className="w-3.5 h-3.5 mr-1 text-green-600" /> : <Link2 className="w-3.5 h-3.5 mr-1" />}
+                  {acc.sync_status === 'conectado' ? 'Sincronizar' : 'Conectar'}
+                </Button>
+              )}
               <Button variant="ghost" size="icon" onClick={() => openEdit(acc)}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" className="text-destructive" onClick={() => remove.mutate(acc.id)}><Trash2 className="w-4 h-4" /></Button>
             </div>
@@ -158,6 +178,43 @@ export default function BankAccounts() {
               <Button variant="outline" className="flex-1" onClick={() => setOpen(false)}>Cancelar</Button>
               <Button className="flex-1" onClick={() => save.mutate(form)} disabled={save.isPending}>
                 {save.isPending ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Conectar via API Banking / Open Finance */}
+      <Dialog open={!!connectAcc} onOpenChange={(o) => !o && setConnectAcc(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Conectar via API Banking / Open Finance</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2 text-sm">
+            <p className="text-muted-foreground">
+              Para confirmar PIX e TED recebidos automaticamente nesta conta, é preciso contratar o acesso à API do banco.
+            </p>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+              <p className="font-medium">O que é necessário (Bradesco API Banking):</p>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>Contratar a API com o gerente da conta PJ</li>
+                <li><code>client_id</code> e <code>client_secret</code></li>
+                <li>Certificado digital para mTLS (.pfx/.pem)</li>
+                <li>Escopos liberados (extrato, saldo, PIX)</li>
+              </ul>
+            </div>
+            {connectAcc?.sync_status === 'conectado' ? (
+              <p className="text-green-700 font-medium flex items-center gap-1"><CheckCircle2 className="w-4 h-4" /> Conta já conectada.</p>
+            ) : (
+              <p className="text-amber-700 flex items-start gap-1"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> A integração ainda não está ativa — aguardando credenciais do banco.</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Alternativa: agregadores como Belvo ou Pluggy integram Bradesco (e outros bancos) via Open Finance, com consentimento do titular.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setConnectAcc(null)}>Fechar</Button>
+              <Button variant="secondary" className="flex-1" disabled>
+                <Link2 className="w-4 h-4 mr-1" /> Conectar (indisponível)
               </Button>
             </div>
           </div>
