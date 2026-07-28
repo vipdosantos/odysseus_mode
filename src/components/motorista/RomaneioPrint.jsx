@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Printer } from 'lucide-react';
+import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 import { buildCargo, orderTotalWeight } from '@/lib/trussWeights';
 
 const PRIORITY_RANK = { urgente: 4, alta: 3, normal: 2, baixa: 1 };
@@ -21,8 +22,9 @@ function RomaneioPage({ driverName, ordered, trucks, weights }) {
 
   return (
     <div className="romaneio-page border border-gray-800 p-5 mb-6 text-[11px] text-gray-900" style={{ breakAfter: 'page' }}>
-      <div className="text-center font-bold text-base mb-2 border-b border-gray-800 pb-1">
-        ROMANEIO DE ENTREGA
+      <div className="flex items-center gap-3 border-b border-gray-800 pb-2 mb-2">
+        <img src={LOGO_URL} alt="Modelajes" className="h-12 w-auto object-contain" />
+        <div className="flex-1 text-center font-bold text-base">ROMANEIO DE ENTREGA</div>
       </div>
 
       {/* Cabeçalho */}
