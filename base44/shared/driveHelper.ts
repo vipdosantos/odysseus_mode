@@ -48,17 +48,23 @@ export async function uploadPdfToFolder(
     "Content-Type: application/pdf\r\n\r\n";
   const tail = `\r\n--${boundary}--\r\n`;
 
-  const blob = new Blob([
-    new TextEncoder().encode(head),
-    new Uint8Array(pdfBytes),
-    new TextEncoder().encode(tail),
-  ]);
+  const blob = new Blob(
+    [
+      new TextEncoder().encode(head),
+      new Uint8Array(pdfBytes),
+      new TextEncoder().encode(tail),
+    ],
+    { type: `multipart/related; boundary=${boundary}` }
+  );
 
   const res = await fetch(
     "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
     {
       method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": `multipart/related; boundary=${boundary}`,
+      },
       body: blob,
     }
   );

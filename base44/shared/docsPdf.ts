@@ -141,7 +141,6 @@ export function buildContractPdf(order: any, sig: { rg: string; cpf: string; sig
   doc.text(`${order.client_name || "Cliente"} — RG: ${sig.rg || "—"} — CPF: ${sig.cpf || "—"}`, M, y + 4);
   doc.text(`Assinado em: ${fmtDate(sig.signedAt)}`, M, y + 9);
 
-  doc.save(`Contrato_${order.order_number || "pedido"}.pdf`);
   return doc.output("arraybuffer");
 }
 
@@ -225,6 +224,5 @@ export function buildDeliveryReceiptPdf(order: any) {
   doc.text(`Documento: ${order.delivery_signer_doc || "—"}`, M, y + 9);
   if (order.delivery_signed_at) doc.text(`Assinado em: ${fmtDate(order.delivery_signed_at)}`, M, y + 14);
 
-  doc.save(`Recibo_${order.order_number || "pedido"}.pdf`);
   return doc.output("arraybuffer");
 }

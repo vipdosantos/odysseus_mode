@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Package, Pen, Trash2, CheckCircle2, Loader2, AlertCircle, FileText, ExternalLink, Download } from 'lucide-react';
+import { Package, Pen, Trash2, CheckCircle2, Loader2, AlertCircle, FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ContractSign() {
@@ -177,12 +177,6 @@ export default function ContractSign() {
                       className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold"
                     >
                       <Download className="w-4 h-4" /> Baixar PDF do Contrato
-                    </a>
-                  )}
-                  {done.driveLink && (
-                    <a href={done.driveLink} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white border border-amber-200 text-amber-700 text-sm font-semibold hover:bg-amber-50">
-                      <ExternalLink className="w-4 h-4" /> Ver no Google Drive
                     </a>
                   )}
                 </div>
