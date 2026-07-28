@@ -17,7 +17,13 @@ export default function Scanner() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('keyboard'); // 'keyboard' | 'camera'
-  const [activeStage, setActiveStage] = useState('');
+  const [activeStage, setActiveStage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = window.localStorage.getItem('scanner_active_stage');
+      if (saved) return saved;
+    }
+    return '';
+  });
   const [cameraError, setCameraError] = useState('');
   const [historyStage, setHistoryStage] = useState('');
   const [historyFilter, setHistoryFilter] = useState('');
@@ -50,6 +56,13 @@ export default function Scanner() {
     if (!availableStages.includes(activeStage)) setActiveStage(availableStages[0] || '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableStages.join('|')]);
+
+  // Persiste a etapa selecionada para não recair em "OF e Etiquetas" a cada visita
+  useEffect(() => {
+    if (activeStage && typeof window !== 'undefined') {
+      window.localStorage.setItem('scanner_active_stage', activeStage);
+    }
+  }, [activeStage]);
   const stageKey = availableStages.includes(activeStage) ? activeStage : (availableStages[0] || '');
   const isDelivery = stageKey === 'entrega';
   const stageLabel = kanbanColumns.find(c => c.key === stageKey)?.label
