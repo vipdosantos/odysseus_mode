@@ -26,6 +26,7 @@ export const SCREENS = [
   { path: '/produtividade', label: 'Produtividade' },
   { path: '/cadastros', label: 'Cadastros' },
   { path: '/api-config', label: 'Integração API' },
+  { path: '/orcamentos', label: 'Orçamentos' },
   { path: '/usuarios', label: 'Usuários' },
 ];
 
@@ -35,6 +36,7 @@ const ROLE_DEFAULTS = {
   operador: {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_EDITAR,
+    '/orcamentos': ACCESS_EDITAR,
     '/aprovacoes': ACCESS_VER,
     '/estoque': ACCESS_EDITAR,
     '/sobra-trelica': ACCESS_EDITAR,
@@ -48,6 +50,7 @@ const ROLE_DEFAULTS = {
   financeiro: {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_VER,
+    '/orcamentos': ACCESS_EDITAR,
     '/ordem-pedido': ACCESS_EDITAR,
     '/aprovacoes': ACCESS_EDITAR,
     '/financeiro': ACCESS_EDITAR,
@@ -59,10 +62,12 @@ const ROLE_DEFAULTS = {
   vendedor: {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_EDITAR,
+    '/orcamentos': ACCESS_EDITAR,
   },
   visualizador: {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_VER,
+    '/orcamentos': ACCESS_VER,
     '/calendario': ACCESS_VER,
   },
   motorista: {
@@ -75,6 +80,7 @@ const ROLE_DEFAULTS = {
   encarregado: {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_EDITAR,
+    '/orcamentos': ACCESS_EDITAR,
     '/aprovacoes': ACCESS_VER,
     '/estoque': ACCESS_EDITAR,
     '/sobra-trelica': ACCESS_EDITAR,
