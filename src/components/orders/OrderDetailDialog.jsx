@@ -11,6 +11,7 @@ import OrderNFTab from './OrderNFTab';
 import QRZoomModal from './QRZoomModal';
 import DeliveryReceiptTab from './DeliveryReceiptTab';
 import ContractTab from './ContractTab';
+import OrderQuoteTab from './OrderQuoteTab';
 import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 
@@ -134,6 +135,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         <Tabs defaultValue="detalhes" className="mt-2">
           <TabsList className="w-full">
             <TabsTrigger value="detalhes" className="flex-1 text-xs">Detalhes</TabsTrigger>
+            <TabsTrigger value="orcamento" className="flex-1 text-xs">Orçamento</TabsTrigger>
             <TabsTrigger value="pagamento" className="flex-1 text-xs">Pagamento</TabsTrigger>
             <TabsTrigger value="nota" className="flex-1 text-xs">Nota Fiscal</TabsTrigger>
             <TabsTrigger value="recibo" className="flex-1 text-xs">Recibo</TabsTrigger>
@@ -303,6 +305,11 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           {/* ── ABA PAGAMENTO ── */}
           <TabsContent value="pagamento">
             <OrderPaymentTab order={order} />
+          </TabsContent>
+
+          {/* ── ABA ORÇAMENTO ── */}
+          <TabsContent value="orcamento">
+            <OrderQuoteTab order={order} />
           </TabsContent>
 
           {/* ── ABA NOTA FISCAL ── */}

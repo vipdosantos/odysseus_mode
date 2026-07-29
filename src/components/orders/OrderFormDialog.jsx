@@ -13,7 +13,9 @@ import { TRUSS_TYPES, FERRO_DIAMETERS } from '@/lib/trussTypes';
 import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
+import OrderHistoryClone from './OrderHistoryClone';
 import { DEFAULT_STATUSES } from './KanbanColumn';
+import { toast } from 'sonner';
 
 function generateAccessKey() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -139,6 +141,36 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     });
   };
 
+  const handleClone = (src) => {
+    setForm(f => ({
+      ...f,
+      client_name: src.client_name || f.client_name,
+      client_phone: src.client_phone || f.client_phone,
+      client_email: src.client_email || f.client_email,
+      seller_id: src.seller_id || f.seller_id,
+      seller_name: src.seller_name || f.seller_name,
+      seller_phone: src.seller_phone || f.seller_phone,
+      items: (src.items || []).map(it => ({
+        ...emptyItem,
+        truss_type: it.truss_type || 'H8',
+        size: it.size || '',
+        quantity: it.quantity || 1,
+        adicionais: (it.adicionais || []).filter(a => Number(a.quantity) > 0),
+        qr_code_id: '',
+      })),
+      delivery_address: src.delivery_address || f.delivery_address,
+      delivery_lat: src.delivery_lat ?? f.delivery_lat,
+      delivery_lng: src.delivery_lng ?? f.delivery_lng,
+      truck_type: src.truck_type || f.truck_type,
+      total_value: src.total_value || f.total_value,
+      payment_method: src.payment_method || f.payment_method,
+      installments: src.installments || f.installments,
+      notes: src.notes || f.notes,
+    }));
+    setClientSearch(src.client_name || '');
+    toast.success(`Pedido #${src.order_number} clonado! Ajuste os dados e salve.`);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -152,6 +184,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
             <TabsTrigger value="itens" className="flex-1">Itens</TabsTrigger>
             <TabsTrigger value="entrega" className="flex-1">Entrega</TabsTrigger>
             <TabsTrigger value="anexos" className="flex-1">Anexos</TabsTrigger>
+            {!order && <TabsTrigger value="historico" className="flex-1">Histórico</TabsTrigger>}
           </TabsList>
 
           {/* ── ABA DADOS ─────────────────────────── */}
@@ -417,6 +450,13 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
               maxFiles={10}
             />
           </TabsContent>
+
+          {/* ── ABA HISTÓRICO (clonagem) ─────────── */}
+          {!order && (
+            <TabsContent value="historico" className="mt-4">
+              <OrderHistoryClone onSelect={handleClone} currentClientName={form.client_name} />
+            </TabsContent>
+          )}
         </Tabs>
 
         <DialogFooter className="mt-6">
