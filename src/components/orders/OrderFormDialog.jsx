@@ -26,7 +26,7 @@ function generateAccessKey() {
 }
 
 const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
-const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS'];
+const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
 
 const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
 

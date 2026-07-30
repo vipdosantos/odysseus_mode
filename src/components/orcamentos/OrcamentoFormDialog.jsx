@@ -20,7 +20,7 @@ function generateAccessKey() {
 }
 
 const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
-const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS'];
+const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
 
 const PAG_OPTIONS = [
   { value: 'boleto', label: 'Boleto' },
