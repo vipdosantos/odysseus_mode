@@ -29,7 +29,7 @@ const PAG_OPTIONS = [
 const TIPO_LAJE_OPTIONS = ['Treliça', 'Pré-moldada', 'Maciça', 'Alveolar', 'Nervurada', 'Laje Treliça'];
 
 export default function OrderQuoteTab({ order, onConverted }) {
-  const [validade, setValidade] = useState(15);
+  const [validade, setValidade] = useState(Number(order?.validade_dias) || 15);
   const [obs, setObs] = useState(order?.notes || '');
   const [sending, setSending] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -38,12 +38,9 @@ export default function OrderQuoteTab({ order, onConverted }) {
   const [tipo, setTipo] = useState(order?.tipo || 'orcamento');
   const [tipoLaje, setTipoLaje] = useState(order?.quote_tipo_laje || 'Treliça');
 
-  // Editable unit prices per item
+  // Editable unit prices per item (from item.unit_price saved in the order)
   const initPrices = useMemo(() => {
-    const baseTotal = Number(order?.total_value) || 0;
-    const totalQtd = (order?.items || []).reduce((s, it) => s + (Number(it.quantity) || 0), 0);
-    const unit = totalQtd > 0 ? baseTotal / totalQtd : 0;
-    return (order?.items || []).map(() => Number(unit.toFixed(2)));
+    return (order?.items || []).map(it => Number(it.unit_price) || 0);
   }, [order]);
   const [unitPrices, setUnitPrices] = useState(initPrices);
 
@@ -76,12 +73,19 @@ export default function OrderQuoteTab({ order, onConverted }) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const items = (order.items || []).map((it, i) => ({
+        ...it,
+        unit_price: Number(unitPrices[i]) || 0,
+      }));
       await base44.entities.Order.update(order.id, {
+        items,
         total_value: total,
         payment_method: pagamento,
         installments: parcelas,
         payments,
         tipo,
+        quote_tipo_laje: tipoLaje,
+        validade_dias: Number(validade) || 15,
         notes: obs,
       });
       toast.success('Valores salvos!');
@@ -95,12 +99,19 @@ export default function OrderQuoteTab({ order, onConverted }) {
   const handleVirarPedido = async () => {
     setConverting(true);
     try {
+      const items = (order.items || []).map((it, i) => ({
+        ...it,
+        unit_price: Number(unitPrices[i]) || 0,
+      }));
       await base44.entities.Order.update(order.id, {
+        items,
         total_value: total,
         payment_method: pagamento,
         installments: parcelas,
         payments,
         tipo: 'pedido',
+        quote_tipo_laje: tipoLaje,
+        validade_dias: Number(validade) || 15,
         notes: obs,
       });
       setTipo('pedido');

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search, FileText, Plus } from 'lucide-react';
 import OrderQuoteTab from '@/components/orders/OrderQuoteTab';
-import OrderFormDialog from '@/components/orders/OrderFormDialog';
+import OrcamentoFormDialog from '@/components/orcamentos/OrcamentoFormDialog';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -126,12 +126,10 @@ export default function Orcamentos() {
         </Dialog>
       )}
 
-      <OrderFormDialog
+      <OrcamentoFormDialog
         open={showForm}
         onOpenChange={setShowForm}
-        order={null}
         onSave={handleSave}
-        defaultTipo="orcamento"
       />
     </div>
   );

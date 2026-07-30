@@ -52,6 +52,16 @@
       "default": "of_etiquetas",
       "description": "Etapa do pedido (chave da coluna Kanban)"
     },
+    "quote_tipo_laje": {
+      "type": "string",
+      "description": "Tipo de laje (or\u00e7amento)",
+      "default": "Treli\u00e7a"
+    },
+    "validade_dias": {
+      "type": "number",
+      "description": "Validade do or\u00e7amento em dias",
+      "default": 15
+    },
     "items": {
       "type": "array",
       "description": "Itens do pedido (treli\u00e7as)",
@@ -75,6 +85,11 @@
           },
           "quantity": {
             "type": "number"
+          },
+          "unit_price": {
+            "type": "number",
+            "default": 0,
+            "description": "Pre\u00e7o unit\u00e1rio (or\u00e7amento)"
           },
           "produced": {
             "type": "number",
