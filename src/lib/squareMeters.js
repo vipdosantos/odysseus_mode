@@ -1,5 +1,5 @@
 // Cálculo de metros quadrados (m²) para pedidos e orçamentos
-// Treliçada: qtd × metro × 0.425
+// Laje: qtd × metro × 0.425
 // Painel: qtd × metro × 0.25
 // Valor interno — não exibir para o cliente
 
@@ -28,7 +28,7 @@ export function calcTotalSquareMeters(items, tipoLaje) {
 }
 
 // Placas de preenchimento EPS
-// Treliçada: m² × 2,3
+// Laje: m² × 2,3
 // Painel: m² × 3,9
 export function calcEpsPlates(item, tipoLaje) {
   const m2 = calcSquareMeters(item, tipoLaje);

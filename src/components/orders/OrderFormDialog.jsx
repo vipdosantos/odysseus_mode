@@ -27,7 +27,7 @@ function generateAccessKey() {
   ).join('');
 }
 
-const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
+const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
 
 const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
@@ -41,7 +41,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     truck_type: 'nenhum',
     total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
     payments: [],
-    quote_tipo_laje: 'Treliçada', tipo_enchimento: 'Nenhum',
+    quote_tipo_laje: 'Laje', tipo_enchimento: 'Nenhum',
     items: [{ ...emptyItem }],
     attachments: [],
     delivery_photos: [],
@@ -82,7 +82,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
       setForm({
         ...order,
         tipo_enchimento: order.tipo_enchimento || 'Nenhum',
-        quote_tipo_laje: order.quote_tipo_laje || 'Treliçada',
+        quote_tipo_laje: order.quote_tipo_laje || 'Laje',
         items: order.items?.length ? order.items : [{ ...emptyItem }],
         attachments: order.attachments || [],
         delivery_photos: order.delivery_photos || [],
@@ -97,7 +97,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
         truck_type: 'nenhum',
         total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
         payments: [],
-        quote_tipo_laje: 'Treliçada', tipo_enchimento: 'Nenhum',
+        quote_tipo_laje: 'Laje', tipo_enchimento: 'Nenhum',
         items: [{ ...emptyItem }],
         attachments: [],
         delivery_photos: [],
@@ -310,7 +310,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
               </div>
               <div>
                 <Label>Tipo de Laje</Label>
-                <Select value={form.quote_tipo_laje || 'Treliçada'} onValueChange={v => set('quote_tipo_laje', v)}>
+                <Select value={form.quote_tipo_laje || 'Laje'} onValueChange={v => set('quote_tipo_laje', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}

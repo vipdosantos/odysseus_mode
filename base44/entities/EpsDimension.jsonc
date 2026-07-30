@@ -5,10 +5,10 @@
     "tipo_laje": {
       "type": "string",
       "enum": [
-        "Treli\u00e7ada",
+        "Laje",
         "Painel"
       ],
-      "default": "Treli\u00e7ada",
+      "default": "Laje",
       "description": "Tipo de laje"
     },
     "truss_type": {

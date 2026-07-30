@@ -21,7 +21,7 @@ function generateAccessKey() {
   ).join('');
 }
 
-const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
+const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
 
 const PAG_OPTIONS = [
@@ -44,7 +44,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
     delivery_address: '', delivery_date: '',
     total_value: 0, payment_method: 'pix', installments: 1, payments: [],
     notes: '', access_key: '',
-    quote_tipo_laje: 'Treliçada', tipo_enchimento: 'Nenhum', validade_dias: 15,
+    quote_tipo_laje: 'Laje', tipo_enchimento: 'Nenhum', validade_dias: 15,
     items: [{ ...emptyItem }],
   });
 
@@ -68,7 +68,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
         delivery_address: '', delivery_date: '',
         total_value: 0, payment_method: 'pix', installments: 1, payments: [],
         notes: '', access_key: generateAccessKey(),
-        quote_tipo_laje: 'Treliçada', tipo_enchimento: 'Nenhum', validade_dias: 15,
+        quote_tipo_laje: 'Laje', tipo_enchimento: 'Nenhum', validade_dias: 15,
         items: [{ ...emptyItem }],
       });
       setClientSearch('');
