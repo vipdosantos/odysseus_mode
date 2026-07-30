@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { TRUSS_TYPES } from '@/lib/trussTypes';
+import { TRUSS_TYPES, getEpsSize } from '@/lib/trussTypes';
 import PaymentsEditor from '@/components/orders/PaymentsEditor';
 import { toast } from 'sonner';
 
@@ -75,6 +75,12 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
     const items = [...form.items];
     items[idx] = { ...items[idx], [field]: value };
     setForm(f => ({ ...f, items }));
+  };
+
+  // Preenche automaticamente o tamanho do EPS ao mudar treliça ou tipo de enchimento/laje
+  const autoFillEpsSize = (items, tipoLaje, enchimento) => {
+    if (enchimento !== 'EPS') return items;
+    return items.map(it => ({ ...it, size: getEpsSize(tipoLaje, it.truss_type) || it.size }));
   };
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { ...emptyItem }] }));
   const removeItem = (idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
@@ -179,7 +185,12 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <Label className="text-xs">Tipo de Laje</Label>
-              <Select value={form.quote_tipo_laje} onValueChange={v => set('quote_tipo_laje', v)}>
+              <Select value={form.quote_tipo_laje} onValueChange={v => {
+                set('quote_tipo_laje', v);
+                if (form.tipo_enchimento === 'EPS') {
+                  setForm(f => ({ ...f, quote_tipo_laje: v, items: autoFillEpsSize(f.items, v, 'EPS') }));
+                }
+              }}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -188,7 +199,12 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
             </div>
             <div>
               <Label className="text-xs">Tipo de Enchimento</Label>
-              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)}>
+              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => {
+                set('tipo_enchimento', v);
+                if (v === 'EPS') {
+                  setForm(f => ({ ...f, tipo_enchimento: v, items: autoFillEpsSize(f.items, f.quote_tipo_laje, 'EPS') }));
+                }
+              }}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -215,7 +231,11 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                   <div className="flex items-end gap-2">
                     <div className="w-20 shrink-0">
                       <Label className="text-[10px] text-muted-foreground">Tipo</Label>
-                      <Select value={item.truss_type} onValueChange={v => updateItem(idx, 'truss_type', v)}>
+                      <Select value={item.truss_type} onValueChange={v => {
+                        const epsSize = form.tipo_enchimento === 'EPS' ? getEpsSize(form.quote_tipo_laje, v) : '';
+                        updateItem(idx, 'truss_type', v);
+                        if (epsSize) updateItem(idx, 'size', epsSize);
+                      }}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {TRUSS_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}

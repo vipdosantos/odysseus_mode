@@ -10,3 +10,11 @@ export const FERRO_DIAMETERS = [
 ];
 
 export const FERRO_LABEL = (code) => FERRO_DIAMETERS.find(f => f.code === code)?.label || code;
+
+// Dimensões de painel EPS por tipo de laje e tipo de treliça
+export const EPS_DIMENSIONS = {
+  'Treliçada': { H8: '1000x330x070', H12: '1000x330x100', H16: '1000x330x140', H20: '1000x330x180' },
+  'Painel':    { H8: '1000x150x040', H12: '1000x150x070', H16: '1000x150x120', H20: '1000x150x160' },
+};
+
+export const getEpsSize = (tipoLaje, trussType) => EPS_DIMENSIONS[tipoLaje]?.[trussType] || '';

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { TRUSS_TYPES, FERRO_DIAMETERS } from '@/lib/trussTypes';
+import { TRUSS_TYPES, FERRO_DIAMETERS, getEpsSize } from '@/lib/trussTypes';
 import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
@@ -116,6 +116,12 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
   };
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { ...emptyItem }] }));
   const removeItem = (idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
+
+  // Preenche automaticamente o tamanho do EPS ao mudar treliça ou tipo de enchimento/laje
+  const autoFillEpsSize = (items, tipoLaje, enchimento) => {
+    if (enchimento !== 'EPS') return items;
+    return items.map(it => ({ ...it, size: getEpsSize(tipoLaje, it.truss_type) || it.size }));
+  };
 
   const updateAdicional = (idx, diametro, value) => {
     const qty = Number(value) || 0;
@@ -284,7 +290,12 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
               </div>
               <div>
                 <Label>Tipo de Laje</Label>
-                <Select value={form.quote_tipo_laje || 'Treliçada'} onValueChange={v => set('quote_tipo_laje', v)}>
+                <Select value={form.quote_tipo_laje || 'Treliçada'} onValueChange={v => {
+                  set('quote_tipo_laje', v);
+                  if (form.tipo_enchimento === 'EPS') {
+                    setForm(f => ({ ...f, quote_tipo_laje: v, items: autoFillEpsSize(f.items, v, 'EPS') }));
+                  }
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -293,7 +304,12 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
               </div>
               <div>
                 <Label>Tipo de Enchimento</Label>
-                <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)}>
+                <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => {
+                  set('tipo_enchimento', v);
+                  if (v === 'EPS') {
+                    setForm(f => ({ ...f, tipo_enchimento: v, items: autoFillEpsSize(f.items, f.quote_tipo_laje, 'EPS') }));
+                  }
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -379,7 +395,11 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                   <div className="flex items-end gap-3">
                   <div className="w-28">
                     <Label className="text-xs">Tipo Treliça</Label>
-                    <Select value={item.truss_type || 'H8'} onValueChange={v => updateItem(idx, 'truss_type', v)}>
+                    <Select value={item.truss_type || 'H8'} onValueChange={v => {
+                      const epsSize = form.tipo_enchimento === 'EPS' ? getEpsSize(form.quote_tipo_laje, v) : '';
+                      updateItem(idx, 'truss_type', v);
+                      if (epsSize) updateItem(idx, 'size', epsSize);
+                    }}>
                       <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
                       <SelectContent>
                         {TRUSS_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -388,7 +408,9 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                   </div>
                   <div className="flex-1">
                     <Label className="text-xs">Tamanho / Produto</Label>
-                    {products.length > 0 ? (
+                    {form.tipo_enchimento === 'EPS' ? (
+                      <Input value={item.size} readOnly className="bg-muted/60 text-muted-foreground" placeholder="Automático (EPS)" />
+                    ) : products.length > 0 ? (
                       <Select value={item.size} onValueChange={v => updateItem(idx, 'size', v)}>
                         <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
                         <SelectContent>
