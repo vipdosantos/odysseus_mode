@@ -26,7 +26,7 @@ const PAG_OPTIONS = [
   { value: 'cheque', label: 'Cheque' },
 ];
 
-const TIPO_LAJE_OPTIONS = ['Treliça', 'Pré-moldada', 'Maciça', 'Alveolar', 'Nervurada', 'Laje Treliça'];
+const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 
 export default function OrderQuoteTab({ order, onConverted }) {
   const [validade, setValidade] = useState(Number(order?.validade_dias) || 15);

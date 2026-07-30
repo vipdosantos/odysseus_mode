@@ -19,7 +19,7 @@ function generateAccessKey() {
   ).join('');
 }
 
-const TIPO_LAJE_OPTIONS = ['Treliça', 'Pré-moldada', 'Maciça', 'Alveolar', 'Nervurada', 'Laje Treliça'];
+const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 
 const PAG_OPTIONS = [
   { value: 'boleto', label: 'Boleto' },
@@ -41,7 +41,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
     delivery_address: '', delivery_date: '',
     total_value: 0, payment_method: 'pix', installments: 1, payments: [],
     notes: '', access_key: '',
-    quote_tipo_laje: 'Treliça', validade_dias: 15,
+    quote_tipo_laje: 'Treliçada', validade_dias: 15,
     items: [{ ...emptyItem }],
   });
 
@@ -61,7 +61,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
         delivery_address: '', delivery_date: '',
         total_value: 0, payment_method: 'pix', installments: 1, payments: [],
         notes: '', access_key: generateAccessKey(),
-        quote_tipo_laje: 'Treliça', validade_dias: 15,
+        quote_tipo_laje: 'Treliçada', validade_dias: 15,
         items: [{ ...emptyItem }],
       });
       setClientSearch('');

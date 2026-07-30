@@ -25,6 +25,8 @@ function generateAccessKey() {
   ).join('');
 }
 
+const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
+
 const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
 
 export default function OrderFormDialog({ open, onOpenChange, order, onSave, defaultTipo = 'pedido' }) {
@@ -36,6 +38,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     truck_type: 'nenhum',
     total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
     payments: [],
+    quote_tipo_laje: 'Treliçada',
     items: [{ ...emptyItem }],
     attachments: [],
     delivery_photos: [],
@@ -84,6 +87,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
         truck_type: 'nenhum',
         total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
         payments: [],
+        quote_tipo_laje: 'Treliçada',
         items: [{ ...emptyItem }],
         attachments: [],
         delivery_photos: [],
@@ -274,6 +278,15 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                     <SelectItem value="normal">Normal</SelectItem>
                     <SelectItem value="alta">Alta</SelectItem>
                     <SelectItem value="urgente">Urgente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Tipo de Laje</Label>
+                <Select value={form.quote_tipo_laje || 'Treliçada'} onValueChange={v => set('quote_tipo_laje', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
