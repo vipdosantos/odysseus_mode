@@ -80,6 +80,8 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     if (order) {
       setForm({
         ...order,
+        tipo_enchimento: order.tipo_enchimento || 'Nenhum',
+        quote_tipo_laje: order.quote_tipo_laje || 'Treliçada',
         items: order.items?.length ? order.items : [{ ...emptyItem }],
         attachments: order.attachments || [],
         delivery_photos: order.delivery_photos || [],
