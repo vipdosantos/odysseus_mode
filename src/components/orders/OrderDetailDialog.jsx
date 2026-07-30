@@ -122,7 +122,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl">Pedido #{order.order_number}</DialogTitle>
