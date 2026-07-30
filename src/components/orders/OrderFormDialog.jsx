@@ -26,6 +26,7 @@ function generateAccessKey() {
 }
 
 const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
+const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS'];
 
 const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
 
@@ -38,7 +39,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     truck_type: 'nenhum',
     total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
     payments: [],
-    quote_tipo_laje: 'Treliçada',
+    quote_tipo_laje: 'Treliçada', tipo_enchimento: 'Nenhum',
     items: [{ ...emptyItem }],
     attachments: [],
     delivery_photos: [],
@@ -87,7 +88,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
         truck_type: 'nenhum',
         total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
         payments: [],
-        quote_tipo_laje: 'Treliçada',
+        quote_tipo_laje: 'Treliçada', tipo_enchimento: 'Nenhum',
         items: [{ ...emptyItem }],
         attachments: [],
         delivery_photos: [],
@@ -287,6 +288,15 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Tipo de Enchimento</Label>
+                <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

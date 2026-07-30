@@ -20,6 +20,7 @@ function generateAccessKey() {
 }
 
 const TIPO_LAJE_OPTIONS = ['Treliçada', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
+const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS'];
 
 const PAG_OPTIONS = [
   { value: 'boleto', label: 'Boleto' },
@@ -41,7 +42,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
     delivery_address: '', delivery_date: '',
     total_value: 0, payment_method: 'pix', installments: 1, payments: [],
     notes: '', access_key: '',
-    quote_tipo_laje: 'Treliçada', validade_dias: 15,
+    quote_tipo_laje: 'Treliçada', tipo_enchimento: 'Nenhum', validade_dias: 15,
     items: [{ ...emptyItem }],
   });
 
@@ -61,7 +62,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
         delivery_address: '', delivery_date: '',
         total_value: 0, payment_method: 'pix', installments: 1, payments: [],
         notes: '', access_key: generateAccessKey(),
-        quote_tipo_laje: 'Treliçada', validade_dias: 15,
+        quote_tipo_laje: 'Treliçada', tipo_enchimento: 'Nenhum', validade_dias: 15,
         items: [{ ...emptyItem }],
       });
       setClientSearch('');
@@ -175,13 +176,22 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
           </div>
 
           {/* Tipo de laje */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <Label className="text-xs">Tipo de Laje</Label>
               <Select value={form.quote_tipo_laje} onValueChange={v => set('quote_tipo_laje', v)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Tipo de Enchimento</Label>
+              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

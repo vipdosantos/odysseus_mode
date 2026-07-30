@@ -55,7 +55,12 @@
     "quote_tipo_laje": {
       "type": "string",
       "description": "Tipo de laje (or\u00e7amento)",
-      "default": "Treli\u00e7a"
+      "default": "Treli\u00e7ada"
+    },
+    "tipo_enchimento": {
+      "type": "string",
+      "description": "Tipo de enchimento da laje",
+      "default": "Nenhum"
     },
     "validade_dias": {
       "type": "number",
