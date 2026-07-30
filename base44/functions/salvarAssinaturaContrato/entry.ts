@@ -28,6 +28,7 @@ export default async function (req: Request): Promise<Response> {
     const { id, webViewLink } = await uploadPdfToFolder(accessToken, folderId, fileName, pdfBytes);
 
     await base44.asServiceRole.entities.Order.update(order.id, {
+      tipo: "pedido",
       contract_rg: rg,
       contract_cpf: cpf,
       contract_signature: signature,

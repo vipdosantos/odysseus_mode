@@ -5,12 +5,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { base44 } from '@/api/base44Client';
-import { Printer, MessageCircle, Mail, Save } from 'lucide-react';
+import { FileDown, MessageCircle, Mail, Save, FileSignature, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 import PaymentsEditor from './PaymentsEditor';
+import ContractTab from './ContractTab';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -25,11 +28,14 @@ const PAG_OPTIONS = [
 
 const TIPO_LAJE_OPTIONS = ['Treliça', 'Pré-moldada', 'Maciça', 'Alveolar', 'Nervurada', 'Laje Treliça'];
 
-export default function OrderQuoteTab({ order }) {
+export default function OrderQuoteTab({ order, onConverted }) {
   const [validade, setValidade] = useState(15);
   const [obs, setObs] = useState(order?.notes || '');
   const [sending, setSending] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [tipo, setTipo] = useState(order?.tipo || 'orcamento');
   const [tipoLaje, setTipoLaje] = useState(order?.quote_tipo_laje || 'Treliça');
 
   // Editable unit prices per item
@@ -75,12 +81,35 @@ export default function OrderQuoteTab({ order }) {
         payment_method: pagamento,
         installments: parcelas,
         payments,
+        tipo,
+        notes: obs,
       });
-      toast.success('Valores salvos no pedido!');
+      toast.success('Valores salvos!');
     } catch (e) {
       toast.error('Erro ao salvar valores.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleVirarPedido = async () => {
+    setConverting(true);
+    try {
+      await base44.entities.Order.update(order.id, {
+        total_value: total,
+        payment_method: pagamento,
+        installments: parcelas,
+        payments,
+        tipo: 'pedido',
+        notes: obs,
+      });
+      setTipo('pedido');
+      toast.success('Orçamento convertido em pedido!');
+      if (onConverted) onConverted();
+    } catch (e) {
+      toast.error('Erro ao converter em pedido.');
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -105,7 +134,7 @@ export default function OrderQuoteTab({ order }) {
       ? `${parcelas}x de R$ ${fmtBRL(total / parcelas)}`
       : 'À vista';
     const pag = PAG_OPTIONS.find(p => p.value === pagamento)?.label || pagamento || '—';
-    const paymentsRows = (payments.length > 0 ? payments : []).map((p, i) => {
+    const paymentsRows = (payments.length > 0 ? payments : []).map((p) => {
       const lbl = PAG_OPTIONS.find(o => o.value === p.method)?.label || p.method;
       const parc = Number(p.installments) > 1 ? `${p.installments}x` : 'À vista';
       return `<div><span>${lbl} (${parc})</span><span>R$ ${fmtBRL(p.value)}</span></div>`;
@@ -113,9 +142,8 @@ export default function OrderQuoteTab({ order }) {
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento #${order.order_number}</title>
     <style>
-      @page { size: A4 portrait; margin: 12mm; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Inter', Arial, sans-serif; color: #1e293b; font-size: 12px; }
+      body { font-family: 'Inter', Arial, sans-serif; color: #1e293b; font-size: 12px; padding: 12mm; }
       .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f59e0b; padding-bottom: 10px; margin-bottom: 14px; }
       .brand { display: flex; align-items: center; gap: 10px; }
       .brand img { height: 42px; }
@@ -148,7 +176,6 @@ export default function OrderQuoteTab({ order }) {
       .footer { margin-top: 18px; border-top: 1px solid #e5e7eb; padding-top: 8px; display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; }
       .sign { margin-top: 24px; text-align: center; }
       .sign .line { border-top: 1px solid #1e293b; width: 280px; margin: 0 auto; padding-top: 4px; font-size: 10px; color: #64748b; }
-      @media print { body { margin: 0; } }
     </style></head>
     <body>
       <div class="header">
@@ -215,11 +242,54 @@ export default function OrderQuoteTab({ order }) {
     </body></html>`;
   };
 
-  const handlePrint = () => {
-    const w = window.open('', '_blank');
-    w.document.write(buildHtml());
-    w.document.close();
-    w.onload = () => setTimeout(() => { w.focus(); w.print(); }, 500);
+  const handleSavePdf = async () => {
+    setGeneratingPdf(true);
+    try {
+      const fullHtml = buildHtml();
+      const bodyMatch = fullHtml.match(/<body>([\s\S]*)<\/body>/);
+      const headMatch = fullHtml.match(/<style>([\s\S]*)<\/style>/);
+
+      const container = document.createElement('div');
+      container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#ffffff;';
+      container.innerHTML = `<style>${headMatch ? headMatch[1] : ''}</style>${bodyMatch ? bodyMatch[1] : fullHtml}`;
+      document.body.appendChild(container);
+
+      // Wait for images to load
+      const imgs = container.querySelectorAll('img');
+      await Promise.all(Array.from(imgs).map(img =>
+        img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
+      ));
+
+      const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      document.body.removeChild(container);
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+      const imgData = canvas.toDataURL('image/png');
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save(`Orcamento_${order.order_number}.pdf`);
+      toast.success('PDF salvo!');
+    } catch (e) {
+      toast.error('Erro ao gerar PDF.');
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   const handleWhatsApp = async () => {
@@ -276,8 +346,23 @@ export default function OrderQuoteTab({ order }) {
     }
   };
 
+  const isPedido = tipo === 'pedido';
+
   return (
     <div className="space-y-4 mt-4">
+      {/* Status banner */}
+      {isPedido ? (
+        <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 p-3">
+          <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+          <p className="text-sm font-semibold text-green-800">Este orçamento já foi convertido em pedido.</p>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <FileSignature className="w-5 h-5 text-amber-600 shrink-0" />
+          <p className="text-sm font-semibold text-amber-800">Orçamento em negociação. Salve em PDF, envie ao cliente e converta em pedido quando aceitar.</p>
+        </div>
+      )}
+
       {/* Itens com preços editáveis */}
       <div className="space-y-2">
         <Label className="text-xs font-semibold">Itens e valores</Label>
@@ -377,12 +462,13 @@ export default function OrderQuoteTab({ order }) {
         <div className="flex justify-between text-sm font-bold pt-1 border-t border-border"><span>Total</span><span className="text-primary">{valorTexto}</span></div>
       </div>
 
+      {/* Ações principais */}
       <div className="flex flex-col gap-2">
         <Button onClick={handleSave} disabled={saving} variant="outline" className="w-full">
-          <Save className="w-4 h-4 mr-2" /> {saving ? 'Salvando...' : 'Salvar valores no pedido'}
+          <Save className="w-4 h-4 mr-2" /> {saving ? 'Salvando...' : 'Salvar valores'}
         </Button>
-        <Button onClick={handlePrint} className="w-full bg-primary text-primary-foreground">
-          <Printer className="w-4 h-4 mr-2" /> Imprimir / Salvar PDF
+        <Button onClick={handleSavePdf} disabled={generatingPdf} className="w-full bg-primary text-primary-foreground">
+          <FileDown className="w-4 h-4 mr-2" /> {generatingPdf ? 'Gerando PDF...' : 'Salvar em PDF'}
         </Button>
         <div className="flex gap-2">
           <Button onClick={handleWhatsApp} disabled={sending} variant="outline" className="flex-1 text-green-700 border-green-300 hover:bg-green-50">
@@ -393,9 +479,18 @@ export default function OrderQuoteTab({ order }) {
           </Button>
         </div>
       </div>
-      <p className="text-[11px] text-muted-foreground text-center">
-        O envio por e-mail/WhatsApp abre o app correspondente com o orçamento preenchido para você confirmar o envio.
-      </p>
+
+      {/* Virar Pedido */}
+      {!isPedido && (
+        <Button onClick={handleVirarPedido} disabled={converting} className="w-full bg-green-600 hover:bg-green-700 text-white h-11">
+          <CheckCircle2 className="w-4 h-4 mr-2" /> {converting ? 'Convertendo...' : 'Virar Pedido'}
+        </Button>
+      )}
+
+      {/* Contrato */}
+      <div className="pt-4 border-t border-border">
+        <ContractTab order={{ ...order, tipo }} canEdit={true} />
+      </div>
     </div>
   );
 }

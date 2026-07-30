@@ -27,11 +27,11 @@ function generateAccessKey() {
 
 const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
 
-export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
+export default function OrderFormDialog({ open, onOpenChange, order, onSave, defaultTipo = 'pedido' }) {
   const [form, setForm] = useState({
     order_number: '', client_name: '', client_phone: '', client_email: '',
     seller_id: '', seller_name: '', seller_phone: '',
-    status: 'of_etiquetas', priority: 'normal',
+    tipo: defaultTipo, status: 'of_etiquetas', priority: 'normal',
     delivery_date: '', delivery_address: '', delivery_lat: null, delivery_lng: null,
     truck_type: 'nenhum',
     total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
@@ -79,7 +79,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
         order_number: `PED-${Date.now().toString().slice(-6)}`,
         client_name: '', client_phone: '', client_email: '',
         seller_id: '', seller_name: '', seller_phone: '',
-        status: 'of_etiquetas', priority: 'normal',
+        tipo: defaultTipo, status: 'of_etiquetas', priority: 'normal',
         delivery_date: '', delivery_address: '', delivery_lat: null, delivery_lng: null,
         truck_type: 'nenhum',
         total_value: 0, payment_method: 'boleto', installments: 1, notes: '',

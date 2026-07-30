@@ -168,11 +168,12 @@ export default function Orders() {
   };
 
   // Vendedor só vê os próprios pedidos; visualizador também restrito
-  const visibleOrders = user?.role === 'vendedor'
+  const visibleOrders = (user?.role === 'vendedor'
     ? orders.filter(o => o.seller_id === user.id || o.seller_name === user.full_name)
     : user?.role === 'visualizador'
     ? orders.filter(o => o.seller_id === user.id || o.seller_name === user.full_name || o.created_by_id === user.id)
-    : orders; // admin, operador, financeiro veem todos
+    : orders // admin, operador, financeiro veem todos
+  ).filter(o => o.tipo !== 'orcamento'); // Orçamentos não aparecem no Kanban de pedidos
 
   const filtered = visibleOrders.filter(o =>
     !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
