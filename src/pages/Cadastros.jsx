@@ -116,6 +116,29 @@ const truckColumns = [
   )},
 ];
 
+// ─── Dimensões de EPS/Lajota ─────────────────────────────────
+const epsFields = [
+  { key: 'tipo_laje', label: 'Tipo de Laje', default: 'Treliçada',
+    enum: ['Treliçada', 'Painel'] },
+  { key: 'truss_type', label: 'Tipo de Treliça', default: 'H8',
+    enum: ['H8', 'H12', 'H16', 'H20', 'H25', 'H30'] },
+  { key: 'tipo_enchimento', label: 'Tipo de Enchimento', default: 'EPS',
+    enum: ['EPS', 'Lajota'] },
+  { key: 'dimension', label: 'Dimensão', fullWidth: true, default: '' },
+  { key: 'active', label: 'Ativo', type: 'boolean', default: true },
+];
+const epsColumns = [
+  { key: 'tipo_laje', label: 'Tipo de Laje' },
+  { key: 'truss_type', label: 'Treliça' },
+  { key: 'tipo_enchimento', label: 'Enchimento' },
+  { key: 'dimension', label: 'Dimensão' },
+  { key: 'active', label: 'Ativo', render: (v) => (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${v !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      {v !== false ? 'Ativo' : 'Inativo'}
+    </span>
+  )},
+];
+
 // Produtos gerenciados pelo componente ProductsWithCategory
 
 export default function Cadastros() {
@@ -135,6 +158,7 @@ export default function Cadastros() {
           <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
           <TabsTrigger value="caminhoes">Tipos de Caminhão</TabsTrigger>
           <TabsTrigger value="cat-insumos">Cat. Produtos</TabsTrigger>
+          <TabsTrigger value="eps">Dimensões EPS</TabsTrigger>
           <TabsTrigger value="certificado">Certificado Digital</TabsTrigger>
           <TabsTrigger value="nfse">NFS-e</TabsTrigger>
         </TabsList>
@@ -194,6 +218,16 @@ export default function Cadastros() {
             title="Categoria de Produto"
             fields={supplyCatFields}
             columns={supplyCatColumns}
+          />
+        </TabsContent>
+
+        <TabsContent value="eps">
+          <CadastroTable
+            entity={base44.entities.EpsDimension}
+            entityKey="eps_dimensions"
+            title="Dimensão"
+            fields={epsFields}
+            columns={epsColumns}
           />
         </TabsContent>
 

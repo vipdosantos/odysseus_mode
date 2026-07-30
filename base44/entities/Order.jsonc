@@ -88,6 +88,11 @@
             ],
             "description": "Tipo de treli\u00e7a"
           },
+          "enchimento_dimension": {
+            "type": "string",
+            "description": "Dimens\u00e3o do enchimento (EPS/Lajota) - auto-preenchido pela tabela",
+            "default": ""
+          },
           "quantity": {
             "type": "number"
           },

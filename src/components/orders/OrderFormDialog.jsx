@@ -10,6 +10,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { TRUSS_TYPES, FERRO_DIAMETERS } from '@/lib/trussTypes';
+import { lookupEpsDimension } from '@/lib/epsDimensions';
 import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
@@ -70,6 +71,11 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     queryFn: () => base44.entities.TruckType.filter({ active: true }, 'name', 200),
   });
 
+  const { data: epsDimensions = [] } = useQuery({
+    queryKey: ['eps_dimensions'],
+    queryFn: () => base44.entities.EpsDimension.list('-created_date', 200),
+  });
+
   useEffect(() => {
     if (order) {
       setForm({
@@ -111,9 +117,26 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
   const updateItem = (idx, field, value) => {
     const items = [...form.items];
     items[idx] = { ...items[idx], [field]: value };
+    if (field === 'truss_type') {
+      const dim = lookupEpsDimension(form.quote_tipo_laje, value, form.tipo_enchimento, epsDimensions);
+      if (dim || form.tipo_enchimento !== 'Nenhum') items[idx].enchimento_dimension = dim;
+    }
     if (!items[idx].qr_code_id) items[idx].qr_code_id = `${form.order_number}-${items[idx].size}-${idx}`;
     setForm(f => ({ ...f, items }));
   };
+
+  // Auto-preencher dimensão do enchimento em todos os itens quando tipo_laje ou tipo_enchimento muda
+  useEffect(() => {
+    if (!epsDimensions.length) return;
+    setForm(f => {
+      if (f.tipo_enchimento === 'Nenhum' && !f.items.some(it => it.enchimento_dimension)) return f;
+      const items = f.items.map(it => ({
+        ...it,
+        enchimento_dimension: lookupEpsDimension(f.quote_tipo_laje, it.truss_type, f.tipo_enchimento, epsDimensions),
+      }));
+      return { ...f, items };
+    });
+  }, [form.tipo_enchimento, form.quote_tipo_laje, epsDimensions]);
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { ...emptyItem }] }));
   const removeItem = (idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
 
@@ -413,6 +436,17 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                     </Button>
                   )}
                   </div>
+                  {form.tipo_enchimento !== 'Nenhum' && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs font-medium text-muted-foreground">Dimensão {form.tipo_enchimento}:</span>
+                      <Input
+                        className="h-8 w-48 text-xs"
+                        value={item.enchimento_dimension || ''}
+                        onChange={e => updateItem(idx, 'enchimento_dimension', e.target.value)}
+                        placeholder="Auto-preenchido pela tabela"
+                      />
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1 border-t border-border/50">
                     <span className="text-xs font-medium text-muted-foreground">Adicionais (ferros):</span>
                     {FERRO_DIAMETERS.map(f => {
