@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { TRUSS_TYPES } from '@/lib/trussTypes';
 import { lookupEpsDimension } from '@/lib/epsDimensions';
+import { calcSquareMeters, calcTotalSquareMeters, fmtM2 } from '@/lib/squareMeters';
 import PaymentsEditor from '@/components/orders/PaymentsEditor';
 import { toast } from 'sonner';
 
@@ -263,17 +264,23 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                       </Button>
                     )}
                   </div>
-                  {form.tipo_enchimento !== 'Nenhum' && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-medium text-muted-foreground">Dimensão {form.tipo_enchimento}:</span>
-                      <Input
-                        className="h-8 flex-1 text-xs"
-                        value={item.enchimento_dimension || ''}
-                        onChange={e => updateItem(idx, 'enchimento_dimension', e.target.value)}
-                        placeholder="Auto-preenchido pela tabela"
-                      />
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium text-muted-foreground">m² (interno):</span>
+                    <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+                      {fmtM2(calcSquareMeters(item, form.quote_tipo_laje))} m²
+                    </span>
+                    {form.tipo_enchimento !== 'Nenhum' && (
+                      <>
+                        <span className="text-[10px] font-medium text-muted-foreground ml-2">Dimensão {form.tipo_enchimento}:</span>
+                        <Input
+                          className="h-8 flex-1 text-xs"
+                          value={item.enchimento_dimension || ''}
+                          onChange={e => updateItem(idx, 'enchimento_dimension', e.target.value)}
+                          placeholder="Auto-preenchido pela tabela"
+                        />
+                      </>
+                    )}
+                  </div>
                   <div className="text-right text-[11px] text-muted-foreground">
                     Subtotal: <strong className="text-foreground">R$ {fmtBRL((Number(item.quantity) || 0) * (Number(item.unit_price) || 0))}</strong>
                   </div>
@@ -315,9 +322,15 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
           </div>
 
           {/* Total */}
-          <div className="rounded-xl border border-border bg-muted/30 p-3 flex items-center justify-between">
-            <span className="text-sm font-semibold">Total do Orçamento</span>
-            <span className="text-lg font-bold text-primary">R$ {fmtBRL(subtotal)}</span>
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold">Total do Orçamento</span>
+              <span className="text-lg font-bold text-primary">R$ {fmtBRL(subtotal)}</span>
+            </div>
+            <div className="flex items-center justify-between border-t border-border pt-2">
+              <span className="text-xs font-semibold text-slate-500">Total m² ({form.quote_tipo_laje}) — interno</span>
+              <span className="text-sm font-bold text-slate-700">{fmtM2(calcTotalSquareMeters(form.items, form.quote_tipo_laje))} m²</span>
+            </div>
           </div>
         </div>
 

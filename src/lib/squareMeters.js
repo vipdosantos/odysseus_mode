@@ -1,0 +1,32 @@
+// Cálculo de metros quadrados (m²) para pedidos e orçamentos
+// Treliçada: qtd × metro × 0.455
+// Painel: qtd × metro × 0.25
+// Valor interno — não exibir para o cliente
+
+export function parseSizeToMeters(size) {
+  if (!size) return 0;
+  const s = String(size).trim();
+  const matches = s.match(/(\d+(?:[.,]\d+)?)/g);
+  if (!matches || matches.length === 0) return 0;
+  if (s.toLowerCase().includes('x')) {
+    return parseFloat(matches[matches.length - 1].replace(',', '.'));
+  }
+  return parseFloat(matches[0].replace(',', '.'));
+}
+
+export function calcSquareMeters(item, tipoLaje) {
+  const meters = parseSizeToMeters(item.size);
+  const qty = Number(item.quantity) || 0;
+  if (!meters || !qty) return 0;
+  const factor = tipoLaje === 'Painel' ? 0.25 : 0.455;
+  return qty * meters * factor;
+}
+
+export function calcTotalSquareMeters(items, tipoLaje) {
+  if (!items) return 0;
+  return items.reduce((sum, it) => sum + calcSquareMeters(it, tipoLaje), 0);
+}
+
+export function fmtM2(v) {
+  return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}

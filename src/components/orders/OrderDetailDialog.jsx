@@ -12,6 +12,7 @@ import QRZoomModal from './QRZoomModal';
 import DeliveryReceiptTab from './DeliveryReceiptTab';
 import OrderQuoteTab from './OrderQuoteTab';
 import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
+import { calcSquareMeters, calcTotalSquareMeters, fmtM2 } from '@/lib/squareMeters';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 
 export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive, columns }) {
@@ -225,6 +226,10 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                             <p className="text-sm font-bold">{item.size}</p>
                           </div>
                           <p className="text-xs text-muted-foreground">{item.produced || 0}/{item.quantity} produzidas</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[10px] text-muted-foreground">m² (interno):</span>
+                            <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">{fmtM2(calcSquareMeters(item, order.quote_tipo_laje))} m²</span>
+                          </div>
                           {order.tipo_enchimento && order.tipo_enchimento !== 'Nenhum' && item.enchimento_dimension && (
                             <div className="flex items-center gap-1 mt-1">
                               <span className="text-[10px] text-muted-foreground">Dimensão {order.tipo_enchimento}:</span>
@@ -273,6 +278,11 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2">
+                <span className="text-xs font-semibold text-slate-600">Total m² ({order.quote_tipo_laje || 'Treliçada'}) — interno</span>
+                <span className="text-sm font-bold text-slate-800">{fmtM2(calcTotalSquareMeters(order.items, order.quote_tipo_laje))} m²</span>
               </div>
 
               <div className="flex gap-2 pt-2 flex-wrap">
