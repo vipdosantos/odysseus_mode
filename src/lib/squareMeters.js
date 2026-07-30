@@ -1,5 +1,5 @@
 // Cálculo de metros quadrados (m²) para pedidos e orçamentos
-// Treliçada: qtd × metro × 0.455
+// Treliçada: qtd × metro × 0.425
 // Painel: qtd × metro × 0.25
 // Valor interno — não exibir para o cliente
 
@@ -18,7 +18,7 @@ export function calcSquareMeters(item, tipoLaje) {
   const meters = parseSizeToMeters(item.size);
   const qty = Number(item.quantity) || 0;
   if (!meters || !qty) return 0;
-  const factor = tipoLaje === 'Painel' ? 0.25 : 0.455;
+  const factor = tipoLaje === 'Painel' ? 0.25 : 0.425;
   return qty * meters * factor;
 }
 
