@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { base44 } from '@/api/base44Client';
-import { Printer, MessageCircle, Mail, Send } from 'lucide-react';
+import { Printer, MessageCircle, Mail, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
@@ -12,10 +13,36 @@ import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const PAG_OPTIONS = [
+  { value: 'boleto', label: 'Boleto' },
+  { value: 'pix', label: 'PIX' },
+  { value: 'transferencia', label: 'Transferência' },
+  { value: 'cartao', label: 'Cartão' },
+  { value: 'dinheiro', label: 'Dinheiro' },
+  { value: 'cheque', label: 'Cheque' },
+];
+
+const TIPO_LAJE_OPTIONS = ['Treliça', 'Pré-moldada', 'Maciça', 'Alveolar', 'Nervurada', 'Laje Treliça'];
+
 export default function OrderQuoteTab({ order }) {
   const [validade, setValidade] = useState(15);
   const [obs, setObs] = useState(order?.notes || '');
   const [sending, setSending] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [tipoLaje, setTipoLaje] = useState(order?.quote_tipo_laje || 'Treliça');
+
+  // Editable unit prices per item
+  const initPrices = useMemo(() => {
+    const baseTotal = Number(order?.total_value) || 0;
+    const totalQtd = (order?.items || []).reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+    const unit = totalQtd > 0 ? baseTotal / totalQtd : 0;
+    return (order?.items || []).map(() => Number(unit.toFixed(2)));
+  }, [order]);
+  const [unitPrices, setUnitPrices] = useState(initPrices);
+
+  const [pagamento, setPagamento] = useState(order?.payment_method || 'pix');
+  const [parcelas, setParcelas] = useState(Number(order?.installments) || 1);
+  const [valorFiscal, setValorFiscal] = useState(0);
 
   const today = new Date();
   const validUntil = addDays(today, Number(validade) || 15);
@@ -25,29 +52,56 @@ export default function OrderQuoteTab({ order }) {
     [order]
   );
 
-  const valor = Number(order?.total_value) || 0;
-  const valorTexto = valor > 0 ? `R$ ${fmtBRL(valor)}` : 'A combinar';
+  const subtotal = useMemo(
+    () => (order?.items || []).reduce((s, it, i) => s + (Number(it.quantity) || 0) * (Number(unitPrices[i]) || 0), 0),
+    [order, unitPrices]
+  );
+  const total = subtotal + (Number(valorFiscal) || 0);
+  const valorTexto = total > 0 ? `R$ ${fmtBRL(total)}` : 'A combinar';
+
+  const handlePriceChange = (i, v) => {
+    const next = [...unitPrices];
+    next[i] = Number(v) || 0;
+    setUnitPrices(next);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await base44.entities.Order.update(order.id, {
+        total_value: total,
+        payment_method: pagamento,
+        installments: parcelas,
+      });
+      toast.success('Valores salvos no pedido!');
+    } catch (e) {
+      toast.error('Erro ao salvar valores.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const buildHtml = () => {
     const itemsRows = (order.items || []).map((it, i) => {
       const extras = [];
       if (it.truss_type) extras.push(TRUSS_TYPE_LABEL(it.truss_type));
       (it.adicionais || []).forEach(a => { if (a.quantity > 0) extras.push(`${FERRO_LABEL(a.diametro)} ×${a.quantity}`); });
+      const unit = Number(unitPrices[i]) || 0;
+      const rowTotal = unit * (Number(it.quantity) || 0);
       return `
         <tr>
           <td>${i + 1}</td>
           <td><strong>${it.size || '—'}</strong>${extras.length ? `<br/><span class="muted">${extras.join(' · ')}</span>` : ''}</td>
           <td class="center">${it.quantity || 0}</td>
-          <td class="right">${valor > 0 ? fmtBRL(valor / totalItems || 0) : '—'}</td>
+          <td class="right">${unit > 0 ? fmtBRL(unit) : '—'}</td>
+          <td class="right">${rowTotal > 0 ? fmtBRL(rowTotal) : '—'}</td>
         </tr>`;
     }).join('');
 
-    const parcelasTxt = Number(order.installments) > 1
-      ? `${order.installments}x de R$ ${fmtBRL(valor / order.installments)}`
+    const parcelasTxt = Number(parcelas) > 1
+      ? `${parcelas}x de R$ ${fmtBRL(total / parcelas)}`
       : 'À vista';
-
-    const pagMap = { boleto: 'Boleto', pix: 'PIX', transferencia: 'Transferência', cartao: 'Cartão', dinheiro: 'Dinheiro', cheque: 'Cheque' };
-    const pag = pagMap[order.payment_method] || order.payment_method || '—';
+    const pag = PAG_OPTIONS.find(p => p.value === pagamento)?.label || pagamento || '—';
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento #${order.order_number}</title>
     <style>
@@ -76,7 +130,7 @@ export default function OrderQuoteTab({ order }) {
       td { padding: 5px 7px; border-bottom: 1px solid #e5e7eb; font-size: 11px; vertical-align: top; }
       .muted { color: #94a3b8; font-size: 10px; }
       .totals { margin-top: 10px; display: flex; justify-content: flex-end; }
-      .totals .row { min-width: 240px; }
+      .totals .row { min-width: 260px; }
       .totals .row div { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
       .totals .row .grand { border-top: 2px solid #1e293b; margin-top: 4px; padding-top: 6px; font-size: 15px; font-weight: 800; }
       .cond { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 10px; margin-top: 10px; }
@@ -114,6 +168,7 @@ export default function OrderQuoteTab({ order }) {
           <div class="box">
             ${order.client_email ? `<p><span class="lbl">E-mail</span><br/>${order.client_email}</p>` : ''}
             ${order.delivery_address ? `<p><span class="lbl">Endereço de entrega</span><br/>${order.delivery_address}</p>` : ''}
+            <p><span class="lbl">Tipo de Laje</span><br/>${tipoLaje}</p>
           </div>
         </div>
       </div>
@@ -121,11 +176,13 @@ export default function OrderQuoteTab({ order }) {
       <div class="section">
         <h2>Itens</h2>
         <table>
-          <thead><tr><th style="width:24px">#</th><th>Descrição</th><th class="center" style="width:60px">Qtd</th><th class="right" style="width:90px">Unitário</th></tr></thead>
-          <tbody>${itemsRows || `<tr><td colspan="4" class="muted center">Sem itens</td></tr>`}</tbody>
+          <thead><tr><th style="width:24px">#</th><th>Descrição</th><th class="center" style="width:50px">Qtd</th><th class="right" style="width:80px">Unitário</th><th class="right" style="width:90px">Total</th></tr></thead>
+          <tbody>${itemsRows || `<tr><td colspan="5" class="muted center">Sem itens</td></tr>`}</tbody>
         </table>
         <div class="totals">
           <div class="row">
+            <div><span>Subtotal</span><span>R$ ${fmtBRL(subtotal)}</span></div>
+            ${Number(valorFiscal) > 0 ? `<div><span>Valor fiscal</span><span>R$ ${fmtBRL(valorFiscal)}</span></div>` : ''}
             <div><span>Forma de pagamento</span><span>${pag}</span></div>
             <div><span>Condição</span><span>${parcelasTxt}</span></div>
             <div class="grand"><span>Total</span><span>${valorTexto}</span></div>
@@ -161,16 +218,17 @@ export default function OrderQuoteTab({ order }) {
     if (!order.client_phone) { toast.error('Pedido sem telefone do cliente.'); return; }
     setSending(true);
     try {
-      // Generate a short quote summary link
       const lines = (order.items || []).map((it, i) =>
         `${i + 1}. ${it.size || ''}${it.truss_type ? ` (${TRUSS_TYPE_LABEL(it.truss_type)})` : ''} — ${it.quantity} un`
       ).join('\n');
+      const pag = PAG_OPTIONS.find(p => p.value === pagamento)?.label || pagamento;
       const msg =
         `*Orçamento #${order.order_number} — Modelajes*\n` +
         `Olá ${order.client_name}! Segue o orçamento solicitado:\n\n` +
+        `Tipo de laje: ${tipoLaje}\n` +
         `${lines}\n\n` +
         `*Total: ${valorTexto}*\n` +
-        `Pagamento: ${order.payment_method || '—'}\n` +
+        `Pagamento: ${pag}\n` +
         `Válido até: ${format(validUntil, 'dd/MM/yyyy')}\n\n` +
         `Aguardamos seu retorno. Obrigado!`;
       const phone = order.client_phone.replace(/\D/g, '');
@@ -188,16 +246,17 @@ export default function OrderQuoteTab({ order }) {
     if (!order.client_email) { toast.error('Pedido sem e-mail do cliente.'); return; }
     setSending(true);
     try {
-      // Upload printable quote to get a shareable link to attach reference
       const lines = (order.items || []).map((it, i) =>
         `${i + 1}. ${it.size || ''}${it.truss_type ? ` (${TRUSS_TYPE_LABEL(it.truss_type)})` : ''} — ${it.quantity} un`
       ).join('%0D%0A');
+      const pag = PAG_OPTIONS.find(p => p.value === pagamento)?.label || pagamento;
       const subject = `Orçamento #${order.order_number} — Modelajes`;
       const body =
         `Olá ${order.client_name},%0D%0A%0D%0A` +
+        `Tipo de laje: ${tipoLaje}%0D%0A` +
         `Segue o orçamento solicitado:%0D%0A%0D%0A${lines}%0D%0A%0D%0A` +
         `*Total: ${valorTexto}*%0D%0A` +
-        `Pagamento: ${order.payment_method || '—'}%0D%0A` +
+        `Pagamento: ${pag}%0D%0A` +
         `Válido até: ${format(validUntil, 'dd/MM/yyyy')}%0D%0A%0D%0A` +
         `Atenciosamente,%0D%0AModelajes`;
       window.location.href = `mailto:${order.client_email}?subject=${encodeURIComponent(subject)}&body=${body}`;
@@ -211,6 +270,65 @@ export default function OrderQuoteTab({ order }) {
 
   return (
     <div className="space-y-4 mt-4">
+      {/* Itens com preços editáveis */}
+      <div className="space-y-2">
+        <Label className="text-xs font-semibold">Itens e valores</Label>
+        <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+          {(order.items || []).map((it, i) => (
+            <div key={i} className="flex items-center gap-2 rounded-lg border border-border bg-card p-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{it.size || '—'} {it.truss_type ? `· ${TRUSS_TYPE_LABEL(it.truss_type)}` : ''}</div>
+                <div className="text-[11px] text-muted-foreground">{it.quantity} un</div>
+              </div>
+              <div className="w-28 shrink-0">
+                <Label className="text-[10px] text-muted-foreground">Unitário (R$)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={unitPrices[i]}
+                  onChange={e => handlePriceChange(i, e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+          ))}
+          {(!order.items || order.items.length === 0) && (
+            <p className="text-xs text-muted-foreground text-center py-3">Sem itens neste pedido.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Tipo de laje + pagamento + parcelas + valor fiscal */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Tipo de Laje</Label>
+          <Select value={tipoLaje} onValueChange={setTipoLaje}>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Forma de Pagamento</Label>
+          <Select value={pagamento} onValueChange={setPagamento}>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PAG_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Parcelas</Label>
+          <Input type="number" min={1} value={parcelas} onChange={e => setParcelas(e.target.value)} />
+        </div>
+        <div>
+          <Label className="text-xs">Valor Fiscal (R$)</Label>
+          <Input type="number" min={0} step="0.01" value={valorFiscal} onChange={e => setValorFiscal(e.target.value)} />
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs">Validade (dias)</Label>
@@ -227,15 +345,22 @@ export default function OrderQuoteTab({ order }) {
         <Textarea value={obs} onChange={e => setObs(e.target.value)} rows={2} placeholder="Condições especiais, prazos, observações..." />
       </div>
 
-      {/* Resumo rápido */}
+      {/* Resumo com totais */}
       <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1">
         <div className="flex justify-between text-sm"><span className="text-muted-foreground">Cliente</span><span className="font-medium truncate ml-2">{order.client_name}</span></div>
         <div className="flex justify-between text-sm"><span className="text-muted-foreground">Itens</span><span>{totalItems} treliça(s)</span></div>
-        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Pagamento</span><span>{order.payment_method || '—'}</span></div>
+        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Tipo de Laje</span><span>{tipoLaje}</span></div>
+        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span>R$ {fmtBRL(subtotal)}</span></div>
+        {Number(valorFiscal) > 0 && (
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Valor Fiscal</span><span>R$ {fmtBRL(valorFiscal)}</span></div>
+        )}
         <div className="flex justify-between text-sm font-bold pt-1 border-t border-border"><span>Total</span><span className="text-primary">{valorTexto}</span></div>
       </div>
 
       <div className="flex flex-col gap-2">
+        <Button onClick={handleSave} disabled={saving} variant="outline" className="w-full">
+          <Save className="w-4 h-4 mr-2" /> {saving ? 'Salvando...' : 'Salvar valores no pedido'}
+        </Button>
         <Button onClick={handlePrint} className="w-full bg-primary text-primary-foreground">
           <Printer className="w-4 h-4 mr-2" /> Imprimir / Salvar PDF
         </Button>
