@@ -181,12 +181,42 @@
         "cheque"
       ],
       "default": "boleto",
-      "description": "Forma de pagamento"
+      "description": "Forma de pagamento (principal)"
     },
     "installments": {
       "type": "number",
       "default": 1,
-      "description": "N\u00famero de parcelas"
+      "description": "N\u00famero de parcelas (principal)"
+    },
+    "payments": {
+      "type": "array",
+      "description": "M\u00faltiplas formas de pagamento (forma, valor, parcelas)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "boleto",
+              "pix",
+              "transferencia",
+              "cartao",
+              "dinheiro",
+              "cheque"
+            ],
+            "default": "pix"
+          },
+          "value": {
+            "type": "number",
+            "default": 0
+          },
+          "installments": {
+            "type": "number",
+            "default": 1
+          }
+        }
+      },
+      "default": []
     },
     "notes": {
       "type": "string"

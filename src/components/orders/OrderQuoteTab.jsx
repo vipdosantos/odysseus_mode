@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
+import PaymentsEditor from './PaymentsEditor';
 
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -43,6 +44,7 @@ export default function OrderQuoteTab({ order }) {
   const [pagamento, setPagamento] = useState(order?.payment_method || 'pix');
   const [parcelas, setParcelas] = useState(Number(order?.installments) || 1);
   const [valorFiscal, setValorFiscal] = useState(0);
+  const [payments, setPayments] = useState(order?.payments || []);
 
   const today = new Date();
   const validUntil = addDays(today, Number(validade) || 15);
@@ -72,6 +74,7 @@ export default function OrderQuoteTab({ order }) {
         total_value: total,
         payment_method: pagamento,
         installments: parcelas,
+        payments,
       });
       toast.success('Valores salvos no pedido!');
     } catch (e) {
@@ -102,6 +105,11 @@ export default function OrderQuoteTab({ order }) {
       ? `${parcelas}x de R$ ${fmtBRL(total / parcelas)}`
       : 'À vista';
     const pag = PAG_OPTIONS.find(p => p.value === pagamento)?.label || pagamento || '—';
+    const paymentsRows = (payments.length > 0 ? payments : []).map((p, i) => {
+      const lbl = PAG_OPTIONS.find(o => o.value === p.method)?.label || p.method;
+      const parc = Number(p.installments) > 1 ? `${p.installments}x` : 'À vista';
+      return `<div><span>${lbl} (${parc})</span><span>R$ ${fmtBRL(p.value)}</span></div>`;
+    }).join('');
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento #${order.order_number}</title>
     <style>
@@ -183,8 +191,8 @@ export default function OrderQuoteTab({ order }) {
           <div class="row">
             <div><span>Subtotal</span><span>R$ ${fmtBRL(subtotal)}</span></div>
             ${Number(valorFiscal) > 0 ? `<div><span>Valor fiscal</span><span>R$ ${fmtBRL(valorFiscal)}</span></div>` : ''}
-            <div><span>Forma de pagamento</span><span>${pag}</span></div>
-            <div><span>Condição</span><span>${parcelasTxt}</span></div>
+            ${paymentsRows}
+            <div><span>Forma principal</span><span>${pag} (${parcelasTxt})</span></div>
             <div class="grand"><span>Total</span><span>${valorTexto}</span></div>
           </div>
         </div>
@@ -299,7 +307,7 @@ export default function OrderQuoteTab({ order }) {
         </div>
       </div>
 
-      {/* Tipo de laje + pagamento + parcelas + valor fiscal */}
+      {/* Tipo de laje + valor fiscal */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs">Tipo de Laje</Label>
@@ -311,7 +319,23 @@ export default function OrderQuoteTab({ order }) {
           </Select>
         </div>
         <div>
-          <Label className="text-xs">Forma de Pagamento</Label>
+          <Label className="text-xs">Valor Fiscal (R$)</Label>
+          <Input type="number" min={0} step="0.01" value={valorFiscal} onChange={e => setValorFiscal(e.target.value)} />
+        </div>
+      </div>
+
+      {/* Múltiplas formas de pagamento */}
+      <PaymentsEditor
+        value={payments}
+        onChange={setPayments}
+        totalValue={total}
+        compact
+      />
+
+      {/* Forma principal (atalho) */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Forma Principal</Label>
           <Select value={pagamento} onValueChange={setPagamento}>
             <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -320,12 +344,8 @@ export default function OrderQuoteTab({ order }) {
           </Select>
         </div>
         <div>
-          <Label className="text-xs">Parcelas</Label>
+          <Label className="text-xs">Parcelas (principal)</Label>
           <Input type="number" min={1} value={parcelas} onChange={e => setParcelas(e.target.value)} />
-        </div>
-        <div>
-          <Label className="text-xs">Valor Fiscal (R$)</Label>
-          <Input type="number" min={0} step="0.01" value={valorFiscal} onChange={e => setValorFiscal(e.target.value)} />
         </div>
       </div>
 

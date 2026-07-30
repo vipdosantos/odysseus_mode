@@ -14,6 +14,7 @@ import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
 import OrderHistoryClone from './OrderHistoryClone';
+import PaymentsEditor from './PaymentsEditor';
 import { DEFAULT_STATUSES } from './KanbanColumn';
 import { toast } from 'sonner';
 
@@ -34,6 +35,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
     delivery_date: '', delivery_address: '', delivery_lat: null, delivery_lng: null,
     truck_type: 'nenhum',
     total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
+    payments: [],
     items: [{ ...emptyItem }],
     attachments: [],
     delivery_photos: [],
@@ -81,6 +83,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
         delivery_date: '', delivery_address: '', delivery_lat: null, delivery_lng: null,
         truck_type: 'nenhum',
         total_value: 0, payment_method: 'boleto', installments: 1, notes: '',
+        payments: [],
         items: [{ ...emptyItem }],
         attachments: [],
         delivery_photos: [],
@@ -295,6 +298,14 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave }) {
               <div>
                 <Label>Parcelas</Label>
                 <Input type="number" min={1} max={24} value={form.installments || 1} onChange={e => set('installments', Number(e.target.value))} />
+              </div>
+              <div className="col-span-2">
+                <PaymentsEditor
+                  value={form.payments || []}
+                  onChange={v => set('payments', v)}
+                  totalValue={Number(form.total_value) || 0}
+                  compact
+                />
               </div>
               <div>
                 <Label>Chave de Acesso ao Status</Label>
