@@ -225,6 +225,12 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                             <p className="text-sm font-bold">{item.size}</p>
                           </div>
                           <p className="text-xs text-muted-foreground">{item.produced || 0}/{item.quantity} produzidas</p>
+                          {order.tipo_enchimento && order.tipo_enchimento !== 'Nenhum' && item.enchimento_dimension && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <span className="text-[10px] text-muted-foreground">Dimensão {order.tipo_enchimento}:</span>
+                              <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">{item.enchimento_dimension}</span>
+                            </div>
+                          )}
                           {item.adicionais?.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
                               <span className="text-[10px] text-muted-foreground self-center">Adicionais:</span>
