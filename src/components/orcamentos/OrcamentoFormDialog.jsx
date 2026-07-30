@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { TRUSS_TYPES } from '@/lib/trussTypes';
 import { lookupEpsDimension } from '@/lib/epsDimensions';
-import { calcSquareMeters, calcTotalSquareMeters, fmtM2 } from '@/lib/squareMeters';
+import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, fmtM2, fmtQty } from '@/lib/squareMeters';
 import PaymentsEditor from '@/components/orders/PaymentsEditor';
 import { toast } from 'sonner';
 
@@ -269,6 +269,11 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                     <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
                       {fmtM2(calcSquareMeters(item, form.quote_tipo_laje))} m²
                     </span>
+                    {form.tipo_enchimento === 'EPS' && (
+                      <span className="text-[10px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                        Placas EPS: {fmtQty(calcEpsPlates(item, form.quote_tipo_laje))}
+                      </span>
+                    )}
                     {form.tipo_enchimento !== 'Nenhum' && (
                       <>
                         <span className="text-[10px] font-medium text-muted-foreground ml-2">Dimensão {form.tipo_enchimento}:</span>
@@ -287,6 +292,12 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                 </div>
               ))}
             </div>
+            {form.tipo_enchimento === 'EPS' && (
+              <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
+                <span className="text-[10px] font-semibold text-amber-800">Total Placas EPS ({form.quote_tipo_laje}) — m² × {form.quote_tipo_laje === 'Painel' ? '3,9' : '2,3'}</span>
+                <span className="text-xs font-bold text-amber-900">{fmtQty(calcTotalEpsPlates(form.items, form.quote_tipo_laje))} placas</span>
+              </div>
+            )}
           </div>
 
           {/* Pagamento */}

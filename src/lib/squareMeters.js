@@ -27,6 +27,24 @@ export function calcTotalSquareMeters(items, tipoLaje) {
   return items.reduce((sum, it) => sum + calcSquareMeters(it, tipoLaje), 0);
 }
 
+// Placas de preenchimento EPS
+// Treliçada: m² × 2,3
+// Painel: m² × 3,9
+export function calcEpsPlates(item, tipoLaje) {
+  const m2 = calcSquareMeters(item, tipoLaje);
+  const factor = tipoLaje === 'Painel' ? 3.9 : 2.3;
+  return m2 * factor;
+}
+
+export function calcTotalEpsPlates(items, tipoLaje) {
+  if (!items) return 0;
+  return items.reduce((sum, it) => sum + calcEpsPlates(it, tipoLaje), 0);
+}
+
+export function fmtQty(v) {
+  return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 export function fmtM2(v) {
   return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

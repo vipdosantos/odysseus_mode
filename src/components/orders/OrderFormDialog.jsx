@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { TRUSS_TYPES, FERRO_DIAMETERS } from '@/lib/trussTypes';
 import { lookupEpsDimension } from '@/lib/epsDimensions';
-import { calcSquareMeters, calcTotalSquareMeters, fmtM2 } from '@/lib/squareMeters';
+import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, fmtM2, fmtQty } from '@/lib/squareMeters';
 import OrderAttachments from './OrderAttachments';
 import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
@@ -444,6 +444,11 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                     <span className="text-xs font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
                       {fmtM2(calcSquareMeters(item, form.quote_tipo_laje))} m²
                     </span>
+                    {form.tipo_enchimento === 'EPS' && (
+                      <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded ml-1">
+                        Placas EPS: {fmtQty(calcEpsPlates(item, form.quote_tipo_laje))}
+                      </span>
+                    )}
                     {form.tipo_enchimento !== 'Nenhum' && (
                       <>
                         <span className="text-xs font-medium text-muted-foreground ml-2">Dimensão {form.tipo_enchimento}:</span>
@@ -480,6 +485,12 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                 <span className="text-xs font-semibold text-slate-600">Total m² ({form.quote_tipo_laje}) — interno</span>
                 <span className="text-sm font-bold text-slate-800">{fmtM2(calcTotalSquareMeters(form.items, form.quote_tipo_laje))} m²</span>
               </div>
+              {form.tipo_enchimento === 'EPS' && (
+                <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 mt-1">
+                  <span className="text-xs font-semibold text-amber-800">Total Placas EPS ({form.quote_tipo_laje}) — m² × {form.quote_tipo_laje === 'Painel' ? '3,9' : '2,3'}</span>
+                  <span className="text-sm font-bold text-amber-900">{fmtQty(calcTotalEpsPlates(form.items, form.quote_tipo_laje))} placas</span>
+                </div>
+              )}
             </div>
           </TabsContent>
 
