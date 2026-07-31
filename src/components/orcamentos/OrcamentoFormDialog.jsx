@@ -301,7 +301,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
             </div>
             {form.tipo_enchimento === 'EPS' && (
               <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
-                <span className="text-[10px] font-semibold text-amber-800">Total Placas EPS ({form.quote_tipo_laje}) — m² × {form.quote_tipo_laje === 'Painel' ? '3,9' : '2,3'}</span>
+                <span className="text-[10px] font-semibold text-amber-800">Total Placas EPS ({form.quote_tipo_laje}) — m² × {form.quote_tipo_laje === 'Painel' ? '3,9' : form.quote_tipo_laje === 'Laje Treliçada Intereixo' ? '1,9' : '2,3'}</span>
                 <span className="text-xs font-bold text-amber-900">{fmtQty(calcTotalEpsPlates(form.items, form.quote_tipo_laje))} placas</span>
               </div>
             )}

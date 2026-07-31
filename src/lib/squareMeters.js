@@ -31,9 +31,10 @@ export function calcTotalSquareMeters(items, tipoLaje) {
 // Placas de preenchimento EPS
 // Laje: m² × 2,3
 // Painel: m² × 3,9
+// Laje Treliçada Intereixo: m² × 1,9
 export function calcEpsPlates(item, tipoLaje) {
   const m2 = calcSquareMeters(item, tipoLaje);
-  const factor = tipoLaje === 'Painel' ? 3.9 : 2.3;
+  const factor = tipoLaje === 'Painel' ? 3.9 : tipoLaje === 'Laje Treliçada Intereixo' ? 1.9 : 2.3;
   return m2 * factor;
 }
 
