@@ -119,7 +119,7 @@ const truckColumns = [
 // ─── Dimensões de EPS/Lajota ─────────────────────────────────
 const epsFields = [
   { key: 'tipo_laje', label: 'Tipo de Laje', default: 'Laje',
-    enum: ['Laje', 'Painel', 'Laje Treliçada Interreixo'] },
+    enum: ['Laje', 'Painel', 'Laje Treliçada Intereixo'] },
   { key: 'truss_type', label: 'Tipo de Treliça', default: 'H8',
     enum: ['H8', 'H12', 'H16', 'H20', 'H25', 'H30'] },
   { key: 'tipo_enchimento', label: 'Tipo de Enchimento', default: 'EPS',

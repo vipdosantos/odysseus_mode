@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { TRUSS_TYPES, getTrussTypesForLaje, INTERREIXO_TRUSS_TYPES } from '@/lib/trussTypes';
+import { TRUSS_TYPES, getTrussTypesForLaje, INTEREIXO_TRUSS_TYPES } from '@/lib/trussTypes';
 import { lookupEpsDimension } from '@/lib/epsDimensions';
 import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, fmtM2, fmtQty } from '@/lib/squareMeters';
 import PaymentsEditor from '@/components/orders/PaymentsEditor';
@@ -21,7 +21,7 @@ function generateAccessKey() {
   ).join('');
 }
 
-const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço', 'Laje Treliçada Interreixo'];
+const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço', 'Laje Treliçada Intereixo'];
 const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
 const NO_FILLING_LAJE_TYPES = ['Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 
@@ -207,8 +207,8 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
               <Select value={form.quote_tipo_laje} onValueChange={v => {
                 set('quote_tipo_laje', v);
                 if (NO_FILLING_LAJE_TYPES.includes(v)) set('tipo_enchimento', 'Nenhum');
-                if (v === 'Laje Treliçada Interreixo') {
-                  setForm(f => ({ ...f, items: f.items.map(it => INTERREIXO_TRUSS_TYPES.includes(it.truss_type) ? it : { ...it, truss_type: 'H16' }) }));
+                if (v === 'Laje Treliçada Intereixo') {
+                  setForm(f => ({ ...f, items: f.items.map(it => INTEREIXO_TRUSS_TYPES.includes(it.truss_type) ? it : { ...it, truss_type: 'H16' }) }));
                 }
               }}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>

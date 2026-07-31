@@ -1,7 +1,7 @@
 // Cálculo de metros quadrados (m²) para pedidos e orçamentos
 // Laje: qtd × metro × 0.425
 // Painel: qtd × metro × 0.25
-// Laje Treliçada Interreixo: qtd × metro × 0.495
+// Laje Treliçada Intereixo: qtd × metro × 0.495
 // Valor interno — não exibir para o cliente
 
 export function parseSizeToMeters(size) {
@@ -19,7 +19,7 @@ export function calcSquareMeters(item, tipoLaje) {
   const meters = parseSizeToMeters(item.size);
   const qty = Number(item.quantity) || 0;
   if (!meters || !qty) return 0;
-  const factor = tipoLaje === 'Painel' ? 0.25 : tipoLaje === 'Laje Treliçada Interreixo' ? 0.495 : 0.425;
+  const factor = tipoLaje === 'Painel' ? 0.25 : tipoLaje === 'Laje Treliçada Intereixo' ? 0.495 : 0.425;
   return qty * meters * factor;
 }
 

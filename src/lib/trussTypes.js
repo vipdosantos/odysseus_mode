@@ -1,9 +1,9 @@
 export const TRUSS_TYPES = ['H8', 'H12', 'H16', 'H20', 'H25', 'H30'];
 
-export const INTERREIXO_TRUSS_TYPES = ['H16', 'H20', 'H25', 'H30'];
+export const INTEREIXO_TRUSS_TYPES = ['H16', 'H20', 'H25', 'H30'];
 
 export function getTrussTypesForLaje(tipoLaje) {
-  if (tipoLaje === 'Laje Treliçada Interreixo') return INTERREIXO_TRUSS_TYPES;
+  if (tipoLaje === 'Laje Treliçada Intereixo') return INTEREIXO_TRUSS_TYPES;
   return TRUSS_TYPES;
 }
 
