@@ -208,6 +208,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                 set('quote_tipo_laje', v);
                 if (NO_FILLING_LAJE_TYPES.includes(v)) set('tipo_enchimento', 'Nenhum');
                 if (v === 'Laje Treliçada Intereixo') {
+                  set('tipo_enchimento', 'EPS');
                   setForm(f => ({ ...f, items: f.items.map(it => INTEREIXO_TRUSS_TYPES.includes(it.truss_type) ? it : { ...it, truss_type: 'H16' }) }));
                 }
               }}>
@@ -219,7 +220,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
             </div>
             <div>
               <Label className="text-xs">Tipo de Enchimento</Label>
-              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)} disabled={NO_FILLING_LAJE_TYPES.includes(form.quote_tipo_laje)}>
+              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)} disabled={NO_FILLING_LAJE_TYPES.includes(form.quote_tipo_laje) || form.quote_tipo_laje === 'Laje Treliçada Intereixo'}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}

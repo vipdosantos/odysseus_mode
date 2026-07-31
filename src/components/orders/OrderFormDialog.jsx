@@ -315,6 +315,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                   set('quote_tipo_laje', v);
                   if (NO_FILLING_LAJE_TYPES.includes(v)) set('tipo_enchimento', 'Nenhum');
                   if (v === 'Laje Treliçada Intereixo') {
+                    set('tipo_enchimento', 'EPS');
                     setForm(f => ({ ...f, items: f.items.map(it => INTEREIXO_TRUSS_TYPES.includes(it.truss_type) ? it : { ...it, truss_type: 'H16' }) }));
                   }
                 }}>
@@ -326,7 +327,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
               </div>
               <div>
                 <Label>Tipo de Enchimento</Label>
-                <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)} disabled={NO_FILLING_LAJE_TYPES.includes(form.quote_tipo_laje)}>
+                <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)} disabled={NO_FILLING_LAJE_TYPES.includes(form.quote_tipo_laje) || form.quote_tipo_laje === 'Laje Treliçada Intereixo'}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
