@@ -43,6 +43,17 @@ export function calcTotalEpsPlates(items, tipoLaje) {
   return items.reduce((sum, it) => sum + calcEpsPlates(it, tipoLaje), 0);
 }
 
+// Lajotas: m² × 11,5
+export function calcLajotas(item, tipoLaje) {
+  const m2 = calcSquareMeters(item, tipoLaje);
+  return m2 * 11.5;
+}
+
+export function calcTotalLajotas(items, tipoLaje) {
+  if (!items) return 0;
+  return items.reduce((sum, it) => sum + calcLajotas(it, tipoLaje), 0);
+}
+
 export function fmtQty(v) {
   return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }

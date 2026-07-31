@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { TRUSS_TYPES, getTrussTypesForLaje, INTEREIXO_TRUSS_TYPES } from '@/lib/trussTypes';
 import { lookupEpsDimension } from '@/lib/epsDimensions';
-import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, fmtM2, fmtQty } from '@/lib/squareMeters';
+import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, calcTotalLajotas, fmtM2, fmtQty } from '@/lib/squareMeters';
 import PaymentsEditor from '@/components/orders/PaymentsEditor';
 import { toast } from 'sonner';
 
@@ -304,6 +304,12 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
               <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
                 <span className="text-[10px] font-semibold text-amber-800">Total Placas EPS ({form.quote_tipo_laje}) — m² × {form.quote_tipo_laje === 'Painel' ? '3,9' : form.quote_tipo_laje === 'Laje Treliçada Intereixo' ? '1,9' : '2,3'}</span>
                 <span className="text-xs font-bold text-amber-900">{fmtQty(calcTotalEpsPlates(form.items, form.quote_tipo_laje))} placas</span>
+              </div>
+            )}
+            {form.tipo_enchimento === 'Lajota' && (
+              <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
+                <span className="text-[10px] font-semibold text-amber-800">Total Lajotas ({form.quote_tipo_laje}) — m² × 11,5</span>
+                <span className="text-xs font-bold text-amber-900">{fmtQty(calcTotalLajotas(form.items, form.quote_tipo_laje))} un</span>
               </div>
             )}
           </div>
