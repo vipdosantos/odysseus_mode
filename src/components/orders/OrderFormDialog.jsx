@@ -29,6 +29,7 @@ function generateAccessKey() {
 
 const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
+const NO_FILLING_LAJE_TYPES = ['Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 
 const emptyItem = { truss_type: 'H8', size: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
 
@@ -310,7 +311,10 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
               </div>
               <div>
                 <Label>Tipo de Laje</Label>
-                <Select value={form.quote_tipo_laje || 'Laje'} onValueChange={v => set('quote_tipo_laje', v)}>
+                <Select value={form.quote_tipo_laje || 'Laje'} onValueChange={v => {
+                  set('quote_tipo_laje', v);
+                  if (NO_FILLING_LAJE_TYPES.includes(v)) set('tipo_enchimento', 'Nenhum');
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -319,7 +323,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
               </div>
               <div>
                 <Label>Tipo de Enchimento</Label>
-                <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)}>
+                <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)} disabled={NO_FILLING_LAJE_TYPES.includes(form.quote_tipo_laje)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}

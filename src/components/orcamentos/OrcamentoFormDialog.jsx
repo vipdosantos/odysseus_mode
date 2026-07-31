@@ -23,6 +23,7 @@ function generateAccessKey() {
 
 const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
+const NO_FILLING_LAJE_TYPES = ['Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 
 const PAG_OPTIONS = [
   { value: 'boleto', label: 'Boleto' },
@@ -203,7 +204,10 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <Label className="text-xs">Tipo de Laje</Label>
-              <Select value={form.quote_tipo_laje} onValueChange={v => set('quote_tipo_laje', v)}>
+              <Select value={form.quote_tipo_laje} onValueChange={v => {
+                set('quote_tipo_laje', v);
+                if (NO_FILLING_LAJE_TYPES.includes(v)) set('tipo_enchimento', 'Nenhum');
+              }}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TIPO_LAJE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -212,7 +216,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
             </div>
             <div>
               <Label className="text-xs">Tipo de Enchimento</Label>
-              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)}>
+              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)} disabled={NO_FILLING_LAJE_TYPES.includes(form.quote_tipo_laje)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
