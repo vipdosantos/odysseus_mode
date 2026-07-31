@@ -6,7 +6,8 @@
       "type": "string",
       "enum": [
         "Laje",
-        "Painel"
+        "Painel",
+        "Laje Treli\u00e7ada Interreixo"
       ],
       "default": "Laje",
       "description": "Tipo de laje"
