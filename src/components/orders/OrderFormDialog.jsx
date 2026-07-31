@@ -17,6 +17,7 @@ import DeliveryMapPicker from './DeliveryMapPicker';
 import ClientPhotoCapture from './ClientPhotoCapture';
 import OrderHistoryClone from './OrderHistoryClone';
 import PaymentsEditor from './PaymentsEditor';
+import TelaEditor from './TelaEditor';
 import { DEFAULT_STATUSES } from './KanbanColumn';
 import { toast } from 'sonner';
 
@@ -44,6 +45,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     payments: [],
     quote_tipo_laje: 'Laje', tipo_enchimento: 'Nenhum',
     items: [{ ...emptyItem }],
+    telas: [],
     attachments: [],
     delivery_photos: [],
     client_photo: '',
@@ -87,6 +89,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
         items: order.items?.length ? order.items : [{ ...emptyItem }],
         attachments: order.attachments || [],
         delivery_photos: order.delivery_photos || [],
+        telas: order.telas || [],
       });
     } else {
       setForm({
@@ -100,6 +103,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
         payments: [],
         quote_tipo_laje: 'Laje', tipo_enchimento: 'Nenhum',
         items: [{ ...emptyItem }],
+        telas: [],
         attachments: [],
         delivery_photos: [],
         client_photo: '',
@@ -518,6 +522,10 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                   <span className="text-sm font-bold text-amber-900">{fmtQty(calcTotalLajotas(form.items, form.quote_tipo_laje))} un</span>
                 </div>
               )}
+              <TelaEditor
+                value={form.telas || []}
+                onChange={v => set('telas', v)}
+              />
             </div>
           </TabsContent>
 

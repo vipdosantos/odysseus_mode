@@ -167,6 +167,34 @@
         }
       }
     },
+    "telas": {
+      "type": "array",
+      "description": "Telas (malhas) do pedido",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "modelo": {
+            "type": "string",
+            "enum": [
+              "Q.45",
+              "Q.61",
+              "Q.92",
+              "Q.138"
+            ],
+            "description": "Modelo da tela"
+          },
+          "especificacao": {
+            "type": "string",
+            "description": "Especifica\u00e7\u00e3o (auto-preenchido)"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      }
+    },
     "delivery_date": {
       "type": "string",
       "format": "date"
