@@ -21,7 +21,7 @@ function generateAccessKey() {
   ).join('');
 }
 
-const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço', 'Laje Treliçada Intereixo'];
+const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Mista', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço', 'Laje Treliçada Intereixo'];
 const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
 const NO_FILLING_LAJE_TYPES = ['Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 

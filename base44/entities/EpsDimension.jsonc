@@ -7,6 +7,7 @@
       "enum": [
         "Laje",
         "Painel",
+        "Mista",
         "Laje Treli\u00e7ada Intereixo"
       ],
       "default": "Laje",
