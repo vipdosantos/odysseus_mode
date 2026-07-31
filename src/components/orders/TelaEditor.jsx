@@ -16,22 +16,17 @@ export function getTelaEspecificacao(modelo) {
   return TELA_OPTIONS.find(t => t.modelo === modelo)?.especificacao || '';
 }
 
-export default function TelaEditor({ value = [], onChange }) {
+export default function TelaEditor({ value = [], onChange, totalSquareMeters = 0 }) {
   const telas = value || [];
+  const calcQty = Math.ceil((Number(totalSquareMeters) || 0) / 5.2);
 
   const addTela = () => {
-    onChange([...telas, { modelo: 'Q.45', especificacao: getTelaEspecificacao('Q.45'), quantity: 1 }]);
+    onChange([...telas, { modelo: 'Q.45', especificacao: getTelaEspecificacao('Q.45'), quantity: calcQty }]);
   };
 
   const updateTela = (idx, modelo) => {
     const updated = [...telas];
     updated[idx] = { ...updated[idx], modelo, especificacao: getTelaEspecificacao(modelo) };
-    onChange(updated);
-  };
-
-  const updateQty = (idx, qty) => {
-    const updated = [...telas];
-    updated[idx] = { ...updated[idx], quantity: Number(qty) || 0 };
     onChange(updated);
   };
 
@@ -46,6 +41,10 @@ export default function TelaEditor({ value = [], onChange }) {
         <Button type="button" variant="outline" size="sm" onClick={addTela}>
           <Plus className="w-4 h-4 mr-1" /> Adicionar Tela
         </Button>
+      </div>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>m² total: {(Number(totalSquareMeters) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²</span>
+        <span>Qtd. calculada: m² ÷ 5,2 = <strong className="text-foreground">{calcQty} un</strong></span>
       </div>
       {telas.length === 0 ? (
         <p className="text-xs text-muted-foreground py-2">Nenhuma tela adicionada.</p>
@@ -67,9 +66,9 @@ export default function TelaEditor({ value = [], onChange }) {
               <Label className="text-xs">Especificação</Label>
               <Input value={tela.especificacao || ''} readOnly className="bg-muted/50 text-xs" />
             </div>
-            <div className="w-24">
+            <div className="w-32">
               <Label className="text-xs">Quantidade</Label>
-              <Input type="number" min={0} value={tela.quantity || 0} onChange={e => updateQty(idx, e.target.value)} />
+              <Input type="number" min={0} value={calcQty} readOnly className="bg-muted/50" />
             </div>
             <Button type="button" variant="ghost" size="icon" onClick={() => removeTela(idx)}>
               <Trash2 className="w-4 h-4 text-destructive" />

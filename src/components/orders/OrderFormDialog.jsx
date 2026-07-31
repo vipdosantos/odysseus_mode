@@ -172,6 +172,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
       produced: Number(item.produced) || 0,
       qr_code_id: item.qr_code_id || `${form.order_number}-${item.size}-${idx}`,
     }));
+    const telaQty = Math.ceil(calcTotalSquareMeters(form.items, form.quote_tipo_laje) / 5.2);
     onSave({
       ...form,
       total_value: Number(form.total_value) || 0,
@@ -179,6 +180,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
         ...item,
         adicionais: (item.adicionais || []).filter(a => Number(a.quantity) > 0),
       })),
+      telas: (form.telas || []).map(t => ({ ...t, quantity: telaQty })),
     });
   };
 
@@ -525,6 +527,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
               <TelaEditor
                 value={form.telas || []}
                 onChange={v => set('telas', v)}
+                totalSquareMeters={calcTotalSquareMeters(form.items, form.quote_tipo_laje)}
               />
             </div>
           </TabsContent>
