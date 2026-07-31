@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { TRUSS_TYPES, getTrussTypesForLaje, INTEREIXO_TRUSS_TYPES } from '@/lib/trussTypes';
 import { lookupEpsDimension } from '@/lib/epsDimensions';
-import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, calcTotalLajotas, fmtM2, fmtQty } from '@/lib/squareMeters';
+import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, calcLajotas, calcTotalLajotas, fmtM2, fmtQty } from '@/lib/squareMeters';
 import PaymentsEditor from '@/components/orders/PaymentsEditor';
 import { toast } from 'sonner';
 
@@ -22,7 +22,7 @@ function generateAccessKey() {
 }
 
 const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Mista', 'Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço', 'Laje Treliçada Intereixo'];
-const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota'];
+const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota', 'EPS+Lajota'];
 const NO_FILLING_LAJE_TYPES = ['Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 
 const PAG_OPTIONS = [
@@ -82,7 +82,8 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
     const items = [...form.items];
     items[idx] = { ...items[idx], [field]: value };
     if (field === 'truss_type') {
-      const dim = lookupEpsDimension(form.quote_tipo_laje, value, form.tipo_enchimento, epsDimensions);
+      const ench = form.tipo_enchimento === 'EPS+Lajota' ? 'EPS' : form.tipo_enchimento;
+      const dim = lookupEpsDimension(form.quote_tipo_laje, value, ench, epsDimensions);
       if (dim || form.tipo_enchimento !== 'Nenhum') items[idx].enchimento_dimension = dim;
     }
     setForm(f => ({ ...f, items }));
@@ -93,9 +94,10 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
     if (!epsDimensions.length) return;
     setForm(f => {
       if (f.tipo_enchimento === 'Nenhum' && !f.items.some(it => it.enchimento_dimension)) return f;
+      const ench = f.tipo_enchimento === 'EPS+Lajota' ? 'EPS' : f.tipo_enchimento;
       const items = f.items.map(it => ({
         ...it,
-        enchimento_dimension: lookupEpsDimension(f.quote_tipo_laje, it.truss_type, f.tipo_enchimento, epsDimensions),
+        enchimento_dimension: lookupEpsDimension(f.quote_tipo_laje, it.truss_type, ench, epsDimensions),
       }));
       return { ...f, items };
     });
@@ -211,6 +213,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                   set('tipo_enchimento', 'EPS');
                   setForm(f => ({ ...f, items: f.items.map(it => INTEREIXO_TRUSS_TYPES.includes(it.truss_type) ? it : { ...it, truss_type: 'H16' }) }));
                 }
+                if (v === 'Mista') set('tipo_enchimento', 'EPS+Lajota');
               }}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -220,7 +223,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
             </div>
             <div>
               <Label className="text-xs">Tipo de Enchimento</Label>
-              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)} disabled={NO_FILLING_LAJE_TYPES.includes(form.quote_tipo_laje) || form.quote_tipo_laje === 'Laje Treliçada Intereixo'}>
+              <Select value={form.tipo_enchimento || 'Nenhum'} onValueChange={v => set('tipo_enchimento', v)} disabled={NO_FILLING_LAJE_TYPES.includes(form.quote_tipo_laje) || form.quote_tipo_laje === 'Laje Treliçada Intereixo' || form.quote_tipo_laje === 'Mista'}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TIPO_ENCHIMENTO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -277,20 +280,30 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                     <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
                       {fmtM2(calcSquareMeters(item, form.quote_tipo_laje))} m²
                     </span>
-                    {form.tipo_enchimento === 'EPS' && (
+                    {(form.tipo_enchimento === 'EPS' || form.tipo_enchimento === 'EPS+Lajota') && (
                       <span className="text-[10px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
                         Placas EPS: {fmtQty(calcEpsPlates(item, form.quote_tipo_laje))}
                       </span>
                     )}
+                    {form.tipo_enchimento === 'EPS+Lajota' && (
+                      <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                        Lajotas: {fmtQty(calcLajotas(item, form.quote_tipo_laje))}
+                      </span>
+                    )}
                     {form.tipo_enchimento !== 'Nenhum' && (
                       <>
-                        <span className="text-[10px] font-medium text-muted-foreground ml-2">Dimensão {form.tipo_enchimento}:</span>
+                        <span className="text-[10px] font-medium text-muted-foreground ml-2">Dim. {form.tipo_enchimento === 'Lajota' ? 'Lajota' : 'EPS'}:</span>
                         <Input
                           className="h-8 flex-1 text-xs"
                           value={item.enchimento_dimension || ''}
                           onChange={e => updateItem(idx, 'enchimento_dimension', e.target.value)}
                           placeholder="Auto-preenchido pela tabela"
                         />
+                        {form.tipo_enchimento === 'EPS+Lajota' && (
+                          <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+                            Lajota: {lookupEpsDimension('Mista', item.truss_type, 'Lajota', epsDimensions) || '—'}
+                          </span>
+                        )}
                       </>
                     )}
                   </div>
@@ -300,13 +313,13 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                 </div>
               ))}
             </div>
-            {form.tipo_enchimento === 'EPS' && (
+            {(form.tipo_enchimento === 'EPS' || form.tipo_enchimento === 'EPS+Lajota') && (
               <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
                 <span className="text-[10px] font-semibold text-amber-800">Total Placas EPS ({form.quote_tipo_laje}) — m² × {form.quote_tipo_laje === 'Painel' ? '3,9' : form.quote_tipo_laje === 'Laje Treliçada Intereixo' ? '1,9' : '2,3'}</span>
                 <span className="text-xs font-bold text-amber-900">{fmtQty(calcTotalEpsPlates(form.items, form.quote_tipo_laje))} placas</span>
               </div>
             )}
-            {form.tipo_enchimento === 'Lajota' && (
+            {(form.tipo_enchimento === 'Lajota' || form.tipo_enchimento === 'EPS+Lajota') && (
               <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
                 <span className="text-[10px] font-semibold text-amber-800">Total Lajotas ({form.quote_tipo_laje}) — m² × 11,5</span>
                 <span className="text-xs font-bold text-amber-900">{fmtQty(calcTotalLajotas(form.items, form.quote_tipo_laje))} un</span>
