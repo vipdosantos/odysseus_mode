@@ -480,7 +480,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                     <Input type="number" value={item.quantity} onChange={e => updateItem(idx, 'quantity', e.target.value)} />
                   </div>
                   <div className="w-28">
-                    <Label className="text-xs">Preço/m lin (R$)</Label>
+                    <Label className="text-xs">Preço/m² (R$)</Label>
                     <Input type="number" value={item.unit_price || 0} onChange={e => updateItem(idx, 'unit_price', Number(e.target.value))} className={sellerPrices.find(p => p.product_size === item.truss_type) ? 'border-primary/50 bg-primary/5' : ''} />
                   </div>
                   {form.items.length > 1 && (
@@ -546,11 +546,11 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                 <span className="text-sm font-bold text-slate-800">{fmtM2(calcTotalSquareMeters(form.items, form.quote_tipo_laje))} m²</span>
               </div>
               {sellerPrices.length > 0 && (() => {
-                const calcTotal = form.items.reduce((sum, it) => sum + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0), 0);
+                const calcTotal = form.items.reduce((sum, it) => sum + (Number(it.unit_price) || 0) * calcSquareMeters(it, form.quote_tipo_laje), 0);
                 const currentTotal = Number(form.total_value) || 0;
                 return (
                   <div className={`flex items-center justify-between rounded-xl px-3 py-2 mt-1 border ${Math.abs(calcTotal - currentTotal) < 0.01 ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
-                    <span className="text-xs font-semibold text-amber-800">Total calculado (preço × qtd)</span>
+                    <span className="text-xs font-semibold text-amber-800">Total calculado (preço × m²)</span>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-amber-900">R$ {calcTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => set('total_value', calcTotal)}>

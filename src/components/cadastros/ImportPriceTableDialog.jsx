@@ -59,7 +59,7 @@ export default function ImportPriceTableDialog({ open, onOpenChange, sellerId, s
                 type: 'object',
                 properties: {
                   truss_type: { type: 'string', description: 'Tipo de treliça: H8, H12, H16, H20, H25, H30' },
-                  preco_metro_linear: { type: 'number', description: 'Preço de venda por metro linear' }
+                  preco_metro_linear: { type: 'number', description: 'Preço de venda por metro quadrado (m²)' }
                 }
               }
             }
@@ -148,7 +148,7 @@ export default function ImportPriceTableDialog({ open, onOpenChange, sellerId, s
             <Input value={tabelaNome} onChange={e => setTabelaNome(e.target.value)} placeholder="Ex: TABELA 29" />
           </div>
           <p className="text-xs text-muted-foreground">
-            O sistema vai extrair os preços de venda por metro linear para cada tipo de treliça (H8–H30)
+            O sistema vai extrair os preços de venda por metro quadrado (m²) para cada tipo de treliça (H8–H30)
             e substituir os preços atuais deste vendedor.
           </p>
         </div>

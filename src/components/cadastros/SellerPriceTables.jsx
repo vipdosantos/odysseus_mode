@@ -82,7 +82,7 @@ export default function SellerPriceTables() {
             <tr>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Vendedor</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Tipo de Treliça</th>
-              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Preço</th>
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Preço/m²</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Desconto</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Preço Final</th>
               <th className="p-3 w-20" />
@@ -138,7 +138,7 @@ export default function SellerPriceTables() {
               </Select>
             </div>
             <div>
-              <Label>Preço (R$)</Label>
+              <Label>Preço/m² (R$)</Label>
               <Input type="number" value={form.price} onChange={e => f('price', Number(e.target.value))} />
             </div>
             <div>
