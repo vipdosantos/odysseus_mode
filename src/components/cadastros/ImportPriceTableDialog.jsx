@@ -67,7 +67,15 @@ export default function ImportPriceTableDialog({ open, onOpenChange, sellerId, s
         }
       });
 
-      const precos = result?.precos_trelica || result?.precos || [];
+      // ExtractDataFromUploadedFile returns { status, details, output }
+      const data = result?.output ?? result;
+      if (result?.status === 'error') {
+        toast.error('Erro na extração: ' + (result?.details || ''));
+        setLoading(false);
+        return;
+      }
+
+      const precos = data?.precos_trelica || data?.precos || [];
       if (!precos.length) {
         toast.error('Nenhum preço encontrado no arquivo');
         setLoading(false);
@@ -82,12 +90,12 @@ export default function ImportPriceTableDialog({ open, onOpenChange, sellerId, s
 
       // Create new records
       const records = precos
-        .filter(p => p.truss_type && p.preco_metro_linear != null)
+        .filter(p => (p.truss_type || p.tipo) && (p.preco_metro_linear != null || p.preco != null || p.price != null))
         .map(p => ({
           seller_id: sellerId,
           seller_name: sellerName,
-          product_size: p.truss_type,
-          price: Number(p.preco_metro_linear) || 0,
+          product_size: (p.truss_type || p.tipo || '').trim(),
+          price: Number(p.preco_metro_linear ?? p.preco ?? p.price) || 0,
           discount_pct: 0,
           notes: 'Importado via Excel'
         }));
@@ -102,9 +110,9 @@ export default function ImportPriceTableDialog({ open, onOpenChange, sellerId, s
       }
 
       toast.success(`${records.length} preços importados para ${sellerName}`);
+      queryClient.invalidateQueries({ queryKey: ['seller-prices'] });
       queryClient.invalidateQueries({ queryKey: ['price_tables'] });
       queryClient.invalidateQueries({ queryKey: ['sellers'] });
-      queryClient.invalidateQueries({ queryKey: ['seller-prices'] });
       reset();
       onOpenChange(false);
     } catch (err) {
