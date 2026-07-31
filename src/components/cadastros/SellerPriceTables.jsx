@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, Upload } from 'lucide-react';
 import ImportPriceTableDialog from './ImportPriceTableDialog';
+import { TRUSS_TYPES } from '@/lib/trussTypes';
 
 export default function SellerPriceTables() {
   const queryClient = useQueryClient();
@@ -80,7 +81,7 @@ export default function SellerPriceTables() {
           <thead className="bg-muted/50 border-b">
             <tr>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Vendedor</th>
-              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Produto / Tamanho</th>
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Tipo de Treliça</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Preço</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Desconto</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Preço Final</th>
@@ -128,8 +129,13 @@ export default function SellerPriceTables() {
               </Select>
             </div>
             <div className="col-span-2">
-              <Label>Produto / Tamanho</Label>
-              <Input value={form.product_size} onChange={e => f('product_size', e.target.value)} placeholder="Ex: Treliça 8cm x 3m" />
+              <Label>Tipo de Treliça</Label>
+              <Select value={form.product_size} onValueChange={v => f('product_size', v)}>
+                <SelectTrigger><SelectValue placeholder="Selecionar tipo..." /></SelectTrigger>
+                <SelectContent>
+                  {TRUSS_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Preço (R$)</Label>
