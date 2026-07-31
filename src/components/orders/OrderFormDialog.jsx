@@ -80,6 +80,14 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     queryFn: () => base44.entities.EpsDimension.list('-created_date', 200),
   });
 
+  const { data: sellerPrices = [] } = useQuery({
+    queryKey: ['seller-prices', form.seller_id],
+    queryFn: () => form.seller_id
+      ? base44.entities.SellerPriceTable.filter({ seller_id: form.seller_id }, 'product_size', 100)
+      : [],
+    enabled: !!form.seller_id,
+  });
+
   useEffect(() => {
     if (order) {
       setForm({
@@ -122,6 +130,11 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     .filter(c => c.active !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
+  const getPriceForTruss = (trussType) => {
+    const entry = sellerPrices.find(p => p.product_size === trussType);
+    return entry?.price ?? 0;
+  };
+
   const updateItem = (idx, field, value) => {
     const items = [...form.items];
     items[idx] = { ...items[idx], [field]: value };
@@ -129,10 +142,26 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
       const ench = form.tipo_enchimento === 'EPS+Lajota' ? 'EPS' : form.tipo_enchimento;
       const dim = lookupEpsDimension(form.quote_tipo_laje, value, ench, epsDimensions);
       if (dim || form.tipo_enchimento !== 'Nenhum') items[idx].enchimento_dimension = dim;
+      // Auto-preencher preço da tabela do vendedor
+      const price = getPriceForTruss(value);
+      if (price > 0) items[idx].unit_price = price;
     }
     if (!items[idx].qr_code_id) items[idx].qr_code_id = `${form.order_number}-${items[idx].size}-${idx}`;
     setForm(f => ({ ...f, items }));
   };
+
+  // Auto-preencher preços da tabela do vendedor quando os preços são carregados
+  useEffect(() => {
+    if (!sellerPrices.length) return;
+    setForm(f => {
+      const items = f.items.map(it => {
+        const price = sellerPrices.find(p => p.product_size === it.truss_type)?.price;
+        return price != null && price > 0 ? { ...it, unit_price: price } : it;
+      });
+      const hasChanges = items.some((it, i) => it.unit_price !== f.items[i]?.unit_price);
+      return hasChanges ? { ...f, items } : f;
+    });
+  }, [sellerPrices]);
 
   // Auto-preencher dimensão do enchimento em todos os itens quando tipo_laje ou tipo_enchimento muda
   useEffect(() => {
@@ -301,7 +330,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                   <SelectTrigger><SelectValue placeholder="Selecionar vendedor" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>— Nenhum —</SelectItem>
-                    {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}{s.tabela_nome ? ` (${s.tabela_nome})` : ''}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -450,6 +479,10 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                     <Label className="text-xs">Quantidade</Label>
                     <Input type="number" value={item.quantity} onChange={e => updateItem(idx, 'quantity', e.target.value)} />
                   </div>
+                  <div className="w-28">
+                    <Label className="text-xs">Preço/m lin (R$)</Label>
+                    <Input type="number" value={item.unit_price || 0} onChange={e => updateItem(idx, 'unit_price', Number(e.target.value))} className={sellerPrices.find(p => p.product_size === item.truss_type) ? 'border-primary/50 bg-primary/5' : ''} />
+                  </div>
                   {form.items.length > 1 && (
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(idx)}>
                       <Trash2 className="w-4 h-4 text-destructive" />
@@ -512,6 +545,21 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                 <span className="text-xs font-semibold text-slate-600">Total m² ({form.quote_tipo_laje}) — interno</span>
                 <span className="text-sm font-bold text-slate-800">{fmtM2(calcTotalSquareMeters(form.items, form.quote_tipo_laje))} m²</span>
               </div>
+              {sellerPrices.length > 0 && (() => {
+                const calcTotal = form.items.reduce((sum, it) => sum + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0), 0);
+                const currentTotal = Number(form.total_value) || 0;
+                return (
+                  <div className={`flex items-center justify-between rounded-xl px-3 py-2 mt-1 border ${Math.abs(calcTotal - currentTotal) < 0.01 ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                    <span className="text-xs font-semibold text-amber-800">Total calculado (preço × qtd)</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-amber-900">R$ {calcTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => set('total_value', calcTotal)}>
+                        Aplicar
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
               {(form.tipo_enchimento === 'EPS' || form.tipo_enchimento === 'EPS+Lajota') && (
                 <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 mt-1">
                   <span className="text-xs font-semibold text-amber-800">Total Placas EPS ({form.quote_tipo_laje}) — m² × {form.quote_tipo_laje === 'Painel' ? '3,9' : form.quote_tipo_laje === 'Laje Treliçada Intereixo' ? '1,9' : '2,3'}</span>

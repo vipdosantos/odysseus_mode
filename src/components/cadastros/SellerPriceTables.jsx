@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload } from 'lucide-react';
+import ImportPriceTableDialog from './ImportPriceTableDialog';
 
 export default function SellerPriceTables() {
   const queryClient = useQueryClient();
@@ -14,6 +15,7 @@ export default function SellerPriceTables() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ seller_id: '', seller_name: '', product_size: '', price: 0, discount_pct: 0, notes: '' });
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: sellers = [] } = useQuery({
     queryKey: ['sellers'],
@@ -67,7 +69,10 @@ export default function SellerPriceTables() {
         <Button onClick={openNew} className="bg-primary text-primary-foreground" disabled={!selectedSeller}>
           <Plus className="w-4 h-4 mr-1" /> Novo Preço
         </Button>
-        {!selectedSeller && <p className="text-xs text-muted-foreground">Selecione um vendedor para adicionar preços</p>}
+        <Button onClick={() => setImportOpen(true)} variant="outline" disabled={!selectedSeller}>
+          <Upload className="w-4 h-4 mr-1" /> Importar Excel
+        </Button>
+        {!selectedSeller && <p className="text-xs text-muted-foreground">Selecione um vendedor para adicionar/importar preços</p>}
       </div>
 
       <div className="rounded-xl border overflow-hidden">
@@ -141,6 +146,15 @@ export default function SellerPriceTables() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {selectedSeller && (
+        <ImportPriceTableDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          sellerId={selectedSeller}
+          sellerName={sellers.find(s => s.id === selectedSeller)?.name || ''}
+        />
+      )}
     </div>
   );
 }

@@ -19,6 +19,10 @@
       "description": "Taxa de comiss\u00e3o (%)",
       "default": 0
     },
+    "tabela_nome": {
+      "type": "string",
+      "description": "Nome da tabela de pre\u00e7os (ex: TABELA 29)"
+    },
     "active": {
       "type": "boolean",
       "description": "Ativo",
