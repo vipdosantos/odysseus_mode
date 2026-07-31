@@ -5,8 +5,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
+
+const TRUSS_TYPES = ['H8', 'H12', 'H16', 'H20', 'H25', 'H30'];
+
+function downloadTemplate() {
+  const headers = ['Tabela de Precos - Modelo', ''];
+  const blank = ['', ''];
+  const nomeRow = ['Nome da Tabela', 'TABELA 29'];
+  const blank2 = ['', ''];
+  const colHeader = ['Tipo de Trelica', 'Preco/m2 (R$)'];
+  const rows = TRUSS_TYPES.map(t => [t, '']);
+
+  const csv = [headers, nomeRow, blank2, colHeader, ...rows]
+    .map(r => r.map(c => `"${c}"`).join(','))
+    .join('\n');
+
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'modelo_tabela_precos.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ImportPriceTableDialog({ open, onOpenChange, sellerId, sellerName }) {
   const queryClient = useQueryClient();
@@ -151,6 +174,9 @@ export default function ImportPriceTableDialog({ open, onOpenChange, sellerId, s
             O sistema vai extrair os preços de venda por metro quadrado (m²) para cada tipo de treliça (H8–H30)
             e substituir os preços atuais deste vendedor.
           </p>
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={downloadTemplate}>
+            <Download className="w-4 h-4 mr-1" /> Baixar Planilha Modelo
+          </Button>
         </div>
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }} disabled={loading}>Cancelar</Button>
