@@ -12,7 +12,8 @@ const TIPO_ENCH_OPTS = ['Nenhum', 'EPS', 'Lajota', 'EPS+Lajota'];
 export default function ProjetoRelatorio({
   projeto, slabs, onUpdateSlab, onDeleteSlab, onGenerateOrcamento, generating, generatedOrderId
 }) {
-  const totalArea = slabs.reduce((a, s) => a + (s.area_m2 || 0), 0);
+  const totalArea = slabs.filter(s => !s.negativo).reduce((a, s) => a + (s.area_m2 || 0), 0);
+  const negativoArea = slabs.filter(s => s.negativo).reduce((a, s) => a + (s.area_m2 || 0), 0);
 
   return (
     <div className="w-80 shrink-0 bg-gray-50 border-l border-border flex flex-col">
@@ -35,8 +36,8 @@ export default function ProjetoRelatorio({
         {slabs.map(slab => (
           <div key={slab.id} className="bg-white border border-border rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">{slab.label}</span>
-              <span className="text-sm font-semibold text-primary">{slab.area_m2.toFixed(2)} m²</span>
+              <span className="text-sm font-semibold">{slab.label}{slab.negativo && <span className="text-destructive"> (Neg)</span>}</span>
+              <span className={`text-sm font-semibold ${slab.negativo ? 'text-destructive' : 'text-primary'}`}>{slab.area_m2.toFixed(2)} m²</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -99,6 +100,12 @@ export default function ProjetoRelatorio({
           <span>Lajes</span>
           <span className="font-semibold">{slabs.length}</span>
         </div>
+        {negativoArea > 0 && (
+          <div className="flex justify-between text-sm text-destructive">
+            <span>Negativos</span>
+            <span className="font-semibold">- {negativoArea.toFixed(2)} m²</span>
+          </div>
+        )}
         {generatedOrderId ? (
           <Button size="sm" className="w-full" variant="outline" asChild>
             <a href={`/orcamentos`}>Orçamento gerado — ver</a>

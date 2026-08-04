@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
@@ -8,18 +8,12 @@ import ProjetoRelatorio from '@/components/projetos/ProjetoRelatorio';
 import ProjetoToolbar from '@/components/projetos/ProjetoToolbar';
 
 const newProjeto = () => ({
-  name: 'Novo Projeto',
-  client_name: '',
-  floor_plan_url: '',
-  scale_px_per_m: 100,
-  floor_plan_opacity: 0.5,
-  show_grid: true,
-  plano_escoras: false,
-  slabs: [],
-  cotas: [],
-  textos: [],
-  total_area_m2: 0
+  name: 'Novo Projeto', client_name: '', floor_plan_url: '',
+  scale_px_per_m: 100, floor_plan_opacity: 0.5, show_grid: true, plano_escoras: false,
+  slabs: [], cotas: [], textos: [], annotations: [], total_area_m2: 0
 });
+
+const uid = (p) => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
 export default function Projetos() {
   const { toast } = useToast();
@@ -28,12 +22,15 @@ export default function Projetos() {
   const [slabs, setSlabs] = useState([]);
   const [cotas, setCotas] = useState([]);
   const [textos, setTextos] = useState([]);
+  const [annotations, setAnnotations] = useState([]);
   const [drawingPoints, setDrawingPoints] = useState([]);
   const [tool, setTool] = useState('vertices');
   const [selectedSlabId, setSelectedSlabId] = useState(null);
   const [scalePxPerM, setScalePxPerM] = useState(100);
   const [floorPlanOpacity, setFloorPlanOpacity] = useState(0.5);
   const [showGrid, setShowGrid] = useState(true);
+  const [ortoAtivo, setOrtoAtivo] = useState(false);
+  const [contornoAtivo, setContornoAtivo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedOrderId, setGeneratedOrderId] = useState(null);
@@ -44,80 +41,45 @@ export default function Projetos() {
     queryFn: () => base44.entities.Projeto.list('-updated_date', 50)
   });
 
-  const changeProjeto = useCallback((patch) => {
-    setProjeto(prev => ({ ...prev, ...patch }));
-  }, []);
+  const changeProjeto = useCallback((patch) => setProjeto(prev => ({ ...prev, ...patch })), []);
 
   const pushHistory = () => {
-    setHistory(prev => [...prev.slice(-19), { slabs, cotas, textos }]);
+    setHistory(prev => [...prev.slice(-19), { slabs, cotas, textos, annotations }]);
   };
 
   const loadProjeto = (p) => {
     setProjeto(p);
-    setSlabs(p.slabs || []);
-    setCotas(p.cotas || []);
-    setTextos(p.textos || []);
-    setScalePxPerM(p.scale_px_per_m || 100);
-    setFloorPlanOpacity(p.floor_plan_opacity ?? 0.5);
-    setShowGrid(p.show_grid !== false);
-    setGeneratedOrderId(p.order_id || null);
-    setDrawingPoints([]);
-    setSelectedSlabId(null);
-    setHistory([]);
+    setSlabs(p.slabs || []); setCotas(p.cotas || []); setTextos(p.textos || []); setAnnotations(p.annotations || []);
+    setScalePxPerM(p.scale_px_per_m || 100); setFloorPlanOpacity(p.floor_plan_opacity ?? 0.5);
+    setShowGrid(p.show_grid !== false); setGeneratedOrderId(p.order_id || null);
+    setDrawingPoints([]); setSelectedSlabId(null); setHistory([]);
   };
 
   const newProj = () => {
-    setProjeto(newProjeto());
-    setSlabs([]);
-    setCotas([]);
-    setTextos([]);
-    setDrawingPoints([]);
-    setSelectedSlabId(null);
-    setGeneratedOrderId(null);
-    setScalePxPerM(100);
-    setFloorPlanOpacity(0.5);
-    setShowGrid(true);
-    setHistory([]);
+    setProjeto(newProjeto()); setSlabs([]); setCotas([]); setTextos([]); setAnnotations([]);
+    setDrawingPoints([]); setSelectedSlabId(null); setGeneratedOrderId(null);
+    setScalePxPerM(100); setFloorPlanOpacity(0.5); setShowGrid(true); setHistory([]);
   };
 
   const addPoint = (pt) => setDrawingPoints(prev => [...prev, pt]);
 
   const finishDrawing = () => {
-    if (drawingPoints.length < 3) {
-      setDrawingPoints([]);
-      return;
-    }
+    if (drawingPoints.length < 3) { setDrawingPoints([]); return; }
     pushHistory();
     const area = polygonAreaM2(drawingPoints, scalePxPerM);
-    const id = `slab_${Date.now()}`;
-    const labelNum = slabs.length + 1;
-    const newSlab = {
-      id,
-      label: `L${labelNum}`,
-      vertices: drawingPoints,
-      area_m2: area,
-      tipo_laje: 'Laje',
-      tipo_enchimento: 'Nenhum',
-      truss_type: 'H8'
-    };
-    setSlabs(prev => [...prev, newSlab]);
+    const id = uid('slab'); const labelNum = slabs.length + 1;
+    setSlabs(prev => [...prev, { id, label: `L${labelNum}`, vertices: drawingPoints, area_m2: area, negativo: false, tipo_laje: 'Laje', tipo_enchimento: 'Nenhum', truss_type: 'H8' }]);
     setDrawingPoints([]);
   };
 
   const addSlabRect = (vertices) => {
     pushHistory();
     const area = polygonAreaM2(vertices, scalePxPerM);
-    const id = `slab_${Date.now()}`;
-    const labelNum = slabs.length + 1;
-    setSlabs(prev => [...prev, {
-      id, label: `L${labelNum}`, vertices, area_m2: area,
-      tipo_laje: 'Laje', tipo_enchimento: 'Nenhum', truss_type: 'H8'
-    }]);
+    const id = uid('slab'); const labelNum = slabs.length + 1;
+    setSlabs(prev => [...prev, { id, label: `L${labelNum}`, vertices, area_m2: area, negativo: false, tipo_laje: 'Laje', tipo_enchimento: 'Nenhum', truss_type: 'H8' }]);
   };
 
-  const updateSlab = (id, patch) => {
-    setSlabs(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
-  };
+  const updateSlab = (id, patch) => setSlabs(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
 
   const deleteSlab = (id) => {
     pushHistory();
@@ -126,67 +88,87 @@ export default function Projetos() {
   };
 
   const moveSlab = (id, dx, dy) => {
-    setSlabs(prev => prev.map(s => s.id === id ? {
-      ...s,
-      vertices: s.vertices.map(v => ({ x: v.x + dx, y: v.y + dy }))
-    } : s));
+    setSlabs(prev => prev.map(s => s.id === id ? { ...s, vertices: s.vertices.map(v => ({ x: v.x + dx, y: v.y + dy })) } : s));
   };
 
-  const rotateSlab = (id) => {
+  const toggleNegativo = (id) => {
+    pushHistory();
+    setSlabs(prev => prev.map(s => s.id === id ? { ...s, negativo: !s.negativo } : s));
+  };
+
+  // Espelho: mirror selected slab horizontally around its centroid
+  const espelhar = () => {
+    if (!selectedSlabId) return;
     pushHistory();
     setSlabs(prev => prev.map(s => {
-      if (s.id !== id) return s;
+      if (s.id !== selectedSlabId) return s;
       const cx = s.vertices.reduce((a, v) => a + v.x, 0) / s.vertices.length;
-      const cy = s.vertices.reduce((a, v) => a + v.y, 0) / s.vertices.length;
-      const ang = Math.PI / 2; // 90°
-      const cos = Math.cos(ang), sin = Math.sin(ang);
-      return {
-        ...s,
-        vertices: s.vertices.map(v => ({
-          x: cx + (v.x - cx) * cos - (v.y - cy) * sin,
-          y: cy + (v.x - cx) * sin + (v.y - cy) * cos
-        }))
-      };
+      return { ...s, vertices: s.vertices.map(v => ({ x: 2 * cx - v.x, y: v.y })) };
     }));
   };
 
-  const addCota = (c) => {
+  // Girar: rotate selected slab 90° around centroid
+  const girar = () => {
+    if (!selectedSlabId) return;
     pushHistory();
-    setCotas(prev => [...prev, c]);
+    setSlabs(prev => prev.map(s => {
+      if (s.id !== selectedSlabId) return s;
+      const cx = s.vertices.reduce((a, v) => a + v.x, 0) / s.vertices.length;
+      const cy = s.vertices.reduce((a, v) => a + v.y, 0) / s.vertices.length;
+      const cos = 0, sin = 1;
+      return { ...s, vertices: s.vertices.map(v => ({ x: cx + (v.x - cx) * cos - (v.y - cy) * sin, y: cy + (v.x - cx) * sin + (v.y - cy) * cos })) };
+    }));
   };
 
+  // Copiar: duplicate selected slab, offset
+  const copiar = () => {
+    if (!selectedSlabId) return;
+    pushHistory();
+    setSlabs(prev => {
+      const orig = prev.find(s => s.id === selectedSlabId);
+      if (!orig) return prev;
+      const id = uid('slab'); const labelNum = prev.length + 1;
+      const copy = { ...orig, id, label: `L${labelNum}`, vertices: orig.vertices.map(v => ({ x: v.x + 24, y: v.y + 24 })) };
+      return [...prev, copy];
+    });
+  };
+
+  // Ajuste Borda: snap selected slab vertices to nearest grid
+  const ajusteBorda = () => {
+    if (!selectedSlabId) return;
+    pushHistory();
+    const g = Math.max(10, scalePxPerM);
+    setSlabs(prev => prev.map(s => {
+      if (s.id !== selectedSlabId) return s;
+      const snapped = s.vertices.map(v => ({ x: Math.round(v.x / g) * g, y: Math.round(v.y / g) * g }));
+      return { ...s, vertices: snapped, area_m2: polygonAreaM2(snapped, scalePxPerM) };
+    }));
+  };
+
+  const addCota = (c) => { pushHistory(); setCotas(prev => [...prev, c]); };
   const addTexto = (p) => {
     const text = window.prompt('Texto da etiqueta:', '');
-    if (!text) return;
-    pushHistory();
-    setTextos(prev => [...prev, { x: p.x, y: p.y, text }]);
+    if (!text) return; pushHistory(); setTextos(prev => [...prev, { x: p.x, y: p.y, text }]);
   };
+  const addAnnotation = (a) => { pushHistory(); setAnnotations(prev => [...prev, { id: uid('ann'), ...a }]); };
 
   const undo = () => {
     setHistory(prev => {
       if (prev.length === 0) return prev;
       const last = prev[prev.length - 1];
-      setSlabs(last.slabs);
-      setCotas(last.cotas);
-      setTextos(last.textos);
-      setDrawingPoints([]);
-      setSelectedSlabId(null);
+      setSlabs(last.slabs); setCotas(last.cotas); setTextos(last.textos); setAnnotations(last.annotations);
+      setDrawingPoints([]); setSelectedSlabId(null);
       return prev.slice(0, -1);
     });
   };
 
-  const deleteSelected = () => {
-    if (selectedSlabId) deleteSlab(selectedSlabId);
-  };
+  const deleteSelected = () => { if (selectedSlabId) deleteSlab(selectedSlabId); };
 
   const calibrate = (pxDistance) => {
     const input = window.prompt('Distância real entre os dois pontos (em metros):', '1.00');
     if (!input) return;
     const meters = parseFloat(input.replace(',', '.'));
-    if (!meters || meters <= 0) {
-      toast({ title: 'Distância inválida', variant: 'destructive' });
-      return;
-    }
+    if (!meters || meters <= 0) { toast({ title: 'Distância inválida', variant: 'destructive' }); return; }
     const newScale = pxDistance / meters;
     setScalePxPerM(newScale);
     toast({ title: 'Escala calibrada', description: `1 m = ${Math.round(newScale)} px` });
@@ -194,7 +176,6 @@ export default function Projetos() {
 
   const reloadPlan = () => {
     if (!projeto.floor_plan_url) return;
-    // força recarregar a imagem limpando cache
     const url = projeto.floor_plan_url;
     changeProjeto({ floor_plan_url: '' });
     setTimeout(() => changeProjeto({ floor_plan_url: url }), 50);
@@ -204,71 +185,40 @@ export default function Projetos() {
   const saveProjeto = async () => {
     setSaving(true);
     try {
-      const total = slabs.reduce((a, s) => a + (s.area_m2 || 0), 0);
+      const total = slabs.filter(s => !s.negativo).reduce((a, s) => a + (s.area_m2 || 0), 0);
       const payload = {
-        name: projeto.name,
-        client_name: projeto.client_name,
-        floor_plan_url: projeto.floor_plan_url,
-        scale_px_per_m: scalePxPerM,
-        floor_plan_opacity: floorPlanOpacity,
-        show_grid: showGrid,
-        plano_escoras: projeto.plano_escoras,
-        slabs,
-        cotas,
-        textos,
-        total_area_m2: total,
-        order_id: generatedOrderId
+        name: projeto.name, client_name: projeto.client_name, floor_plan_url: projeto.floor_plan_url,
+        scale_px_per_m: scalePxPerM, floor_plan_opacity: floorPlanOpacity, show_grid: showGrid,
+        plano_escoras: projeto.plano_escoras, slabs, cotas, textos, annotations,
+        total_area_m2: total, order_id: generatedOrderId
       };
-      if (projeto.id) {
-        await base44.entities.Projeto.update(projeto.id, payload);
-      } else {
-        const created = await base44.entities.Projeto.create(payload);
-        setProjeto(prev => ({ ...prev, id: created.id }));
-      }
+      if (projeto.id) { await base44.entities.Projeto.update(projeto.id, payload); }
+      else { const created = await base44.entities.Projeto.create(payload); setProjeto(prev => ({ ...prev, id: created.id })); }
       await qc.invalidateQueries({ queryKey: ['projetos'] });
       toast({ title: 'Projeto salvo' });
-    } catch (e) {
-      toast({ title: 'Erro ao salvar', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
+    } catch (e) { toast({ title: 'Erro ao salvar', variant: 'destructive' }); }
+    finally { setSaving(false); }
   };
 
   const generateOrcamento = async () => {
     setGenerating(true);
     try {
       const order_number = `ORC-${Date.now().toString().slice(-6)}`;
-      const total = slabs.reduce((a, s) => a + (s.area_m2 || 0), 0);
-      const items = slabs.map(s => ({
-        size: s.label,
-        truss_type: s.truss_type || 'H8',
-        quantity: 1,
-        unit_price: 0,
-        produced: 0,
-        scanned_units: [],
-        delivered_units: [],
-        loaded_units: [],
-        stage_conferencias: {}
+      const total = slabs.filter(s => !s.negativo).reduce((a, s) => a + (s.area_m2 || 0), 0);
+      const items = slabs.filter(s => !s.negativo).map(s => ({
+        size: s.label, truss_type: s.truss_type || 'H8', quantity: 1, unit_price: 0,
+        produced: 0, scanned_units: [], delivered_units: [], loaded_units: [], stage_conferencias: {}
       }));
       const order = await base44.entities.Order.create({
-        order_number,
-        client_name: projeto.client_name || 'Cliente',
-        tipo: 'orcamento',
-        items,
-        total_value: 0,
-        notes: `Projeto: ${projeto.name} | Área total: ${total.toFixed(2)}m²`
+        order_number, client_name: projeto.client_name || 'Cliente', tipo: 'orcamento',
+        items, total_value: 0, notes: `Projeto: ${projeto.name} | Área total: ${total.toFixed(2)}m²`
       });
       setGeneratedOrderId(order.id);
-      if (projeto.id) {
-        await base44.entities.Projeto.update(projeto.id, { order_id: order.id });
-      }
+      if (projeto.id) await base44.entities.Projeto.update(projeto.id, { order_id: order.id });
       await qc.invalidateQueries({ queryKey: ['projetos'] });
       toast({ title: 'Orçamento gerado', description: order_number });
-    } catch (e) {
-      toast({ title: 'Erro ao gerar orçamento', variant: 'destructive' });
-    } finally {
-      setGenerating(false);
-    }
+    } catch (e) { toast({ title: 'Erro ao gerar orçamento', variant: 'destructive' }); }
+    finally { setGenerating(false); }
   };
 
   return (
@@ -279,62 +229,41 @@ export default function Projetos() {
       </div>
 
       <ProjetoToolbar
-        tool={tool}
-        setTool={setTool}
-        showGrid={showGrid}
-        onToggleGrid={() => setShowGrid(v => !v)}
-        onUndo={undo}
-        onDeleteSelected={deleteSelected}
+        tool={tool} setTool={setTool}
+        showGrid={showGrid} onToggleGrid={() => setShowGrid(v => !v)}
+        ortoAtivo={ortoAtivo} onToggleOrto={() => setOrtoAtivo(v => !v)}
+        contornoAtivo={contornoAtivo} onToggleContorno={() => setContornoAtivo(v => !v)}
+        onUndo={undo} onEspelho={espelhar} onGirar={girar} onCopiar={copiar}
+        onAjusteBorda={ajusteBorda} onDeleteSelected={deleteSelected}
         hasSelection={!!selectedSlabId}
       />
 
       <div className="flex-1 flex min-h-0">
         <ProjetoLeftPanel
-          projeto={projeto}
-          onChangeProjeto={changeProjeto}
-          projetos={projetos}
-          onLoadProjeto={loadProjeto}
-          onNewProjeto={newProj}
-          onSave={saveProjeto}
-          saving={saving}
-          floorPlanOpacity={floorPlanOpacity}
-          setFloorPlanOpacity={setFloorPlanOpacity}
-          onCalibrarClick={() => setTool('calibrar')}
-          onReloadPlan={reloadPlan}
+          projeto={projeto} onChangeProjeto={changeProjeto} projetos={projetos}
+          onLoadProjeto={loadProjeto} onNewProjeto={newProj} onSave={saveProjeto} saving={saving}
+          floorPlanOpacity={floorPlanOpacity} setFloorPlanOpacity={setFloorPlanOpacity}
+          onCalibrarClick={() => setTool('calibrar')} onReloadPlan={reloadPlan}
         />
 
         <div className="flex-1 min-w-0">
           <ProjetoCanvas
-            slabs={slabs}
-            drawingPoints={drawingPoints}
-            onAddPoint={addPoint}
-            onFinishDrawing={finishDrawing}
-            onSelectSlab={setSelectedSlabId}
-            selectedSlabId={selectedSlabId}
-            floorPlanUrl={projeto.floor_plan_url}
-            floorPlanOpacity={floorPlanOpacity}
-            scalePxPerM={scalePxPerM}
-            tool={tool}
-            cotas={cotas}
-            textos={textos}
-            showGrid={showGrid}
-            onAddSlabRect={addSlabRect}
-            onAddCota={addCota}
-            onAddTexto={addTexto}
-            onCalibrate={calibrate}
-            onMoveSlab={moveSlab}
-            onRotateSlab={rotateSlab}
+            slabs={slabs} drawingPoints={drawingPoints} onAddPoint={addPoint}
+            onFinishDrawing={finishDrawing} onSelectSlab={setSelectedSlabId}
+            selectedSlabId={selectedSlabId} floorPlanUrl={projeto.floor_plan_url}
+            floorPlanOpacity={floorPlanOpacity} scalePxPerM={scalePxPerM} tool={tool}
+            cotas={cotas} textos={textos} annotations={annotations}
+            showGrid={showGrid} contornoAtivo={contornoAtivo} ortoAtivo={ortoAtivo}
+            onAddSlabRect={addSlabRect} onAddCota={addCota} onAddTexto={addTexto}
+            onAddAnnotation={addAnnotation} onToggleNegativo={toggleNegativo}
+            onCalibrate={calibrate} onMoveSlab={moveSlab}
           />
         </div>
 
         <ProjetoRelatorio
-          projeto={projeto}
-          slabs={slabs}
-          onUpdateSlab={updateSlab}
-          onDeleteSlab={deleteSlab}
-          onGenerateOrcamento={generateOrcamento}
-          generating={generating}
-          generatedOrderId={generatedOrderId}
+          projeto={projeto} slabs={slabs} onUpdateSlab={updateSlab}
+          onDeleteSlab={deleteSlab} onGenerateOrcamento={generateOrcamento}
+          generating={generating} generatedOrderId={generatedOrderId}
         />
       </div>
     </div>

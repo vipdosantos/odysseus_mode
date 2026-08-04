@@ -23,28 +23,36 @@ export function polygonAreaM2(vertices, scalePxPerM) {
   return area / pxPerM2;
 }
 
-function dist(a, b) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+// snap point b orthogonally to a (orto mode)
+function orthoSnap(a, b) {
+  const dx = Math.abs(b.x - a.x);
+  const dy = Math.abs(b.y - a.y);
+  if (dx >= dy) return { x: b.x, y: a.y };
+  return { x: a.x, y: b.y };
 }
+
+const LINE_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura']);
+const POINT_TOOLS = new Set(['ponto_luz', 'nucleo', 'frigideira']);
 
 export default function ProjetoCanvas({
   slabs, drawingPoints, onAddPoint, onFinishDrawing, onSelectSlab,
   selectedSlabId, floorPlanUrl, floorPlanOpacity, scalePxPerM, tool,
-  cotas, textos, showGrid, onAddSlabRect, onAddCota, onAddTexto,
-  onCalibrate, onMoveSlab, onRotateSlab
+  cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo,
+  onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation, onToggleNegativo,
+  onCalibrate, onMoveSlab
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
   const imgRef = useRef(null);
-  const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, moveStart: null, moveLast: null, rectStart: null, cur: null });
+  const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, lineFirst: null, moveLast: null, rectStart: null, cur: null });
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => {
-      setSize({ w: el.clientWidth, h: el.clientHeight });
-    });
+    const ro = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -62,25 +70,17 @@ export default function ProjetoCanvas({
     const ctx = canvas.getContext('2d');
     const { w, h } = size;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
 
     if (showGrid) {
       const gridPx = Math.max(10, scalePxPerM);
-      ctx.strokeStyle = '#e5e7eb';
-      ctx.lineWidth = 1;
-      for (let x = 0; x <= w; x += gridPx) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-      }
-      for (let y = 0; y <= h; y += gridPx) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      }
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+      for (let x = 0; x <= w; x += gridPx) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y <= h; y += gridPx) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
     }
 
     if (imgRef.current) {
@@ -93,38 +93,60 @@ export default function ProjetoCanvas({
       ctx.globalAlpha = 1;
     }
 
-    // cotas (dimension lines)
-    (cotas || []).forEach(c => {
-      ctx.strokeStyle = '#ef4444';
+    // annotations
+    (annotations || []).forEach(a => {
+      const m = mouseRef.current;
       ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(c.x1, c.y1);
-      ctx.lineTo(c.x2, c.y2);
-      ctx.stroke();
-      // endpoints
+      if (a.type === 'linha') {
+        ctx.strokeStyle = '#111827'; ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
+      } else if (a.type === 'tracejada') {
+        ctx.strokeStyle = '#111827'; ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
+        ctx.setLineDash([]);
+      } else if (a.type === 'vigota') {
+        ctx.strokeStyle = '#92400e'; ctx.lineWidth = 3; ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
+        ctx.lineWidth = 1.5;
+      } else if (a.type === 'nervura') {
+        ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
+        ctx.setLineDash([]);
+      } else if (a.type === 'ponto_luz') {
+        ctx.strokeStyle = '#ca8a04'; ctx.fillStyle = '#fef9c3'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(a.x, a.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(a.x - 4, a.y); ctx.lineTo(a.x + 4, a.y);
+        ctx.moveTo(a.x, a.y - 4); ctx.lineTo(a.x, a.y + 4); ctx.stroke();
+      } else if (a.type === 'nucleo') {
+        ctx.fillStyle = '#1d4ed8'; ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 1.5;
+        ctx.fillRect(a.x - 4, a.y - 4, 8, 8);
+      } else if (a.type === 'frigideira') {
+        ctx.strokeStyle = '#6b7280'; ctx.fillStyle = '#f3f4f6'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(a.x, a.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // handle
+        ctx.beginPath(); ctx.moveTo(a.x + 7, a.y - 7); ctx.lineTo(a.x + 14, a.y - 12); ctx.stroke();
+      }
+    });
+
+    // cotas
+    (cotas || []).forEach(c => {
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(c.x1, c.y1); ctx.lineTo(c.x2, c.y2); ctx.stroke();
       [[c.x1, c.y1], [c.x2, c.y2]].forEach(([px, py]) => {
         ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.fillStyle = '#ef4444'; ctx.fill();
       });
-      // label
-      const mx = (c.x1 + c.x2) / 2;
-      const my = (c.y1 + c.y2) / 2;
+      const mx = (c.x1 + c.x2) / 2, my = (c.y1 + c.y2) / 2;
       const label = `${c.meters.toFixed(2)} m`;
       ctx.font = 'bold 11px Inter, sans-serif';
       const tw = ctx.measureText(label).width + 6;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(mx - tw / 2, my - 8, tw, 16);
-      ctx.fillStyle = '#ef4444';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, mx, my);
-      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(mx - tw / 2, my - 8, tw, 16);
+      ctx.fillStyle = '#ef4444'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, mx, my); ctx.textBaseline = 'alphabetic';
     });
 
     // textos
     (textos || []).forEach(t => {
-      ctx.fillStyle = '#111827';
-      ctx.font = 'bold 12px Inter, sans-serif';
-      ctx.textAlign = 'left';
+      ctx.fillStyle = '#111827'; ctx.font = 'bold 12px Inter, sans-serif'; ctx.textAlign = 'left';
       ctx.fillText(t.text, t.x, t.y);
     });
 
@@ -132,70 +154,71 @@ export default function ProjetoCanvas({
     slabs.forEach(slab => {
       const isSel = slab.id === selectedSlabId;
       ctx.beginPath();
-      slab.vertices.forEach((v, i) => {
-        if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y);
-      });
+      slab.vertices.forEach((v, i) => { if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y); });
       ctx.closePath();
-      ctx.fillStyle = isSel ? 'rgba(0,123,255,0.22)' : 'rgba(0,123,255,0.10)';
-      ctx.fill();
-      ctx.strokeStyle = isSel ? '#007BFF' : '#1a1e2e';
-      ctx.lineWidth = isSel ? 2.5 : 1.5;
-      ctx.stroke();
+      if (slab.negativo) {
+        ctx.fillStyle = 'rgba(239,68,68,0.15)'; ctx.fill();
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = contornoAtivo ? 4 : 2;
+        ctx.setLineDash([6, 4]); ctx.stroke(); ctx.setLineDash([]);
+        // hatch
+        ctx.save();
+        ctx.clip();
+        ctx.strokeStyle = 'rgba(239,68,68,0.5)'; ctx.lineWidth = 1;
+        for (let i = -w; i < w; i += 8) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + h, h); ctx.stroke(); }
+        ctx.restore();
+      } else {
+        ctx.fillStyle = isSel ? 'rgba(0,123,255,0.22)' : 'rgba(0,123,255,0.10)'; ctx.fill();
+        ctx.strokeStyle = isSel ? '#007BFF' : '#1a1e2e';
+        ctx.lineWidth = contornoAtivo ? 4 : (isSel ? 2.5 : 1.5);
+        ctx.stroke();
+      }
       ctx.fillStyle = '#007BFF';
-      slab.vertices.forEach(v => {
-        ctx.beginPath(); ctx.arc(v.x, v.y, 4, 0, Math.PI * 2); ctx.fill();
-      });
+      slab.vertices.forEach(v => { ctx.beginPath(); ctx.arc(v.x, v.y, 4, 0, Math.PI * 2); ctx.fill(); });
       const cx = slab.vertices.reduce((a, v) => a + v.x, 0) / slab.vertices.length;
       const cy = slab.vertices.reduce((a, v) => a + v.y, 0) / slab.vertices.length;
-      ctx.fillStyle = '#111827';
-      ctx.font = 'bold 13px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${slab.label} • ${slab.area_m2.toFixed(2)}m²`, cx, cy);
+      ctx.fillStyle = '#111827'; ctx.font = 'bold 13px Inter, sans-serif'; ctx.textAlign = 'center';
+      const tag = slab.negativo ? `${slab.label} (Neg)` : `${slab.label} • ${slab.area_m2.toFixed(2)}m²`;
+      ctx.fillText(tag, cx, cy);
     });
 
     // drawing in progress (vertices)
     if (drawingPoints.length > 0) {
       ctx.beginPath();
-      drawingPoints.forEach((v, i) => {
-        if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y);
-      });
+      drawingPoints.forEach((v, i) => { if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y); });
       const cur = mouseRef.current.cur;
-      if (cur && tool === 'vertices') {
-        ctx.lineTo(cur.x, cur.y);
-      }
-      ctx.strokeStyle = '#007BFF';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 4]);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      if (cur && tool === 'vertices') ctx.lineTo(cur.x, cur.y);
+      ctx.strokeStyle = '#007BFF'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = '#007BFF';
-      drawingPoints.forEach(v => {
-        ctx.beginPath(); ctx.arc(v.x, v.y, 5, 0, Math.PI * 2); ctx.fill();
-      });
+      drawingPoints.forEach(v => { ctx.beginPath(); ctx.arc(v.x, v.y, 5, 0, Math.PI * 2); ctx.fill(); });
     }
 
-    // rectangle preview
     const m = mouseRef.current;
+
+    // rectangle preview
     if (tool === 'retangulo' && m.down && m.rectStart && m.cur) {
-      const s = m.rectStart;
-      const c = m.cur;
-      ctx.strokeStyle = '#007BFF';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 3]);
+      const s = m.rectStart, c = m.cur;
+      ctx.strokeStyle = '#007BFF'; ctx.lineWidth = 2; ctx.setLineDash([5, 3]);
       ctx.strokeRect(Math.min(s.x, c.x), Math.min(s.y, c.y), Math.abs(c.x - s.x), Math.abs(c.y - s.y));
       ctx.setLineDash([]);
     }
 
+    // line preview (linha/tracejada/vigota/nervura)
+    if (LINE_TOOLS.has(tool) && m.lineFirst && m.cur) {
+      let end = m.cur;
+      if (ortoAtivo) end = orthoSnap(m.lineFirst, m.cur);
+      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : '#111827';
+      ctx.lineWidth = tool === 'vigota' ? 3 : 2;
+      ctx.setLineDash(tool === 'tracejada' || tool === 'nervura' ? [5, 4] : []);
+      ctx.beginPath(); ctx.moveTo(m.lineFirst.x, m.lineFirst.y); ctx.lineTo(end.x, end.y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.beginPath(); ctx.arc(m.lineFirst.x, m.lineFirst.y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+
     // calibrar preview
     if (tool === 'calibrar' && m.calibFirst && m.cur) {
-      ctx.strokeStyle = '#16a34a';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 3]);
-      ctx.beginPath();
-      ctx.moveTo(m.calibFirst.x, m.calibFirst.y);
-      ctx.lineTo(m.cur.x, m.cur.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(m.calibFirst.x, m.calibFirst.y); ctx.lineTo(m.cur.x, m.cur.y); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = '#16a34a';
       ctx.beginPath(); ctx.arc(m.calibFirst.x, m.calibFirst.y, 5, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc(m.cur.x, m.cur.y, 5, 0, Math.PI * 2); ctx.fill();
@@ -203,21 +226,13 @@ export default function ProjetoCanvas({
 
     // cota preview
     if (tool === 'cotas' && m.cotaFirst && m.cur) {
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 3]);
-      ctx.beginPath();
-      ctx.moveTo(m.cotaFirst.x, m.cotaFirst.y);
-      ctx.lineTo(m.cur.x, m.cur.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(m.cotaFirst.x, m.cotaFirst.y); ctx.lineTo(m.cur.x, m.cur.y); ctx.stroke(); ctx.setLineDash([]);
       const d = dist(m.cotaFirst, m.cur) / scalePxPerM;
-      ctx.fillStyle = '#ef4444';
-      ctx.font = 'bold 11px Inter, sans-serif';
-      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter, sans-serif'; ctx.textAlign = 'center';
       ctx.fillText(`${d.toFixed(2)} m`, (m.cotaFirst.x + m.cur.x) / 2, (m.cotaFirst.y + m.cur.y) / 2);
     }
-  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, showGrid, tool]);
+  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool]);
 
   useEffect(() => { draw(); }, [draw]);
 
@@ -229,54 +244,52 @@ export default function ProjetoCanvas({
   const handleClick = (e) => {
     const p = getPos(e);
     const m = mouseRef.current;
-    if (tool === 'vertices') {
-      onAddPoint(p);
-    } else if (tool === 'select') {
+    if (tool === 'vertices') { onAddPoint(p); return; }
+    if (tool === 'select') {
       const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-      onSelectSlab(hit ? hit.id : null);
-    } else if (tool === 'cotas') {
-      if (!m.cotaFirst) {
-        m.cotaFirst = p;
-      } else {
-        const px = dist(m.cotaFirst, p);
-        const meters = px / scalePxPerM;
-        onAddCota({ x1: m.cotaFirst.x, y1: m.cotaFirst.y, x2: p.x, y2: p.y, meters });
-        m.cotaFirst = null;
-      }
-    } else if (tool === 'texto') {
-      onAddTexto(p);
-    } else if (tool === 'calibrar') {
-      if (!m.calibFirst) {
-        m.calibFirst = p;
-      } else {
-        const px = dist(m.calibFirst, p);
-        m.calibFirst = null;
-        onCalibrate(px);
-      }
-    } else if (tool === 'girar') {
+      onSelectSlab(hit ? hit.id : null); return;
+    }
+    if (tool === 'negativo') {
       const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-      if (hit) onRotateSlab(hit.id);
+      if (hit) onToggleNegativo(hit.id); return;
+    }
+    if (tool === 'cotas') {
+      if (!m.cotaFirst) { m.cotaFirst = p; }
+      else { const px = dist(m.cotaFirst, p); onAddCota({ x1: m.cotaFirst.x, y1: m.cotaFirst.y, x2: p.x, y2: p.y, meters: px / scalePxPerM }); m.cotaFirst = null; }
+      return;
+    }
+    if (tool === 'texto') { onAddTexto(p); return; }
+    if (tool === 'calibrar') {
+      if (!m.calibFirst) { m.calibFirst = p; }
+      else { const px = dist(m.calibFirst, p); m.calibFirst = null; onCalibrate(px); }
+      return;
+    }
+    if (LINE_TOOLS.has(tool)) {
+      if (!m.lineFirst) { m.lineFirst = p; }
+      else {
+        let end = p;
+        if (ortoAtivo) end = orthoSnap(m.lineFirst, p);
+        onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: end.x, y2: end.y });
+        m.lineFirst = null;
+      }
+      return;
+    }
+    if (POINT_TOOLS.has(tool)) {
+      onAddAnnotation({ type: tool, x: p.x, y: p.y });
+      return;
     }
   };
 
-  const handleDoubleClick = () => {
-    if (tool === 'vertices') onFinishDrawing();
-  };
+  const handleDoubleClick = () => { if (tool === 'vertices') onFinishDrawing(); };
 
   const handleMouseDown = (e) => {
     const p = getPos(e);
     const m = mouseRef.current;
-    m.down = true;
-    m.cur = p;
-    if (tool === 'retangulo') {
-      m.rectStart = p;
-    } else if (tool === 'mover') {
+    m.down = true; m.cur = p;
+    if (tool === 'retangulo') { m.rectStart = p; }
+    else if (tool === 'mover') {
       const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-      if (hit) {
-        onSelectSlab(hit.id);
-        m.moveStart = p;
-        m.moveLast = p;
-      }
+      if (hit) { onSelectSlab(hit.id); m.moveLast = p; }
     }
   };
 
@@ -285,10 +298,8 @@ export default function ProjetoCanvas({
     const m = mouseRef.current;
     m.cur = p;
     if (m.down && tool === 'mover' && m.moveLast && selectedSlabId) {
-      const dx = p.x - m.moveLast.x;
-      const dy = p.y - m.moveLast.y;
-      onMoveSlab(selectedSlabId, dx, dy);
-      m.moveLast = p;
+      const dx = p.x - m.moveLast.x, dy = p.y - m.moveLast.y;
+      onMoveSlab(selectedSlabId, dx, dy); m.moveLast = p;
     }
   };
 
@@ -298,39 +309,29 @@ export default function ProjetoCanvas({
     m.down = false;
     if (tool === 'retangulo' && m.rectStart) {
       const s = m.rectStart;
-      const w = Math.abs(p.x - s.x);
-      const h = Math.abs(p.y - s.y);
-      if (w > 4 && h > 4) {
-        const x0 = Math.min(s.x, p.x);
-        const y0 = Math.min(s.y, p.y);
-        const x1 = x0 + w;
-        const y1 = y0 + h;
+      const wpx = Math.abs(p.x - s.x), hpx = Math.abs(p.y - s.y);
+      if (wpx > 4 && hpx > 4) {
+        const x0 = Math.min(s.x, p.x), y0 = Math.min(s.y, p.y);
+        const x1 = x0 + wpx, y1 = y0 + hpx;
         onAddSlabRect([{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }]);
       }
       m.rectStart = null;
     }
-    if (tool === 'mover') {
-      m.moveStart = null;
-      m.moveLast = null;
-    }
+    if (tool === 'mover') { m.moveLast = null; }
   };
 
   const handleMouseLeave = () => {
     const m = mouseRef.current;
-    m.down = false;
-    m.rectStart = null;
-    m.cur = null;
+    m.down = false; m.rectStart = null; m.cur = null;
   };
 
   const cursorClass = {
-    vertices: 'cursor-crosshair',
-    retangulo: 'cursor-crosshair',
-    cotas: 'cursor-crosshair',
-    calibrar: 'cursor-crosshair',
-    texto: 'cursor-text',
-    mover: 'cursor-move',
-    girar: 'cursor-pointer',
-    select: 'cursor-pointer',
+    vertices: 'cursor-crosshair', retangulo: 'cursor-crosshair', cotas: 'cursor-crosshair',
+    calibrar: 'cursor-crosshair', texto: 'cursor-text', mover: 'cursor-move', select: 'cursor-pointer',
+    negativo: 'cursor-pointer',
+    linha: 'cursor-crosshair', tracejada: 'cursor-crosshair', vigota: 'cursor-crosshair',
+    nervura: 'cursor-crosshair', ponto_luz: 'cursor-crosshair', nucleos: 'cursor-crosshair',
+    frigideira: 'cursor-crosshair',
   }[tool] || 'cursor-pointer';
 
   return (
@@ -346,16 +347,16 @@ export default function ProjetoCanvas({
         className={`block ${cursorClass}`}
       />
       <div className="absolute bottom-2 right-3 text-xs text-muted-foreground bg-white/80 px-2 py-1 rounded">
-        Escala: 1 m = {Math.round(scalePxPerM)} px
+        Escala: 1 m = {Math.round(scalePxPerM)} px{ortoAtivo ? ' • ORTO' : ''}{contornoAtivo ? ' • Contorno' : ''}
       </div>
       {tool === 'calibrar' && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-green-600 text-white px-3 py-1.5 rounded-full shadow">
           Clique em dois pontos da planta e informe a distância real em metros
         </div>
       )}
-      {tool === 'cotas' && !mouseRef.current?.cotaFirst && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-red-600 text-white px-3 py-1.5 rounded-full shadow">
-          Clique no primeiro ponto da cota
+      {LINE_TOOLS.has(tool) && !mouseRef.current?.lineFirst && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-3 py-1.5 rounded-full shadow">
+          Clique no primeiro ponto
         </div>
       )}
     </div>
