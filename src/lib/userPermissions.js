@@ -26,6 +26,7 @@ export const SCREENS = [
   { path: '/produtividade', label: 'Produtividade' },
   { path: '/cadastros', label: 'Cadastros' },
   { path: '/api-config', label: 'Integração API' },
+  { path: '/projetos', label: 'Projetos' },
   { path: '/orcamentos', label: 'Orçamentos' },
   { path: '/usuarios', label: 'Usuários' },
 ];
@@ -37,6 +38,7 @@ const ROLE_DEFAULTS = {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_EDITAR,
     '/orcamentos': ACCESS_EDITAR,
+    '/projetos': ACCESS_EDITAR,
     '/aprovacoes': ACCESS_VER,
     '/estoque': ACCESS_EDITAR,
     '/sobra-trelica': ACCESS_EDITAR,
@@ -63,11 +65,13 @@ const ROLE_DEFAULTS = {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_EDITAR,
     '/orcamentos': ACCESS_EDITAR,
+    '/projetos': ACCESS_EDITAR,
   },
   visualizador: {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_VER,
     '/orcamentos': ACCESS_VER,
+    '/projetos': ACCESS_VER,
     '/calendario': ACCESS_VER,
   },
   motorista: {
@@ -81,6 +85,7 @@ const ROLE_DEFAULTS = {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_EDITAR,
     '/orcamentos': ACCESS_EDITAR,
+    '/projetos': ACCESS_EDITAR,
     '/aprovacoes': ACCESS_VER,
     '/estoque': ACCESS_EDITAR,
     '/sobra-trelica': ACCESS_EDITAR,

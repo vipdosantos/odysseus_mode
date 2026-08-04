@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Boxes, Landmark, FileText, Users, Settings, Wrench, ClipboardList, ShoppingCart, ClipboardCheck, BookUser, LogOut, TrendingUp, BarChart3, Truck, Receipt } from 'lucide-react';
+import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Boxes, Landmark, FileText, Users, Settings, Wrench, ClipboardList, ShoppingCart, ClipboardCheck, BookUser, LogOut, TrendingUp, BarChart3, Truck, Receipt, PencilRuler } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { canView } from '@/lib/userPermissions';
 
@@ -20,6 +20,7 @@ const allItems = [
   { path: '/insumos', icon: Boxes, label: 'Insumos' },
   { path: '/patrimonio', icon: Wrench, label: 'Patrimônio' },
   { path: '/produtividade', icon: ClipboardList, label: 'Produtividade' },
+  { path: '/projetos', icon: PencilRuler, label: 'Projetos' },
   { path: '/orcamentos', icon: Receipt, label: 'Orçamentos' },
   { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais' },
   { path: '/relatorio-fiscal', icon: BarChart3, label: 'Relatório Fiscal' },

@@ -1,0 +1,116 @@
+{
+  "name": "Projeto",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do projeto"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Cliente"
+    },
+    "floor_plan_url": {
+      "type": "string",
+      "description": "URL da planta importada (fundo)"
+    },
+    "scale_px_per_m": {
+      "type": "number",
+      "default": 100,
+      "description": "Pixels por metro (calibra\u00e7\u00e3o de escala)"
+    },
+    "floor_plan_opacity": {
+      "type": "number",
+      "default": 0.5,
+      "description": "Opacidade da planta de fundo (0-1)"
+    },
+    "slabs": {
+      "type": "array",
+      "default": [],
+      "description": "Lajes desenhadas (pol\u00edgonos)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "Identificador (L1, L2...)"
+          },
+          "vertices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "area_m2": {
+            "type": "number",
+            "default": 0,
+            "description": "\u00c1rea calculada em m\u00b2"
+          },
+          "tipo_laje": {
+            "type": "string",
+            "enum": [
+              "Laje",
+              "Painel",
+              "Mista",
+              "Laje Treli\u00e7ada Intereixo"
+            ],
+            "default": "Laje"
+          },
+          "tipo_enchimento": {
+            "type": "string",
+            "enum": [
+              "Nenhum",
+              "EPS",
+              "Lajota",
+              "EPS+Lajota"
+            ],
+            "default": "Nenhum"
+          },
+          "truss_type": {
+            "type": "string",
+            "enum": [
+              "H8",
+              "H12",
+              "H16",
+              "H20",
+              "H25",
+              "H30"
+            ],
+            "description": "Tipo de treli\u00e7a"
+          }
+        }
+      }
+    },
+    "total_area_m2": {
+      "type": "number",
+      "default": 0,
+      "description": "\u00c1rea total (calculada)"
+    },
+    "seller_id": {
+      "type": "string",
+      "description": "Vendedor"
+    },
+    "seller_name": {
+      "type": "string",
+      "description": "Nome do vendedor"
+    },
+    "order_id": {
+      "type": "string",
+      "description": "Or\u00e7amento/pedido gerado a partir do projeto"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
