@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ProjetoCanvas, { polygonAreaM2 } from '@/components/projetos/ProjetoCanvas';
 import ProjetoLeftPanel from '@/components/projetos/ProjetoLeftPanel';
 import ProjetoRelatorio from '@/components/projetos/ProjetoRelatorio';
+import ProjetoToolbar from '@/components/projetos/ProjetoToolbar';
 
 const newProjeto = () => ({
   name: 'Novo Projeto',
@@ -12,7 +13,11 @@ const newProjeto = () => ({
   floor_plan_url: '',
   scale_px_per_m: 100,
   floor_plan_opacity: 0.5,
+  show_grid: true,
+  plano_escoras: false,
   slabs: [],
+  cotas: [],
+  textos: [],
   total_area_m2: 0
 });
 
@@ -21,14 +26,18 @@ export default function Projetos() {
   const qc = useQueryClient();
   const [projeto, setProjeto] = useState(newProjeto());
   const [slabs, setSlabs] = useState([]);
+  const [cotas, setCotas] = useState([]);
+  const [textos, setTextos] = useState([]);
   const [drawingPoints, setDrawingPoints] = useState([]);
   const [tool, setTool] = useState('vertices');
   const [selectedSlabId, setSelectedSlabId] = useState(null);
   const [scalePxPerM, setScalePxPerM] = useState(100);
   const [floorPlanOpacity, setFloorPlanOpacity] = useState(0.5);
+  const [showGrid, setShowGrid] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedOrderId, setGeneratedOrderId] = useState(null);
+  const [history, setHistory] = useState([]);
 
   const { data: projetos = [] } = useQuery({
     queryKey: ['projetos'],
@@ -39,37 +48,46 @@ export default function Projetos() {
     setProjeto(prev => ({ ...prev, ...patch }));
   }, []);
 
+  const pushHistory = () => {
+    setHistory(prev => [...prev.slice(-19), { slabs, cotas, textos }]);
+  };
+
   const loadProjeto = (p) => {
     setProjeto(p);
     setSlabs(p.slabs || []);
+    setCotas(p.cotas || []);
+    setTextos(p.textos || []);
     setScalePxPerM(p.scale_px_per_m || 100);
     setFloorPlanOpacity(p.floor_plan_opacity ?? 0.5);
+    setShowGrid(p.show_grid !== false);
     setGeneratedOrderId(p.order_id || null);
     setDrawingPoints([]);
     setSelectedSlabId(null);
+    setHistory([]);
   };
 
   const newProj = () => {
     setProjeto(newProjeto());
     setSlabs([]);
+    setCotas([]);
+    setTextos([]);
     setDrawingPoints([]);
     setSelectedSlabId(null);
     setGeneratedOrderId(null);
     setScalePxPerM(100);
     setFloorPlanOpacity(0.5);
+    setShowGrid(true);
+    setHistory([]);
   };
 
-  // Add vertex while drawing
-  const addPoint = (pt) => {
-    setDrawingPoints(prev => [...prev, pt]);
-  };
+  const addPoint = (pt) => setDrawingPoints(prev => [...prev, pt]);
 
-  // Finish current drawing polygon
   const finishDrawing = () => {
     if (drawingPoints.length < 3) {
       setDrawingPoints([]);
       return;
     }
+    pushHistory();
     const area = polygonAreaM2(drawingPoints, scalePxPerM);
     const id = `slab_${Date.now()}`;
     const labelNum = slabs.length + 1;
@@ -86,27 +104,103 @@ export default function Projetos() {
     setDrawingPoints([]);
   };
 
+  const addSlabRect = (vertices) => {
+    pushHistory();
+    const area = polygonAreaM2(vertices, scalePxPerM);
+    const id = `slab_${Date.now()}`;
+    const labelNum = slabs.length + 1;
+    setSlabs(prev => [...prev, {
+      id, label: `L${labelNum}`, vertices, area_m2: area,
+      tipo_laje: 'Laje', tipo_enchimento: 'Nenhum', truss_type: 'H8'
+    }]);
+  };
+
   const updateSlab = (id, patch) => {
     setSlabs(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
   };
 
   const deleteSlab = (id) => {
+    pushHistory();
     setSlabs(prev => prev.filter(s => s.id !== id));
     if (selectedSlabId === id) setSelectedSlabId(null);
   };
 
-  // Upload floor plan
-  const uploadPlan = async (file) => {
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      changeProjeto({ floor_plan_url: file_url });
-      toast({ title: 'Planta importada' });
-    } catch (e) {
-      toast({ title: 'Erro ao importar planta', variant: 'destructive' });
-    }
+  const moveSlab = (id, dx, dy) => {
+    setSlabs(prev => prev.map(s => s.id === id ? {
+      ...s,
+      vertices: s.vertices.map(v => ({ x: v.x + dx, y: v.y + dy }))
+    } : s));
   };
 
-  // Save projeto
+  const rotateSlab = (id) => {
+    pushHistory();
+    setSlabs(prev => prev.map(s => {
+      if (s.id !== id) return s;
+      const cx = s.vertices.reduce((a, v) => a + v.x, 0) / s.vertices.length;
+      const cy = s.vertices.reduce((a, v) => a + v.y, 0) / s.vertices.length;
+      const ang = Math.PI / 2; // 90°
+      const cos = Math.cos(ang), sin = Math.sin(ang);
+      return {
+        ...s,
+        vertices: s.vertices.map(v => ({
+          x: cx + (v.x - cx) * cos - (v.y - cy) * sin,
+          y: cy + (v.x - cx) * sin + (v.y - cy) * cos
+        }))
+      };
+    }));
+  };
+
+  const addCota = (c) => {
+    pushHistory();
+    setCotas(prev => [...prev, c]);
+  };
+
+  const addTexto = (p) => {
+    const text = window.prompt('Texto da etiqueta:', '');
+    if (!text) return;
+    pushHistory();
+    setTextos(prev => [...prev, { x: p.x, y: p.y, text }]);
+  };
+
+  const undo = () => {
+    setHistory(prev => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setSlabs(last.slabs);
+      setCotas(last.cotas);
+      setTextos(last.textos);
+      setDrawingPoints([]);
+      setSelectedSlabId(null);
+      return prev.slice(0, -1);
+    });
+  };
+
+  const deleteSelected = () => {
+    if (selectedSlabId) deleteSlab(selectedSlabId);
+  };
+
+  const calibrate = (pxDistance) => {
+    const input = window.prompt('Distância real entre os dois pontos (em metros):', '1.00');
+    if (!input) return;
+    const meters = parseFloat(input.replace(',', '.'));
+    if (!meters || meters <= 0) {
+      toast({ title: 'Distância inválida', variant: 'destructive' });
+      return;
+    }
+    const newScale = pxDistance / meters;
+    setScalePxPerM(newScale);
+    toast({ title: 'Escala calibrada', description: `1 m = ${Math.round(newScale)} px` });
+  };
+
+  const reloadPlan = () => {
+    if (!projeto.floor_plan_url) return;
+    // força recarregar a imagem limpando cache
+    const url = projeto.floor_plan_url;
+    changeProjeto({ floor_plan_url: '' });
+    setTimeout(() => changeProjeto({ floor_plan_url: url }), 50);
+    toast({ title: 'Planta recarregada' });
+  };
+
   const saveProjeto = async () => {
     setSaving(true);
     try {
@@ -117,7 +211,11 @@ export default function Projetos() {
         floor_plan_url: projeto.floor_plan_url,
         scale_px_per_m: scalePxPerM,
         floor_plan_opacity: floorPlanOpacity,
+        show_grid: showGrid,
+        plano_escoras: projeto.plano_escoras,
         slabs,
+        cotas,
+        textos,
         total_area_m2: total,
         order_id: generatedOrderId
       };
@@ -136,7 +234,6 @@ export default function Projetos() {
     }
   };
 
-  // Generate orçamento (Order with tipo=orcamento)
   const generateOrcamento = async () => {
     setGenerating(true);
     try {
@@ -176,31 +273,34 @@ export default function Projetos() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Top bar */}
       <div className="shrink-0 bg-white border-b border-border px-4 py-2 flex items-center gap-3">
         <h1 className="text-base font-semibold">Projetos de Laje</h1>
-        <span className="text-xs text-muted-foreground">Desenhe as lajes sobre a planta e gere o orçamento</span>
+        <span className="text-xs text-muted-foreground">Desenhe as lajes sobre a planta, calibre a escala e gere o orçamento</span>
       </div>
+
+      <ProjetoToolbar
+        tool={tool}
+        setTool={setTool}
+        showGrid={showGrid}
+        onToggleGrid={() => setShowGrid(v => !v)}
+        onUndo={undo}
+        onDeleteSelected={deleteSelected}
+        hasSelection={!!selectedSlabId}
+      />
 
       <div className="flex-1 flex min-h-0">
         <ProjetoLeftPanel
           projeto={projeto}
           onChangeProjeto={changeProjeto}
-          slabs={slabs}
-          selectedSlabId={selectedSlabId}
-          onSelectSlab={setSelectedSlabId}
-          tool={tool}
-          setTool={setTool}
-          floorPlanOpacity={floorPlanOpacity}
-          setFloorPlanOpacity={setFloorPlanOpacity}
-          scalePxPerM={scalePxPerM}
-          setScalePxPerM={setScalePxPerM}
-          onUploadPlan={uploadPlan}
+          projetos={projetos}
+          onLoadProjeto={loadProjeto}
           onNewProjeto={newProj}
           onSave={saveProjeto}
           saving={saving}
-          projetos={projetos}
-          onLoadProjeto={loadProjeto}
+          floorPlanOpacity={floorPlanOpacity}
+          setFloorPlanOpacity={setFloorPlanOpacity}
+          onCalibrarClick={() => setTool('calibrar')}
+          onReloadPlan={reloadPlan}
         />
 
         <div className="flex-1 min-w-0">
@@ -215,6 +315,15 @@ export default function Projetos() {
             floorPlanOpacity={floorPlanOpacity}
             scalePxPerM={scalePxPerM}
             tool={tool}
+            cotas={cotas}
+            textos={textos}
+            showGrid={showGrid}
+            onAddSlabRect={addSlabRect}
+            onAddCota={addCota}
+            onAddTexto={addTexto}
+            onCalibrate={calibrate}
+            onMoveSlab={moveSlab}
+            onRotateSlab={rotateSlab}
           />
         </div>
 
