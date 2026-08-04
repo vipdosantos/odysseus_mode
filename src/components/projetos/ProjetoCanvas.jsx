@@ -499,6 +499,26 @@ export default function ProjetoCanvas({
     m.dirStart = null; m.dirSlabId = null;
   };
 
+  // Suporte a touch (mobile/tablet): mapeia toque → gestos de mouse
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const makeEvt = (t) => ({ clientX: t.clientX, clientY: t.clientY, button: 0, buttons: 1, preventDefault() {}, stopPropagation() {} });
+    const ts = (e) => { if (e.touches.length === 1) handleMouseDown(makeEvt(e.touches[0])); };
+    const tm = (e) => { if (e.touches.length === 1) { e.preventDefault(); handleMouseMove(makeEvt(e.touches[0])); } };
+    const te = (e) => { if (e.changedTouches.length === 1) handleMouseUp(makeEvt(e.changedTouches[0])); };
+    canvas.addEventListener('touchstart', ts, { passive: false });
+    canvas.addEventListener('touchmove', tm, { passive: false });
+    canvas.addEventListener('touchend', te, { passive: false });
+    canvas.addEventListener('touchcancel', te, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', ts);
+      canvas.removeEventListener('touchmove', tm);
+      canvas.removeEventListener('touchend', te);
+      canvas.removeEventListener('touchcancel', te);
+    };
+  }, [handleMouseDown, handleMouseMove, handleMouseUp]);
+
   // Foca o campo de comprimento ao digitar número enquanto desenha
   useEffect(() => {
     const onKey = (e) => {
