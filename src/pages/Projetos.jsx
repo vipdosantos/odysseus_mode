@@ -31,6 +31,8 @@ export default function Projetos() {
   const [showGrid, setShowGrid] = useState(true);
   const [ortoAtivo, setOrtoAtivo] = useState(false);
   const [contornoAtivo, setContornoAtivo] = useState(false);
+  const [activeColor, setActiveColor] = useState(null);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedOrderId, setGeneratedOrderId] = useState(null);
@@ -164,6 +166,19 @@ export default function Projetos() {
 
   const deleteSelected = () => { if (selectedSlabId) deleteSlab(selectedSlabId); };
 
+  const escolherCor = () => {
+    const c = window.prompt('Cor para as próximas linhas (hex, ex: #ef4444):', activeColor || '#111827');
+    if (c) setActiveColor(c);
+  };
+  const ajuda = () => toast({ title: 'Ajuda', description: 'Selecione uma ferramenta, desenhe lajes/elementos sobre a planta, calibre a escala e gere o orçamento.' });
+  const atalhos = () => toast({ title: 'Atalhos', description: 'Duplo clique finaliza a laje vértice • Del remove selecionada • Pan arrasta a vista.' });
+  const config = () => toast({ title: 'Configurações', description: 'Use o painel esquerdo para planta, escala e visualização.' });
+  const ver3D = () => toast({ title: '3D', description: 'Visualização 3D em desenvolvimento.' });
+  const exportar = () => {
+    toast({ title: 'Exportar', description: 'Salvando e abrelhando para impressão/PDF…' });
+    setTimeout(() => window.print(), 400);
+  };
+
   const calibrate = (pxDistance) => {
     const input = window.prompt('Distância real entre os dois pontos (em metros):', '1.00');
     if (!input) return;
@@ -230,11 +245,11 @@ export default function Projetos() {
 
       <ProjetoToolbar
         tool={tool} setTool={setTool}
-        showGrid={showGrid} onToggleGrid={() => setShowGrid(v => !v)}
         ortoAtivo={ortoAtivo} onToggleOrto={() => setOrtoAtivo(v => !v)}
         contornoAtivo={contornoAtivo} onToggleContorno={() => setContornoAtivo(v => !v)}
         onUndo={undo} onEspelho={espelhar} onGirar={girar} onCopiar={copiar}
-        onAjusteBorda={ajusteBorda} onDeleteSelected={deleteSelected}
+        onAjusteBorda={ajusteBorda} onCores={escolherCor}
+        onAjuda={ajuda} onExportar={exportar} on3D={ver3D} onAtalhos={atalhos} onConfig={config}
         hasSelection={!!selectedSlabId}
       />
 
@@ -253,7 +268,8 @@ export default function Projetos() {
             selectedSlabId={selectedSlabId} floorPlanUrl={projeto.floor_plan_url}
             floorPlanOpacity={floorPlanOpacity} scalePxPerM={scalePxPerM} tool={tool}
             cotas={cotas} textos={textos} annotations={annotations}
-            showGrid={showGrid} contornoAtivo={contornoAtivo} ortoAtivo={ortoAtivo}
+            showGrid={showGrid} contornoAtivo={contornoAtivo} ortoAtivo={ortoAtivo} activeColor={activeColor}
+            panOffset={panOffset} onPan={setPanOffset}
             onAddSlabRect={addSlabRect} onAddCota={addCota} onAddTexto={addTexto}
             onAddAnnotation={addAnnotation} onToggleNegativo={toggleNegativo}
             onCalibrate={calibrate} onMoveSlab={moveSlab}

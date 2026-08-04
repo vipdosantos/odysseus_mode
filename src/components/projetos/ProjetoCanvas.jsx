@@ -25,7 +25,6 @@ export function polygonAreaM2(vertices, scalePxPerM) {
 
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
-// snap point b orthogonally to a (orto mode)
 function orthoSnap(a, b) {
   const dx = Math.abs(b.x - a.x);
   const dy = Math.abs(b.y - a.y);
@@ -34,12 +33,13 @@ function orthoSnap(a, b) {
 }
 
 const LINE_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura']);
-const POINT_TOOLS = new Set(['ponto_luz', 'nucleo', 'frigideira']);
+const POINT_TOOLS = new Set(['ponto_luz']);
 
 export default function ProjetoCanvas({
   slabs, drawingPoints, onAddPoint, onFinishDrawing, onSelectSlab,
   selectedSlabId, floorPlanUrl, floorPlanOpacity, scalePxPerM, tool,
-  cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo,
+  cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, activeColor,
+  panOffset, onPan,
   onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation, onToggleNegativo,
   onCalibrate, onMoveSlab
 }) {
@@ -47,7 +47,7 @@ export default function ProjetoCanvas({
   const containerRef = useRef(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
   const imgRef = useRef(null);
-  const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, lineFirst: null, moveLast: null, rectStart: null, cur: null });
+  const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, lineFirst: null, moveLast: null, rectStart: null, cur: null, panStart: null });
 
   useEffect(() => {
     const el = containerRef.current;
@@ -76,11 +76,17 @@ export default function ProjetoCanvas({
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
 
+    const ox = panOffset?.x || 0, oy = panOffset?.y || 0;
+    ctx.save();
+    ctx.translate(ox, oy);
+
     if (showGrid) {
       const gridPx = Math.max(10, scalePxPerM);
       ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
-      for (let x = 0; x <= w; x += gridPx) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-      for (let y = 0; y <= h; y += gridPx) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      const xStart = Math.floor(-ox / gridPx) * gridPx;
+      const yStart = Math.floor(-oy / gridPx) * gridPx;
+      for (let x = xStart; x <= w - ox; x += gridPx) { ctx.beginPath(); ctx.moveTo(x, yStart); ctx.lineTo(x, h - oy); ctx.stroke(); }
+      for (let y = yStart; y <= h - oy; y += gridPx) { ctx.beginPath(); ctx.moveTo(xStart, y); ctx.lineTo(w - ox, y); ctx.stroke(); }
     }
 
     if (imgRef.current) {
@@ -93,15 +99,14 @@ export default function ProjetoCanvas({
       ctx.globalAlpha = 1;
     }
 
-    // annotations
     (annotations || []).forEach(a => {
-      const m = mouseRef.current;
+      const lineColor = a.color || activeColor || '#111827';
       ctx.lineWidth = 1.5;
       if (a.type === 'linha') {
-        ctx.strokeStyle = '#111827'; ctx.setLineDash([]);
+        ctx.strokeStyle = lineColor; ctx.setLineDash([]);
         ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
       } else if (a.type === 'tracejada') {
-        ctx.strokeStyle = '#111827'; ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = lineColor; ctx.setLineDash([6, 4]);
         ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
         ctx.setLineDash([]);
       } else if (a.type === 'vigota') {
@@ -117,18 +122,9 @@ export default function ProjetoCanvas({
         ctx.beginPath(); ctx.arc(a.x, a.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(a.x - 4, a.y); ctx.lineTo(a.x + 4, a.y);
         ctx.moveTo(a.x, a.y - 4); ctx.lineTo(a.x, a.y + 4); ctx.stroke();
-      } else if (a.type === 'nucleo') {
-        ctx.fillStyle = '#1d4ed8'; ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 1.5;
-        ctx.fillRect(a.x - 4, a.y - 4, 8, 8);
-      } else if (a.type === 'frigideira') {
-        ctx.strokeStyle = '#6b7280'; ctx.fillStyle = '#f3f4f6'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(a.x, a.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        // handle
-        ctx.beginPath(); ctx.moveTo(a.x + 7, a.y - 7); ctx.lineTo(a.x + 14, a.y - 12); ctx.stroke();
       }
     });
 
-    // cotas
     (cotas || []).forEach(c => {
       ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(c.x1, c.y1); ctx.lineTo(c.x2, c.y2); ctx.stroke();
@@ -144,13 +140,11 @@ export default function ProjetoCanvas({
       ctx.fillText(label, mx, my); ctx.textBaseline = 'alphabetic';
     });
 
-    // textos
     (textos || []).forEach(t => {
       ctx.fillStyle = '#111827'; ctx.font = 'bold 12px Inter, sans-serif'; ctx.textAlign = 'left';
       ctx.fillText(t.text, t.x, t.y);
     });
 
-    // slabs
     slabs.forEach(slab => {
       const isSel = slab.id === selectedSlabId;
       ctx.beginPath();
@@ -160,11 +154,10 @@ export default function ProjetoCanvas({
         ctx.fillStyle = 'rgba(239,68,68,0.15)'; ctx.fill();
         ctx.strokeStyle = '#ef4444'; ctx.lineWidth = contornoAtivo ? 4 : 2;
         ctx.setLineDash([6, 4]); ctx.stroke(); ctx.setLineDash([]);
-        // hatch
-        ctx.save();
-        ctx.clip();
+        ctx.save(); ctx.clip();
         ctx.strokeStyle = 'rgba(239,68,68,0.5)'; ctx.lineWidth = 1;
-        for (let i = -w; i < w; i += 8) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + h, h); ctx.stroke(); }
+        const wx0 = -ox, wy0 = -oy, ww = w - ox, wh = h - oy;
+        for (let i = wx0 - wh; i < ww + wh; i += 8) { ctx.beginPath(); ctx.moveTo(i, wy0); ctx.lineTo(i + wh, wh + wy0); ctx.stroke(); }
         ctx.restore();
       } else {
         ctx.fillStyle = isSel ? 'rgba(0,123,255,0.22)' : 'rgba(0,123,255,0.10)'; ctx.fill();
@@ -181,7 +174,6 @@ export default function ProjetoCanvas({
       ctx.fillText(tag, cx, cy);
     });
 
-    // drawing in progress (vertices)
     if (drawingPoints.length > 0) {
       ctx.beginPath();
       drawingPoints.forEach((v, i) => { if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y); });
@@ -194,7 +186,6 @@ export default function ProjetoCanvas({
 
     const m = mouseRef.current;
 
-    // rectangle preview
     if (tool === 'retangulo' && m.down && m.rectStart && m.cur) {
       const s = m.rectStart, c = m.cur;
       ctx.strokeStyle = '#007BFF'; ctx.lineWidth = 2; ctx.setLineDash([5, 3]);
@@ -202,11 +193,10 @@ export default function ProjetoCanvas({
       ctx.setLineDash([]);
     }
 
-    // line preview (linha/tracejada/vigota/nervura)
     if (LINE_TOOLS.has(tool) && m.lineFirst && m.cur) {
       let end = m.cur;
       if (ortoAtivo) end = orthoSnap(m.lineFirst, m.cur);
-      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : '#111827';
+      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : (activeColor || '#111827');
       ctx.lineWidth = tool === 'vigota' ? 3 : 2;
       ctx.setLineDash(tool === 'tracejada' || tool === 'nervura' ? [5, 4] : []);
       ctx.beginPath(); ctx.moveTo(m.lineFirst.x, m.lineFirst.y); ctx.lineTo(end.x, end.y); ctx.stroke();
@@ -215,7 +205,6 @@ export default function ProjetoCanvas({
       ctx.beginPath(); ctx.arc(m.lineFirst.x, m.lineFirst.y, 4, 0, Math.PI * 2); ctx.fill();
     }
 
-    // calibrar preview
     if (tool === 'calibrar' && m.calibFirst && m.cur) {
       ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
       ctx.beginPath(); ctx.moveTo(m.calibFirst.x, m.calibFirst.y); ctx.lineTo(m.cur.x, m.cur.y); ctx.stroke(); ctx.setLineDash([]);
@@ -224,7 +213,6 @@ export default function ProjetoCanvas({
       ctx.beginPath(); ctx.arc(m.cur.x, m.cur.y, 5, 0, Math.PI * 2); ctx.fill();
     }
 
-    // cota preview
     if (tool === 'cotas' && m.cotaFirst && m.cur) {
       ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
       ctx.beginPath(); ctx.moveTo(m.cotaFirst.x, m.cotaFirst.y); ctx.lineTo(m.cur.x, m.cur.y); ctx.stroke(); ctx.setLineDash([]);
@@ -232,11 +220,19 @@ export default function ProjetoCanvas({
       ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter, sans-serif'; ctx.textAlign = 'center';
       ctx.fillText(`${d.toFixed(2)} m`, (m.cotaFirst.x + m.cur.x) / 2, (m.cotaFirst.y + m.cur.y) / 2);
     }
-  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool]);
+
+    ctx.restore();
+  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset]);
 
   useEffect(() => { draw(); }, [draw]);
 
   const getPos = (e) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    const ox = panOffset?.x || 0, oy = panOffset?.y || 0;
+    return { x: e.clientX - rect.left - ox, y: e.clientY - rect.top - oy };
+  };
+
+  const getScreen = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
@@ -269,7 +265,7 @@ export default function ProjetoCanvas({
       else {
         let end = p;
         if (ortoAtivo) end = orthoSnap(m.lineFirst, p);
-        onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: end.x, y2: end.y });
+        onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: end.x, y2: end.y, color: activeColor });
         m.lineFirst = null;
       }
       return;
@@ -284,54 +280,60 @@ export default function ProjetoCanvas({
 
   const handleMouseDown = (e) => {
     const p = getPos(e);
+    const s = getScreen(e);
     const m = mouseRef.current;
     m.down = true; m.cur = p;
     if (tool === 'retangulo') { m.rectStart = p; }
     else if (tool === 'mover') {
-      const hit = slabs.find(s => pointInPolygon(p, s.vertices));
+      const hit = slabs.find(sl => pointInPolygon(p, sl.vertices));
       if (hit) { onSelectSlab(hit.id); m.moveLast = p; }
+    } else if (tool === 'pan') {
+      m.panStart = { sx: s.x, sy: s.y, ox: panOffset?.x || 0, oy: panOffset?.y || 0 };
     }
   };
 
   const handleMouseMove = (e) => {
     const p = getPos(e);
+    const s = getScreen(e);
     const m = mouseRef.current;
     m.cur = p;
     if (m.down && tool === 'mover' && m.moveLast && selectedSlabId) {
       const dx = p.x - m.moveLast.x, dy = p.y - m.moveLast.y;
       onMoveSlab(selectedSlabId, dx, dy); m.moveLast = p;
+    } else if (m.down && tool === 'pan' && m.panStart) {
+      onPan(m.panStart.ox + (s.x - m.panStart.sx), m.panStart.oy + (s.y - m.panStart.sy));
     }
   };
 
-  const handleMouseUp = (e) => {
-    const p = getPos(e);
+  const handleMouseUp = () => {
     const m = mouseRef.current;
     m.down = false;
     if (tool === 'retangulo' && m.rectStart) {
+      const c = m.cur;
       const s = m.rectStart;
-      const wpx = Math.abs(p.x - s.x), hpx = Math.abs(p.y - s.y);
+      const wpx = Math.abs(c.x - s.x), hpx = Math.abs(c.y - s.y);
       if (wpx > 4 && hpx > 4) {
-        const x0 = Math.min(s.x, p.x), y0 = Math.min(s.y, p.y);
+        const x0 = Math.min(s.x, c.x), y0 = Math.min(s.y, c.y);
         const x1 = x0 + wpx, y1 = y0 + hpx;
         onAddSlabRect([{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }]);
       }
       m.rectStart = null;
     }
     if (tool === 'mover') { m.moveLast = null; }
+    if (tool === 'pan') { m.panStart = null; }
   };
 
   const handleMouseLeave = () => {
     const m = mouseRef.current;
-    m.down = false; m.rectStart = null; m.cur = null;
+    m.down = false; m.rectStart = null; m.cur = null; m.panStart = null;
   };
 
   const cursorClass = {
     vertices: 'cursor-crosshair', retangulo: 'cursor-crosshair', cotas: 'cursor-crosshair',
-    calibrar: 'cursor-crosshair', texto: 'cursor-text', mover: 'cursor-move', select: 'cursor-pointer',
-    negativo: 'cursor-pointer',
+    calibrar: 'cursor-crosshair', texto: 'cursor-text', mover: 'cursor-move', pan: 'cursor-grab',
+    select: 'cursor-pointer', negativo: 'cursor-pointer',
     linha: 'cursor-crosshair', tracejada: 'cursor-crosshair', vigota: 'cursor-crosshair',
-    nervura: 'cursor-crosshair', ponto_luz: 'cursor-crosshair', nucleos: 'cursor-crosshair',
-    frigideira: 'cursor-crosshair',
+    nervura: 'cursor-crosshair', ponto_luz: 'cursor-crosshair',
   }[tool] || 'cursor-pointer';
 
   return (
@@ -347,7 +349,7 @@ export default function ProjetoCanvas({
         className={`block ${cursorClass}`}
       />
       <div className="absolute bottom-2 right-3 text-xs text-muted-foreground bg-white/80 px-2 py-1 rounded">
-        Escala: 1 m = {Math.round(scalePxPerM)} px{ortoAtivo ? ' • ORTO' : ''}{contornoAtivo ? ' • Contorno' : ''}
+        Escala: 1 m = {Math.round(scalePxPerM)} px{ortoAtivo ? ' • ORTO' : ''}{contornoAtivo ? ' • Contorno' : ''}{activeColor ? ` • ${activeColor}` : ''}
       </div>
       {tool === 'calibrar' && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-green-600 text-white px-3 py-1.5 rounded-full shadow">
