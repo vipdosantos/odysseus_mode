@@ -91,10 +91,7 @@ export default function ProjetoCanvas({
     let p = { x: snapped.x, y: snapped.y };
     if (anc) {
       if (ortoAtivo) p = orthoLock(anc, p);
-      if (pendingLen != null) {
-        p = applyLength(anc, p, pendingLen, scalePxPerM);
-        setPendingLen(null);
-      }
+      if (pendingLen != null) p = applyLength(anc, p, pendingLen, scalePxPerM);
     }
     mouseRef.current.snapped = p;
     return p;
@@ -315,59 +312,30 @@ export default function ProjetoCanvas({
 
   useEffect(() => { draw(); }, [draw]);
 
-  // Aplica o comprimento digitado e dispara o posicionamento
+  // Ferramentas baseadas em arrasto (pressionar → mover → soltar)
+  const DRAG_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura', 'cotas', 'calibrar']);
+
+  // Aplica o comprimento digitado — será usado no próximo posicionamento
   const applyLengthNow = () => {
     const meters = parseFloat(lenVal.replace(',', '.'));
     if (!meters || meters <= 0) return;
     setPendingLen(meters);
     setLenVal('');
-    // Se já há mouse sobre o canvas e uma âncora, posiciona imediatamente
-    const m = mouseRef.current;
-    if (m.cur && anchor()) {
-      placeFromMouse({ clientX: m._screenX, clientY: m._screenY });
-    }
   };
 
-  // Coloca um ponto a partir de um evento de mouse (clique) — usa snap/ORTO/length
-  const placeFromMouse = (e) => {
-    const p = resolvePoint(e);
-    const m = mouseRef.current;
-    if (tool === 'vertices') { onAddPoint(p); return; }
-    if (LINE_TOOLS.has(tool)) {
-      if (!m.lineFirst) { m.lineFirst = p; }
-      else {
-        onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y, color: activeColor });
-        m.lineFirst = null;
-      }
-      return;
-    }
-    if (tool === 'cotas') {
-      if (!m.cotaFirst) { m.cotaFirst = p; }
-      else { const px = dist(m.cotaFirst, p); onAddCota({ x1: m.cotaFirst.x, y1: m.cotaFirst.y, x2: p.x, y2: p.y, meters: px / scalePxPerM }); m.cotaFirst = null; }
-      return;
-    }
-    if (tool === 'calibrar') {
-      if (!m.calibFirst) { m.calibFirst = p; }
-      else { const px = dist(m.calibFirst, p); m.calibFirst = null; onCalibrate(px); }
-      return;
-    }
-    if (POINT_TOOLS.has(tool)) { onAddAnnotation({ type: tool, x: p.x, y: p.y }); return; }
-  };
-
+  // Clique — usado apenas para ferramentas de clique único (vértices, ponto, texto, seleção, negativo)
   const handleClick = (e) => {
-    if (DRAW_TOOLS.has(tool) || tool === 'select' || tool === 'negativo' || tool === 'mover') {
-      const p = tool === 'select' || tool === 'negativo' || tool === 'mover' ? rawPos(e) : resolvePoint(e);
-      if (tool === 'select') {
-        const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-        onSelectSlab(hit ? hit.id : null); return;
-      }
-      if (tool === 'negativo') {
-        const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-        if (hit) onToggleNegativo(hit.id); return;
-      }
-      if (tool === 'texto') { onAddTexto(p); return; }
-      placeFromMouse(e);
+    if (tool === 'select' || tool === 'negativo') {
+      const p = rawPos(e);
+      const hit = slabs.find(s => pointInPolygon(p, s.vertices));
+      if (tool === 'select') { onSelectSlab(hit ? hit.id : null); return; }
+      if (hit) onToggleNegativo(hit.id);
+      return;
     }
+    if (tool === 'vertices') { const p = resolvePoint(e); onAddPoint(p); setPendingLen(null); return; }
+    if (tool === 'ponto_luz') { const p = resolvePoint(e); onAddAnnotation({ type: tool, x: p.x, y: p.y }); return; }
+    if (tool === 'texto') { const p = resolvePoint(e); onAddTexto(p); return; }
+    // ferramentas de arrasto confirmam no mouseup
   };
 
   const rawPos = (e) => {
@@ -390,7 +358,10 @@ export default function ProjetoCanvas({
     }
     const p = (tool === 'retangulo' || tool === 'mover' || tool === 'pan') ? rawPos(e) : resolvePoint(e);
     m.down = true; m.cur = p;
-    if (tool === 'retangulo') { m.rectStart = p; }
+    if (LINE_TOOLS.has(tool)) { m.lineFirst = p; }
+    else if (tool === 'cotas') { m.cotaFirst = p; }
+    else if (tool === 'calibrar') { m.calibFirst = p; }
+    else if (tool === 'retangulo') { m.rectStart = p; }
     else if (tool === 'mover') {
       const hit = slabs.find(sl => pointInPolygon(p, sl.vertices));
       if (hit) { onSelectSlab(hit.id); m.moveLast = p; }
@@ -424,18 +395,29 @@ export default function ProjetoCanvas({
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
     const m = mouseRef.current;
     m.down = false;
     m.midPan = null;
-    if (tool === 'retangulo' && m.rectStart) {
+    if (LINE_TOOLS.has(tool) && m.lineFirst) {
+      const p = resolvePoint(e);
+      onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y, color: activeColor });
+      m.lineFirst = null; setPendingLen(null);
+    } else if (tool === 'cotas' && m.cotaFirst) {
+      const p = resolvePoint(e);
+      onAddCota({ x1: m.cotaFirst.x, y1: m.cotaFirst.y, x2: p.x, y2: p.y, meters: dist(m.cotaFirst, p) / scalePxPerM });
+      m.cotaFirst = null; setPendingLen(null);
+    } else if (tool === 'calibrar' && m.calibFirst) {
+      const p = resolvePoint(e);
+      onCalibrate(dist(m.calibFirst, p));
+      m.calibFirst = null;
+    } else if (tool === 'retangulo' && m.rectStart) {
       const c = m.cur;
       const s = m.rectStart;
       const wpx = Math.abs(c.x - s.x), hpx = Math.abs(c.y - s.y);
       if (wpx > 4 && hpx > 4) {
         const x0 = Math.min(s.x, c.x), y0 = Math.min(s.y, c.y);
-        const x1 = x0 + wpx, y1 = y0 + hpx;
-        onAddSlabRect([{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }]);
+        onAddSlabRect([{ x: x0, y: y0 }, { x: x0 + wpx, y: y0 }, { x: x0 + wpx, y: y0 + hpx }, { x: x0, y: y0 + hpx }]);
       }
       m.rectStart = null;
     }
@@ -509,12 +491,12 @@ export default function ProjetoCanvas({
       </div>
       {tool === 'calibrar' && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-green-600 text-white px-3 py-1.5 rounded-full shadow">
-          Clique em dois pontos da planta e informe a distância real em metros
+          Pressione e arraste entre dois pontos da planta e informe a distância real em metros
         </div>
       )}
-      {LINE_TOOLS.has(tool) && !mouseRef.current?.lineFirst && (
+      {LINE_TOOLS.has(tool) && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-3 py-1.5 rounded-full shadow">
-          Clique no primeiro ponto (digite o comprimento para precisão exata)
+          Pressione e arraste para desenhar (digite o comprimento para precisão exata)
         </div>
       )}
     </div>
