@@ -35,6 +35,7 @@ export default function ProjetoCanvas({
   selectedSlabId, floorPlanUrl, floorPlanOpacity, scalePxPerM, tool,
   cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, activeColor,
   panOffset, onPan,
+  zoom, onZoom,
   onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation, onToggleNegativo,
   onCalibrate, onMoveSlab
 }) {
@@ -83,7 +84,8 @@ export default function ProjetoCanvas({
   const resolvePoint = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     const ox = panOffset?.x || 0, oy = panOffset?.y || 0;
-    const raw = { x: e.clientX - rect.left - ox, y: e.clientY - rect.top - oy };
+    const z = zoom || 1;
+    const raw = { x: (e.clientX - rect.left - ox) / z, y: (e.clientY - rect.top - oy) / z };
     let snapped = snapPoint(raw, snapCandidates, gridPx, 12);
     const anc = anchor();
     let p = { x: snapped.x, y: snapped.y };
@@ -111,15 +113,18 @@ export default function ProjetoCanvas({
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
 
     const ox = panOffset?.x || 0, oy = panOffset?.y || 0;
+    const z = zoom || 1;
     ctx.save();
     ctx.translate(ox, oy);
+    ctx.scale(z, z);
 
     if (showGrid) {
-      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
-      const xStart = Math.floor(-ox / gridPx) * gridPx;
-      const yStart = Math.floor(-oy / gridPx) * gridPx;
-      for (let x = xStart; x <= w - ox; x += gridPx) { ctx.beginPath(); ctx.moveTo(x, yStart); ctx.lineTo(x, h - oy); ctx.stroke(); }
-      for (let y = yStart; y <= h - oy; y += gridPx) { ctx.beginPath(); ctx.moveTo(xStart, y); ctx.lineTo(w - ox, y); ctx.stroke(); }
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1 / z;
+      const wx0 = -ox / z, wy0 = -oy / z, wx1 = (w - ox) / z, wy1 = (h - oy) / z;
+      const xStart = Math.floor(wx0 / gridPx) * gridPx;
+      const yStart = Math.floor(wy0 / gridPx) * gridPx;
+      for (let x = xStart; x <= wx1; x += gridPx) { ctx.beginPath(); ctx.moveTo(x, wy0); ctx.lineTo(x, wy1); ctx.stroke(); }
+      for (let y = yStart; y <= wy1; y += gridPx) { ctx.beginPath(); ctx.moveTo(wx0, y); ctx.lineTo(wx1, y); ctx.stroke(); }
     }
 
     if (imgRef.current) {
@@ -291,7 +296,22 @@ export default function ProjetoCanvas({
     }
 
     ctx.restore();
-  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, snapCandidates, gridPx, pendingLen]);
+  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen]);
+
+  // Roda do mouse → zoom em torno do cursor
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+      onZoom?.(factor, sx, sy);
+    };
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', onWheel);
+  }, [onZoom]);
 
   useEffect(() => { draw(); }, [draw]);
 
@@ -353,15 +373,22 @@ export default function ProjetoCanvas({
   const rawPos = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     const ox = panOffset?.x || 0, oy = panOffset?.y || 0;
-    return { x: e.clientX - rect.left - ox, y: e.clientY - rect.top - oy };
+    const z = zoom || 1;
+    return { x: (e.clientX - rect.left - ox) / z, y: (e.clientY - rect.top - oy) / z };
   };
 
   const handleDoubleClick = () => { if (tool === 'vertices') onFinishDrawing(); };
 
   const handleMouseDown = (e) => {
-    const p = (tool === 'retangulo' || tool === 'mover' || tool === 'pan') ? rawPos(e) : resolvePoint(e);
     const s = screenPos(e);
     const m = mouseRef.current;
+    if (e.button === 1) { // botão do meio (roda clicada) → pan
+      e.preventDefault();
+      m.midPan = { sx: s.x, sy: s.y, ox: panOffset?.x || 0, oy: panOffset?.y || 0 };
+      m.down = true;
+      return;
+    }
+    const p = (tool === 'retangulo' || tool === 'mover' || tool === 'pan') ? rawPos(e) : resolvePoint(e);
     m.down = true; m.cur = p;
     if (tool === 'retangulo') { m.rectStart = p; }
     else if (tool === 'mover') {
@@ -381,6 +408,10 @@ export default function ProjetoCanvas({
     const s = screenPos(e);
     const m = mouseRef.current;
     m._screenX = e.clientX; m._screenY = e.clientY;
+    if (m.down && m.midPan) {
+      onPan(m.midPan.ox + (s.x - m.midPan.sx), m.midPan.oy + (s.y - m.midPan.sy));
+      return;
+    }
     let p;
     if (DRAW_TOOLS.has(tool)) p = resolvePoint(e);
     else p = rawPos(e);
@@ -396,6 +427,7 @@ export default function ProjetoCanvas({
   const handleMouseUp = () => {
     const m = mouseRef.current;
     m.down = false;
+    m.midPan = null;
     if (tool === 'retangulo' && m.rectStart) {
       const c = m.cur;
       const s = m.rectStart;
@@ -413,7 +445,7 @@ export default function ProjetoCanvas({
 
   const handleMouseLeave = () => {
     const m = mouseRef.current;
-    m.down = false; m.rectStart = null; m.cur = null; m.panStart = null; m.snapped = null;
+    m.down = false; m.rectStart = null; m.cur = null; m.panStart = null; m.midPan = null; m.snapped = null;
   };
 
   // Foca o campo de comprimento ao digitar número enquanto desenha
@@ -473,7 +505,7 @@ export default function ProjetoCanvas({
       )}
 
       <div className="absolute bottom-2 right-3 text-xs text-muted-foreground bg-white/80 px-2 py-1 rounded">
-        Escala: 1 m = {Math.round(scalePxPerM)} px{ortoAtivo ? ' • ORTO' : ''}{contornoAtivo ? ' • Contorno' : ''}{activeColor ? ` • ${activeColor}` : ''}{pendingLen != null ? ` • Próx: ${pendingLen}m` : ''}
+        Escala: 1 m = {Math.round(scalePxPerM)} px • Zoom: {Math.round((zoom || 1) * 100)}%{ortoAtivo ? ' • ORTO' : ''}{contornoAtivo ? ' • Contorno' : ''}{activeColor ? ` • ${activeColor}` : ''}{pendingLen != null ? ` • Próx: ${pendingLen}m` : ''}
       </div>
       {tool === 'calibrar' && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-green-600 text-white px-3 py-1.5 rounded-full shadow">

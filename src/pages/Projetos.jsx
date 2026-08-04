@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
@@ -33,6 +33,7 @@ export default function Projetos() {
   const [contornoAtivo, setContornoAtivo] = useState(false);
   const [activeColor, setActiveColor] = useState(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedOrderId, setGeneratedOrderId] = useState(null);
@@ -45,6 +46,18 @@ export default function Projetos() {
 
   const changeProjeto = useCallback((patch) => setProjeto(prev => ({ ...prev, ...patch })), []);
 
+  const panRef = useRef(panOffset); panRef.current = panOffset;
+  const zoomRef = useRef(zoom); zoomRef.current = zoom;
+  const handleZoom = useCallback((factor, sx, sy) => {
+    const prev = zoomRef.current;
+    const next = Math.max(0.1, Math.min(10, prev * factor));
+    const ox = panRef.current.x, oy = panRef.current.y;
+    const wx = (sx - ox) / prev;
+    const wy = (sy - oy) / prev;
+    setPanOffset({ x: sx - wx * next, y: sy - wy * next });
+    setZoom(next);
+  }, []);
+
   const pushHistory = () => {
     setHistory(prev => [...prev.slice(-19), { slabs, cotas, textos, annotations }]);
   };
@@ -55,12 +68,14 @@ export default function Projetos() {
     setScalePxPerM(p.scale_px_per_m || 100); setFloorPlanOpacity(p.floor_plan_opacity ?? 0.5);
     setShowGrid(p.show_grid !== false); setGeneratedOrderId(p.order_id || null);
     setDrawingPoints([]); setSelectedSlabId(null); setHistory([]);
+    setZoom(1); setPanOffset({ x: 0, y: 0 });
   };
 
   const newProj = () => {
     setProjeto(newProjeto()); setSlabs([]); setCotas([]); setTextos([]); setAnnotations([]);
     setDrawingPoints([]); setSelectedSlabId(null); setGeneratedOrderId(null);
     setScalePxPerM(100); setFloorPlanOpacity(0.5); setShowGrid(true); setHistory([]);
+    setZoom(1); setPanOffset({ x: 0, y: 0 });
   };
 
   const addPoint = (pt) => setDrawingPoints(prev => [...prev, pt]);
@@ -270,6 +285,7 @@ export default function Projetos() {
             cotas={cotas} textos={textos} annotations={annotations}
             showGrid={showGrid} contornoAtivo={contornoAtivo} ortoAtivo={ortoAtivo} activeColor={activeColor}
             panOffset={panOffset} onPan={setPanOffset}
+            zoom={zoom} onZoom={handleZoom}
             onAddSlabRect={addSlabRect} onAddCota={addCota} onAddTexto={addTexto}
             onAddAnnotation={addAnnotation} onToggleNegativo={toggleNegativo}
             onCalibrate={calibrate} onMoveSlab={moveSlab}
