@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { snapPoint, orthoLock, applyLength, buildSnapCandidates } from '@/lib/projetoSnap';
 
 export function pointInPolygon(p, poly) {
   let inside = false;
@@ -25,15 +26,9 @@ export function polygonAreaM2(vertices, scalePxPerM) {
 
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
-function orthoSnap(a, b) {
-  const dx = Math.abs(b.x - a.x);
-  const dy = Math.abs(b.y - a.y);
-  if (dx >= dy) return { x: b.x, y: a.y };
-  return { x: a.x, y: b.y };
-}
-
 const LINE_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura']);
 const POINT_TOOLS = new Set(['ponto_luz']);
+const DRAW_TOOLS = new Set(['vertices', 'linha', 'tracejada', 'vigota', 'nervura', 'cotas', 'calibrar', 'retangulo', 'texto', 'ponto_luz', 'negativo']);
 
 export default function ProjetoCanvas({
   slabs, drawingPoints, onAddPoint, onFinishDrawing, onSelectSlab,
@@ -47,7 +42,17 @@ export default function ProjetoCanvas({
   const containerRef = useRef(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
   const imgRef = useRef(null);
-  const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, lineFirst: null, moveLast: null, rectStart: null, cur: null, panStart: null });
+  const [lenVal, setLenVal] = useState(''); // comprimento digitado (metros)
+  const [pendingLen, setPendingLen] = useState(null); // metros, aplicado no próximo ponto
+  const lenRef = useRef(null);
+  const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, lineFirst: null, moveLast: null, rectStart: null, cur: null, panStart: null, snapped: null });
+
+  const gridPx = Math.max(10, scalePxPerM || 100);
+
+  const snapCandidates = useMemo(
+    () => buildSnapCandidates(slabs, drawingPoints, annotations),
+    [slabs, drawingPoints, annotations]
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -63,6 +68,35 @@ export default function ProjetoCanvas({
     img.onload = () => { imgRef.current = img; };
     img.src = floorPlanUrl;
   }, [floorPlanUrl]);
+
+  // Âncora para o próximo ponto (depende da ferramenta)
+  const anchor = useCallback(() => {
+    const m = mouseRef.current;
+    if (tool === 'vertices') return drawingPoints[drawingPoints.length - 1] || null;
+    if (LINE_TOOLS.has(tool)) return m.lineFirst;
+    if (tool === 'cotas') return m.cotaFirst;
+    if (tool === 'calibrar') return m.calibFirst;
+    return null;
+  }, [tool, drawingPoints]);
+
+  // Converte posição do mouse para coordenada do canvas (com snap + ORTHO + comprimento)
+  const resolvePoint = (e) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    const ox = panOffset?.x || 0, oy = panOffset?.y || 0;
+    const raw = { x: e.clientX - rect.left - ox, y: e.clientY - rect.top - oy };
+    let snapped = snapPoint(raw, snapCandidates, gridPx, 12);
+    const anc = anchor();
+    let p = { x: snapped.x, y: snapped.y };
+    if (anc) {
+      if (ortoAtivo) p = orthoLock(anc, p);
+      if (pendingLen != null) {
+        p = applyLength(anc, p, pendingLen, scalePxPerM);
+        setPendingLen(null);
+      }
+    }
+    mouseRef.current.snapped = p;
+    return p;
+  };
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -81,7 +115,6 @@ export default function ProjetoCanvas({
     ctx.translate(ox, oy);
 
     if (showGrid) {
-      const gridPx = Math.max(10, scalePxPerM);
       ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
       const xStart = Math.floor(-ox / gridPx) * gridPx;
       const yStart = Math.floor(-oy / gridPx) * gridPx;
@@ -125,6 +158,7 @@ export default function ProjetoCanvas({
       }
     });
 
+    // Cotas (medidas de paredes)
     (cotas || []).forEach(c => {
       ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(c.x1, c.y1); ctx.lineTo(c.x2, c.y2); ctx.stroke();
@@ -134,10 +168,28 @@ export default function ProjetoCanvas({
       const mx = (c.x1 + c.x2) / 2, my = (c.y1 + c.y2) / 2;
       const label = `${c.meters.toFixed(2)} m`;
       ctx.font = 'bold 11px Inter, sans-serif';
-      const tw = ctx.measureText(label).width + 6;
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(mx - tw / 2, my - 8, tw, 16);
+      const tw = ctx.measureText(label).width + 8;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(mx - tw / 2, my - 9, tw, 18);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 0.5; ctx.strokeRect(mx - tw / 2, my - 9, tw, 18);
       ctx.fillStyle = '#ef4444'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(label, mx, my); ctx.textBaseline = 'alphabetic';
+    });
+
+    // Medidas das arestas de cada laje (parede por parede)
+    slabs.forEach(slab => {
+      const v = slab.vertices || [];
+      ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (let i = 0; i < v.length; i++) {
+        const a = v[i], b = v[(i + 1) % v.length];
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        const dM = dist(a, b) / scalePxPerM;
+        const label = `${dM.toFixed(2)}m`;
+        const tw = ctx.measureText(label).width + 6;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(mx - tw / 2, my - 7, tw, 14);
+        ctx.fillStyle = slab.negativo ? '#b91c1c' : '#1d4ed8';
+        ctx.fillText(label, mx, my);
+      }
+      ctx.textBaseline = 'alphabetic';
     });
 
     (textos || []).forEach(t => {
@@ -195,7 +247,9 @@ export default function ProjetoCanvas({
 
     if (LINE_TOOLS.has(tool) && m.lineFirst && m.cur) {
       let end = m.cur;
-      if (ortoAtivo) end = orthoSnap(m.lineFirst, m.cur);
+      if (ortoAtivo) end = orthoLock(m.lineFirst, m.cur);
+      if (pendingLen != null) end = applyLength(m.lineFirst, end, pendingLen, scalePxPerM);
+      const dM = dist(m.lineFirst, end) / scalePxPerM;
       ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : (activeColor || '#111827');
       ctx.lineWidth = tool === 'vigota' ? 3 : 2;
       ctx.setLineDash(tool === 'tracejada' || tool === 'nervura' ? [5, 4] : []);
@@ -203,6 +257,13 @@ export default function ProjetoCanvas({
       ctx.setLineDash([]);
       ctx.fillStyle = ctx.strokeStyle;
       ctx.beginPath(); ctx.arc(m.lineFirst.x, m.lineFirst.y, 4, 0, Math.PI * 2); ctx.fill();
+      // medida ao longo da linha
+      const mx = (m.lineFirst.x + end.x) / 2, my = (m.lineFirst.y + end.y) / 2;
+      const label = `${dM.toFixed(2)} m`;
+      ctx.font = 'bold 11px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(label).width + 6;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(mx - tw / 2, my - 8, tw, 16);
+      ctx.fillStyle = '#111827'; ctx.fillText(label, mx, my); ctx.textBaseline = 'alphabetic';
     }
 
     if (tool === 'calibrar' && m.calibFirst && m.cur) {
@@ -214,73 +275,92 @@ export default function ProjetoCanvas({
     }
 
     if (tool === 'cotas' && m.cotaFirst && m.cur) {
+      let end = m.cur;
+      if (ortoAtivo) end = orthoLock(m.cotaFirst, m.cur);
+      const d = dist(m.cotaFirst, end) / scalePxPerM;
       ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
-      ctx.beginPath(); ctx.moveTo(m.cotaFirst.x, m.cotaFirst.y); ctx.lineTo(m.cur.x, m.cur.y); ctx.stroke(); ctx.setLineDash([]);
-      const d = dist(m.cotaFirst, m.cur) / scalePxPerM;
+      ctx.beginPath(); ctx.moveTo(m.cotaFirst.x, m.cotaFirst.y); ctx.lineTo(end.x, end.y); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter, sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(`${d.toFixed(2)} m`, (m.cotaFirst.x + m.cur.x) / 2, (m.cotaFirst.y + m.cur.y) / 2);
+      ctx.fillText(`${d.toFixed(2)} m`, (m.cotaFirst.x + end.x) / 2, (m.cotaFirst.y + end.y) / 2);
+    }
+
+    // Indicador de snap
+    if (m.snapped && DRAW_TOOLS.has(tool)) {
+      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(m.snapped.x - 5, m.snapped.y - 5, 10, 10);
     }
 
     ctx.restore();
-  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset]);
+  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, snapCandidates, gridPx, pendingLen]);
 
   useEffect(() => { draw(); }, [draw]);
 
-  const getPos = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const ox = panOffset?.x || 0, oy = panOffset?.y || 0;
-    return { x: e.clientX - rect.left - ox, y: e.clientY - rect.top - oy };
+  // Aplica o comprimento digitado e dispara o posicionamento
+  const applyLengthNow = () => {
+    const meters = parseFloat(lenVal.replace(',', '.'));
+    if (!meters || meters <= 0) return;
+    setPendingLen(meters);
+    setLenVal('');
+    // Se já há mouse sobre o canvas e uma âncora, posiciona imediatamente
+    const m = mouseRef.current;
+    if (m.cur && anchor()) {
+      placeFromMouse({ clientX: m._screenX, clientY: m._screenY });
+    }
   };
 
-  const getScreen = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  };
-
-  const handleClick = (e) => {
-    const p = getPos(e);
+  // Coloca um ponto a partir de um evento de mouse (clique) — usa snap/ORTO/length
+  const placeFromMouse = (e) => {
+    const p = resolvePoint(e);
     const m = mouseRef.current;
     if (tool === 'vertices') { onAddPoint(p); return; }
-    if (tool === 'select') {
-      const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-      onSelectSlab(hit ? hit.id : null); return;
-    }
-    if (tool === 'negativo') {
-      const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-      if (hit) onToggleNegativo(hit.id); return;
+    if (LINE_TOOLS.has(tool)) {
+      if (!m.lineFirst) { m.lineFirst = p; }
+      else {
+        onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y, color: activeColor });
+        m.lineFirst = null;
+      }
+      return;
     }
     if (tool === 'cotas') {
       if (!m.cotaFirst) { m.cotaFirst = p; }
       else { const px = dist(m.cotaFirst, p); onAddCota({ x1: m.cotaFirst.x, y1: m.cotaFirst.y, x2: p.x, y2: p.y, meters: px / scalePxPerM }); m.cotaFirst = null; }
       return;
     }
-    if (tool === 'texto') { onAddTexto(p); return; }
     if (tool === 'calibrar') {
       if (!m.calibFirst) { m.calibFirst = p; }
       else { const px = dist(m.calibFirst, p); m.calibFirst = null; onCalibrate(px); }
       return;
     }
-    if (LINE_TOOLS.has(tool)) {
-      if (!m.lineFirst) { m.lineFirst = p; }
-      else {
-        let end = p;
-        if (ortoAtivo) end = orthoSnap(m.lineFirst, p);
-        onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: end.x, y2: end.y, color: activeColor });
-        m.lineFirst = null;
+    if (POINT_TOOLS.has(tool)) { onAddAnnotation({ type: tool, x: p.x, y: p.y }); return; }
+  };
+
+  const handleClick = (e) => {
+    if (DRAW_TOOLS.has(tool) || tool === 'select' || tool === 'negativo' || tool === 'mover') {
+      const p = tool === 'select' || tool === 'negativo' || tool === 'mover' ? rawPos(e) : resolvePoint(e);
+      if (tool === 'select') {
+        const hit = slabs.find(s => pointInPolygon(p, s.vertices));
+        onSelectSlab(hit ? hit.id : null); return;
       }
-      return;
+      if (tool === 'negativo') {
+        const hit = slabs.find(s => pointInPolygon(p, s.vertices));
+        if (hit) onToggleNegativo(hit.id); return;
+      }
+      if (tool === 'texto') { onAddTexto(p); return; }
+      placeFromMouse(e);
     }
-    if (POINT_TOOLS.has(tool)) {
-      onAddAnnotation({ type: tool, x: p.x, y: p.y });
-      return;
-    }
+  };
+
+  const rawPos = (e) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    const ox = panOffset?.x || 0, oy = panOffset?.y || 0;
+    return { x: e.clientX - rect.left - ox, y: e.clientY - rect.top - oy };
   };
 
   const handleDoubleClick = () => { if (tool === 'vertices') onFinishDrawing(); };
 
   const handleMouseDown = (e) => {
-    const p = getPos(e);
-    const s = getScreen(e);
+    const p = (tool === 'retangulo' || tool === 'mover' || tool === 'pan') ? rawPos(e) : resolvePoint(e);
+    const s = screenPos(e);
     const m = mouseRef.current;
     m.down = true; m.cur = p;
     if (tool === 'retangulo') { m.rectStart = p; }
@@ -292,10 +372,18 @@ export default function ProjetoCanvas({
     }
   };
 
+  const screenPos = (e) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
   const handleMouseMove = (e) => {
-    const p = getPos(e);
-    const s = getScreen(e);
+    const s = screenPos(e);
     const m = mouseRef.current;
+    m._screenX = e.clientX; m._screenY = e.clientY;
+    let p;
+    if (DRAW_TOOLS.has(tool)) p = resolvePoint(e);
+    else p = rawPos(e);
     m.cur = p;
     if (m.down && tool === 'mover' && m.moveLast && selectedSlabId) {
       const dx = p.x - m.moveLast.x, dy = p.y - m.moveLast.y;
@@ -325,8 +413,21 @@ export default function ProjetoCanvas({
 
   const handleMouseLeave = () => {
     const m = mouseRef.current;
-    m.down = false; m.rectStart = null; m.cur = null; m.panStart = null;
+    m.down = false; m.rectStart = null; m.cur = null; m.panStart = null; m.snapped = null;
   };
+
+  // Foca o campo de comprimento ao digitar número enquanto desenha
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!DRAW_TOOLS.has(tool)) return;
+      if (document.activeElement === lenRef.current) return;
+      if (/^[0-9.,]$/.test(e.key)) {
+        lenRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [tool]);
 
   const cursorClass = {
     vertices: 'cursor-crosshair', retangulo: 'cursor-crosshair', cotas: 'cursor-crosshair',
@@ -335,6 +436,8 @@ export default function ProjetoCanvas({
     linha: 'cursor-crosshair', tracejada: 'cursor-crosshair', vigota: 'cursor-crosshair',
     nervura: 'cursor-crosshair', ponto_luz: 'cursor-crosshair',
   }[tool] || 'cursor-pointer';
+
+  const showLenBox = DRAW_TOOLS.has(tool) && tool !== 'ponto_luz' && tool !== 'texto';
 
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-white">
@@ -348,8 +451,29 @@ export default function ProjetoCanvas({
         onMouseLeave={handleMouseLeave}
         className={`block ${cursorClass}`}
       />
+
+      {showLenBox && (
+        <div className="absolute bottom-10 right-3 flex items-center gap-2 bg-white border border-border rounded-md shadow px-2 py-1.5">
+          <span className="text-xs text-muted-foreground">Comprimento (m):</span>
+          <input
+            ref={lenRef}
+            type="text"
+            inputMode="decimal"
+            value={lenVal}
+            onChange={(e) => setLenVal(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyLengthNow(); } }}
+            placeholder="ex: 4.5"
+            className="w-20 text-sm outline-none border-b border-border focus:border-primary"
+          />
+          <button
+            onClick={applyLengthNow}
+            className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground"
+          >Aplicar</button>
+        </div>
+      )}
+
       <div className="absolute bottom-2 right-3 text-xs text-muted-foreground bg-white/80 px-2 py-1 rounded">
-        Escala: 1 m = {Math.round(scalePxPerM)} px{ortoAtivo ? ' • ORTO' : ''}{contornoAtivo ? ' • Contorno' : ''}{activeColor ? ` • ${activeColor}` : ''}
+        Escala: 1 m = {Math.round(scalePxPerM)} px{ortoAtivo ? ' • ORTO' : ''}{contornoAtivo ? ' • Contorno' : ''}{activeColor ? ` • ${activeColor}` : ''}{pendingLen != null ? ` • Próx: ${pendingLen}m` : ''}
       </div>
       {tool === 'calibrar' && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-green-600 text-white px-3 py-1.5 rounded-full shadow">
@@ -358,7 +482,7 @@ export default function ProjetoCanvas({
       )}
       {LINE_TOOLS.has(tool) && !mouseRef.current?.lineFirst && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-3 py-1.5 rounded-full shadow">
-          Clique no primeiro ponto
+          Clique no primeiro ponto (digite o comprimento para precisão exata)
         </div>
       )}
     </div>
