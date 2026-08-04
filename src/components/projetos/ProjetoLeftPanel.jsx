@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Upload, Trash2, Save, Plus, RefreshCw, Scale, Ruler, Type, Square, MousePointer2, PenLine, Move, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+import { convertPlanToPng } from '@/lib/projetoImport';
 
 export default function ProjetoLeftPanel({
   projeto, onChangeProjeto, projetos, onLoadProjeto, onNewProjeto, onSave, saving,
@@ -15,18 +16,34 @@ export default function ProjetoLeftPanel({
 }) {
   const fileRef = useRef(null);
   const { toast } = useToast();
+  const [importing, setImporting] = useState(false);
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      onChangeProjeto({ floor_plan_url: file_url });
-      toast({ title: 'Planta importada' });
-    } catch (err) {
-      toast({ title: 'Erro ao importar planta', variant: 'destructive' });
-    }
     e.target.value = '';
+    setImporting(true);
+    try {
+      const png = await convertPlanToPng(file);
+      let file_url;
+      if (png) {
+        // PDF/DXF convertido → envia o PNG
+        const blob = await (await fetch(png)).blob();
+        const pngFile = new File([blob], `${file.name.replace(/\.[^.]+$/, '')}.png`, { type: 'image/png' });
+        const res = await base44.integrations.Core.UploadFile({ file: pngFile });
+        file_url = res.file_url;
+      } else {
+        // imagem comum
+        const res = await base44.integrations.Core.UploadFile({ file });
+        file_url = res.file_url;
+      }
+      onChangeProjeto({ floor_plan_url: file_url });
+      toast({ title: 'Planta importada', description: file.name });
+    } catch (err) {
+      toast({ title: 'Erro ao importar planta', description: err?.message || '', variant: 'destructive' });
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
@@ -76,10 +93,11 @@ export default function ProjetoLeftPanel({
       {/* Planta de fundo */}
       <div>
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Planta de fundo</p>
-        <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
-        <Button size="sm" variant="outline" className="w-full" onClick={() => fileRef.current?.click()}>
-          <Upload className="w-4 h-4" /> Importar planta
+        <input ref={fileRef} type="file" accept="image/*,.pdf,.dxf,.dwg" onChange={handleFile} className="hidden" />
+        <Button size="sm" variant="outline" className="w-full" onClick={() => fileRef.current?.click()} disabled={importing}>
+          <Upload className="w-4 h-4" /> {importing ? 'Importando...' : 'Importar planta'}
         </Button>
+        <p className="text-[10px] text-muted-foreground mt-1">Formatos: imagem, PDF, DXF (AutoCAD). DWG deve ser convertido.</p>
         {projeto.floor_plan_url && (
           <Button size="sm" variant="outline" className="w-full mt-2" onClick={onReloadPlan}>
             <RefreshCw className="w-4 h-4" /> Recarregar planta
