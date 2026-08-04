@@ -37,7 +37,9 @@ export default function ProjetoRelatorio({
           <div key={slab.id} className="bg-white border border-border rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">{slab.label}{slab.negativo && <span className="text-destructive"> (Neg)</span>}</span>
-              <span className={`text-sm font-semibold ${slab.negativo ? 'text-destructive' : 'text-primary'}`}>{slab.area_m2.toFixed(2)} m²</span>
+              <span className={`text-sm font-semibold ${slab.negativo ? 'text-destructive' : 'text-primary'}`}>
+                {slab.area_m2.toFixed(2)} m²{!slab.negativo && slab.vt ? ` • ${slab.vt}vt` : ''}
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>

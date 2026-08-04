@@ -6,6 +6,7 @@ import ProjetoCanvas, { polygonAreaM2 } from '@/components/projetos/ProjetoCanva
 import ProjetoLeftPanel from '@/components/projetos/ProjetoLeftPanel';
 import ProjetoRelatorio from '@/components/projetos/ProjetoRelatorio';
 import ProjetoToolbar from '@/components/projetos/ProjetoToolbar';
+import { computeVt } from '@/lib/projetoSnap';
 
 const newProjeto = () => ({
   name: 'Novo Projeto', client_name: '', floor_plan_url: '',
@@ -98,6 +99,14 @@ export default function Projetos() {
 
   const updateSlab = (id, patch) => setSlabs(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
 
+  const setDirection = (id, direction) => {
+    setSlabs(prev => prev.map(s => {
+      if (s.id !== id) return s;
+      const vt = computeVt(s.vertices, direction, scalePxPerM);
+      return { ...s, direction, vt };
+    }));
+  };
+
   const deleteSlab = (id) => {
     pushHistory();
     setSlabs(prev => prev.filter(s => s.id !== id));
@@ -105,7 +114,17 @@ export default function Projetos() {
   };
 
   const moveSlab = (id, dx, dy) => {
-    setSlabs(prev => prev.map(s => s.id === id ? { ...s, vertices: s.vertices.map(v => ({ x: v.x + dx, y: v.y + dy })) } : s));
+    setSlabs(prev => prev.map(s => {
+      if (s.id !== id) return s;
+      const moved = { ...s, vertices: s.vertices.map(v => ({ x: v.x + dx, y: v.y + dy })) };
+      if (s.direction) {
+        moved.direction = {
+          x1: s.direction.x1 + dx, y1: s.direction.y1 + dy,
+          x2: s.direction.x2 + dx, y2: s.direction.y2 + dy
+        };
+      }
+      return moved;
+    }));
   };
 
   const toggleNegativo = (id) => {
@@ -288,7 +307,7 @@ export default function Projetos() {
             zoom={zoom} onZoom={handleZoom}
             onAddSlabRect={addSlabRect} onAddCota={addCota} onAddTexto={addTexto}
             onAddAnnotation={addAnnotation} onToggleNegativo={toggleNegativo}
-            onCalibrate={calibrate} onMoveSlab={moveSlab}
+            onCalibrate={calibrate} onMoveSlab={moveSlab} onSetDirection={setDirection}
           />
         </div>
 

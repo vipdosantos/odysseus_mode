@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import {
   MousePointer2, PenLine, Square, Ruler, Type, Undo2, Frame, Move, RotateCw,
   Minus, Slash, Spline, GitBranch, Ban, Lightbulb, Crosshair, Copy, FlipHorizontal2, Magnet,
-  Hand, Palette, HelpCircle, FileDown, Box, Keyboard, Settings
+  Hand, Palette, HelpCircle, FileDown, Box, Keyboard, Settings, MoveVertical
 } from 'lucide-react';
 
 // Linha superior (21 ferramentas) — ordem conforme print ProjLAJE
@@ -15,6 +15,7 @@ const TOP_TOOLS = [
   { key: 'vigota', label: 'Lançar Vigota', icon: Spline, kind: 'tool' },
   { key: 'nervura', label: 'Incluir Nervura', icon: GitBranch, kind: 'tool' },
   { key: 'negativo', label: 'Adicionar Negativo', icon: Ban, kind: 'tool' },
+  { key: 'direcao', label: 'Direção Vigotas', icon: MoveVertical, kind: 'tool' },
   { key: 'vertices', label: 'Laje Vértice', icon: PenLine, kind: 'tool' },
   { key: 'ponto_luz', label: 'Ponto de Luz', icon: Lightbulb, kind: 'tool' },
   { key: 'cotas', label: 'Cotas', icon: Ruler, kind: 'tool' },

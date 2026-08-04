@@ -57,6 +57,28 @@ export function orthoLock(a, b) {
   return { x: a.x, y: b.y };
 }
 
+// Espaçamento padrão entre vigotas (intereixo) em metros
+export const VIGOTA_SPACING = 0.45;
+
+// Calcula o número de vigotas (vt) com base na extensão perpendicular do polígono
+// à direção informada. direction = { x1, y1, x2, y2 } em px do canvas.
+export function computeVt(vertices, direction, scalePxPerM, spacing = VIGOTA_SPACING) {
+  if (!vertices || vertices.length < 3 || !direction) return 0;
+  const dx = (direction.x2 ?? 0) - (direction.x1 ?? 0);
+  const dy = (direction.y2 ?? 0) - (direction.y1 ?? 0);
+  const len = Math.hypot(dx, dy);
+  if (len < 1) return 0;
+  const px = -dy / len, py = dx / len; // vetor perpendicular unitário
+  let min = Infinity, max = -Infinity;
+  for (const v of vertices) {
+    const proj = v.x * px + v.y * py;
+    if (proj < min) min = proj;
+    if (proj > max) max = proj;
+  }
+  const spanM = (max - min) / (scalePxPerM || 100);
+  return Math.max(1, Math.round(spanM / spacing));
+}
+
 // Aplica um comprimento exato (em metros) a partir da âncora, na direção atual do mouse
 export function applyLength(anchor, target, meters, scalePxPerM) {
   let dx = target.x - anchor.x;

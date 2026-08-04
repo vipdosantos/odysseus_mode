@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { snapPoint, orthoLock, applyLength, buildSnapCandidates } from '@/lib/projetoSnap';
+import { snapPoint, orthoLock, applyLength, buildSnapCandidates, computeVt } from '@/lib/projetoSnap';
 
 export function pointInPolygon(p, poly) {
   let inside = false;
@@ -28,7 +28,7 @@ function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
 const LINE_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura']);
 const POINT_TOOLS = new Set(['ponto_luz']);
-const DRAW_TOOLS = new Set(['vertices', 'linha', 'tracejada', 'vigota', 'nervura', 'cotas', 'calibrar', 'retangulo', 'texto', 'ponto_luz', 'negativo']);
+const DRAW_TOOLS = new Set(['vertices', 'linha', 'tracejada', 'vigota', 'nervura', 'cotas', 'calibrar', 'retangulo', 'texto', 'ponto_luz', 'negativo', 'direcao']);
 
 export default function ProjetoCanvas({
   slabs, drawingPoints, onAddPoint, onFinishDrawing, onSelectSlab,
@@ -37,7 +37,7 @@ export default function ProjetoCanvas({
   panOffset, onPan,
   zoom, onZoom,
   onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation, onToggleNegativo,
-  onCalibrate, onMoveSlab
+  onCalibrate, onMoveSlab, onSetDirection
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -214,17 +214,54 @@ export default function ProjetoCanvas({
         for (let i = wx0 - wh; i < ww + wh; i += 8) { ctx.beginPath(); ctx.moveTo(i, wy0); ctx.lineTo(i + wh, wh + wy0); ctx.stroke(); }
         ctx.restore();
       } else {
-        ctx.fillStyle = isSel ? 'rgba(0,123,255,0.22)' : 'rgba(0,123,255,0.10)'; ctx.fill();
-        ctx.strokeStyle = isSel ? '#007BFF' : '#1a1e2e';
+        ctx.fillStyle = isSel ? 'rgba(211,84,0,0.12)' : 'rgba(0,123,255,0.10)'; ctx.fill();
+        ctx.strokeStyle = isSel ? '#D35400' : '#1a1e2e';
         ctx.lineWidth = contornoAtivo ? 4 : (isSel ? 2.5 : 1.5);
         ctx.stroke();
       }
-      ctx.fillStyle = '#007BFF';
-      slab.vertices.forEach(v => { ctx.beginPath(); ctx.arc(v.x, v.y, 4, 0, Math.PI * 2); ctx.fill(); });
+      // Alfinetes: verdes na seleção, azuis no padrão
+      ctx.fillStyle = isSel ? '#1E8449' : '#007BFF';
+      const r = isSel ? 5 : 4;
+      slab.vertices.forEach(v => { ctx.beginPath(); ctx.arc(v.x, v.y, r, 0, Math.PI * 2); ctx.fill(); });
       const cx = slab.vertices.reduce((a, v) => a + v.x, 0) / slab.vertices.length;
       const cy = slab.vertices.reduce((a, v) => a + v.y, 0) / slab.vertices.length;
+
+      // Seta dupla vermelha indicando a direção das vigotas
+      if (slab.direction) {
+        const dx = (slab.direction.x2 || 0) - (slab.direction.x1 || 0);
+        const dy = (slab.direction.y2 || 0) - (slab.direction.y1 || 0);
+        const len = Math.hypot(dx, dy);
+        if (len > 1) {
+          const ux = dx / len, uy = dy / len;
+          let min = Infinity, max = -Infinity;
+          for (const v of slab.vertices) {
+            const proj = (v.x - cx) * ux + (v.y - cy) * uy;
+            if (proj < min) min = proj;
+            if (proj > max) max = proj;
+          }
+          const ax = cx + ux * min, ay = cy + uy * min;
+          const bx = cx + ux * max, by = cy + uy * max;
+          ctx.strokeStyle = '#E74C3C'; ctx.lineWidth = 2.5; ctx.setLineDash([]);
+          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+          const ah = 11, ang = Math.atan2(uy, ux);
+          const drawHead = (px, py, dirSign) => {
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(px - ah * Math.cos(ang + dirSign * 0.4), py - ah * Math.sin(ang + dirSign * 0.4));
+            ctx.moveTo(px, py);
+            ctx.lineTo(px - ah * Math.cos(ang - dirSign * 0.4), py - ah * Math.sin(ang - dirSign * 0.4));
+            ctx.stroke();
+          };
+          drawHead(ax, ay, 1);
+          drawHead(bx, by, -1);
+        }
+      }
+
       ctx.fillStyle = '#111827'; ctx.font = 'bold 13px Inter, sans-serif'; ctx.textAlign = 'center';
-      const tag = slab.negativo ? `${slab.label} (Neg)` : `${slab.label} • ${slab.area_m2.toFixed(2)}m²`;
+      const vt = slab.vt || computeVt(slab.vertices, slab.direction, scalePxPerM);
+      const tag = slab.negativo
+        ? `${slab.label} (Neg)`
+        : `${slab.label} (${slab.area_m2.toFixed(2)} m²)${vt ? ` (${vt}vt)` : ''}`;
       ctx.fillText(tag, cx, cy);
     });
 
@@ -245,6 +282,26 @@ export default function ProjetoCanvas({
       ctx.strokeStyle = '#007BFF'; ctx.lineWidth = 2; ctx.setLineDash([5, 3]);
       ctx.strokeRect(Math.min(s.x, c.x), Math.min(s.y, c.y), Math.abs(c.x - s.x), Math.abs(c.y - s.y));
       ctx.setLineDash([]);
+    }
+
+    if (tool === 'direcao' && m.down && m.dirStart && m.cur) {
+      const s = m.dirStart, c = m.cur;
+      const dx = c.x - s.x, dy = c.y - s.y, len = Math.hypot(dx, dy);
+      ctx.strokeStyle = '#E74C3C'; ctx.lineWidth = 2.5; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(c.x, c.y); ctx.stroke();
+      if (len > 4) {
+        const ah = 11, ang = Math.atan2(dy, dx);
+        const drawHead = (px, py, dirSign) => {
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(px - ah * Math.cos(ang + dirSign * 0.4), py - ah * Math.sin(ang + dirSign * 0.4));
+          ctx.moveTo(px, py);
+          ctx.lineTo(px - ah * Math.cos(ang - dirSign * 0.4), py - ah * Math.sin(ang - dirSign * 0.4));
+          ctx.stroke();
+        };
+        drawHead(s.x, s.y, 1);
+        drawHead(c.x, c.y, -1);
+      }
     }
 
     if (LINE_TOOLS.has(tool) && m.lineFirst && m.cur) {
@@ -356,12 +413,16 @@ export default function ProjetoCanvas({
       m.down = true;
       return;
     }
-    const p = (tool === 'retangulo' || tool === 'mover' || tool === 'pan') ? rawPos(e) : resolvePoint(e);
+    const p = (tool === 'retangulo' || tool === 'mover' || tool === 'pan' || tool === 'direcao') ? rawPos(e) : resolvePoint(e);
     m.down = true; m.cur = p;
     if (LINE_TOOLS.has(tool)) { m.lineFirst = p; }
     else if (tool === 'cotas') { m.cotaFirst = p; }
     else if (tool === 'calibrar') { m.calibFirst = p; }
     else if (tool === 'retangulo') { m.rectStart = p; }
+    else if (tool === 'direcao') {
+      const hit = slabs.find(sl => pointInPolygon(p, sl.vertices));
+      if (hit) { onSelectSlab(hit.id); m.dirStart = p; m.dirSlabId = hit.id; }
+    }
     else if (tool === 'mover') {
       const hit = slabs.find(sl => pointInPolygon(p, sl.vertices));
       if (hit) { onSelectSlab(hit.id); m.moveLast = p; }
@@ -420,6 +481,13 @@ export default function ProjetoCanvas({
         onAddSlabRect([{ x: x0, y: y0 }, { x: x0 + wpx, y: y0 }, { x: x0 + wpx, y: y0 + hpx }, { x: x0, y: y0 + hpx }]);
       }
       m.rectStart = null;
+    } else if (tool === 'direcao' && m.dirStart) {
+      const p = rawPos(e);
+      const dx = p.x - m.dirStart.x, dy = p.y - m.dirStart.y;
+      if (Math.hypot(dx, dy) > 4 && m.dirSlabId) {
+        onSetDirection(m.dirSlabId, { x1: m.dirStart.x, y1: m.dirStart.y, x2: p.x, y2: p.y });
+      }
+      m.dirStart = null; m.dirSlabId = null;
     }
     if (tool === 'mover') { m.moveLast = null; }
     if (tool === 'pan') { m.panStart = null; }
@@ -428,6 +496,7 @@ export default function ProjetoCanvas({
   const handleMouseLeave = () => {
     const m = mouseRef.current;
     m.down = false; m.rectStart = null; m.cur = null; m.panStart = null; m.midPan = null; m.snapped = null;
+    m.dirStart = null; m.dirSlabId = null;
   };
 
   // Foca o campo de comprimento ao digitar número enquanto desenha
@@ -448,7 +517,7 @@ export default function ProjetoCanvas({
     calibrar: 'cursor-crosshair', texto: 'cursor-text', mover: 'cursor-move', pan: 'cursor-grab',
     select: 'cursor-pointer', negativo: 'cursor-pointer',
     linha: 'cursor-crosshair', tracejada: 'cursor-crosshair', vigota: 'cursor-crosshair',
-    nervura: 'cursor-crosshair', ponto_luz: 'cursor-crosshair',
+    nervura: 'cursor-crosshair', ponto_luz: 'cursor-crosshair', direcao: 'cursor-crosshair',
   }[tool] || 'cursor-pointer';
 
   const showLenBox = DRAW_TOOLS.has(tool) && tool !== 'ponto_luz' && tool !== 'texto';
@@ -497,6 +566,11 @@ export default function ProjetoCanvas({
       {LINE_TOOLS.has(tool) && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-3 py-1.5 rounded-full shadow">
           Pressione e arraste para desenhar (digite o comprimento para precisão exata)
+        </div>
+      )}
+      {tool === 'direcao' && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-red-600 text-white px-3 py-1.5 rounded-full shadow">
+          Arraste dentro de uma laje para definir a direção das vigotas
         </div>
       )}
     </div>
