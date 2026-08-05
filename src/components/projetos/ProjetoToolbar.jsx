@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import {
   MousePointer2, PenLine, Square, Ruler, Type, Undo2, Frame, RotateCw,
-  Minus, Slash, Spline, GitBranch, Ban, Lightbulb, Crosshair, Copy, FlipHorizontal2, Magnet,
+  Minus, Slash, Spline, GitBranch, Cable, Lightbulb, Crosshair, Copy, FlipHorizontal2, Magnet,
   Hand, HelpCircle, FileDown, Box, Keyboard, Settings, MoveVertical,
   Disc3, Grid3x3, Cog
 } from 'lucide-react';
@@ -16,7 +16,7 @@ const TOP_TOOLS = [
   { key: 'retangulo', label: 'Lançar Laje', icon: Square, kind: 'tool' },
   { key: 'direcao', label: 'Lançar Vigota', icon: MoveVertical, kind: 'tool' },
   { key: 'nervura', label: 'Incluir Nervura', icon: GitBranch, kind: 'tool' },
-  { key: 'negativo', label: 'Negativo', icon: Ban, kind: 'tool' },
+  { key: 'negativo', label: 'Negativo', icon: Cable, kind: 'tool' },
   { key: 'vertices', label: 'Laje Vértices', icon: PenLine, kind: 'tool' },
   { key: 'ponto_luz', label: 'Ponto de Luz', icon: Lightbulb, kind: 'tool' },
   // Cotas, textos e detalhes
