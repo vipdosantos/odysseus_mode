@@ -181,27 +181,23 @@ export default function ProjetoCanvas({
         const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
         const len = Math.hypot(dx, dy) || 1;
         const ux = dx / len, uy = dy / len;
-        const nx = uy, ny = -ux; // perpendicular apontando para a direita do sentido da barra
-        const hookPx = a.acabamento === 'com_dobra' ? Math.max(8, ((a.dobra_esq || 0) / 100) * scalePxPerM) : 0;
-        const step = Math.max(18, hookPx);
-        const gap = 12; // meio-espaçamento entre as duas barras paralelas
+        const nx = uy, ny = -ux; // perpendicular à barra
+        const step = Math.max(24, ((a.dobra_esq || 0) / 100) * scalePxPerM);
         ctx.strokeStyle = '#000000'; ctx.lineWidth = 2.5; ctx.setLineDash([]);
-        // Barra direita (reta)
-        ctx.beginPath();
-        ctx.moveTo(a.x1 + nx * gap, a.y1 + ny * gap);
-        ctx.lineTo(a.x2 + nx * gap, a.y2 + ny * gap);
-        ctx.stroke();
-        // Barra esquerda (cobre/Z — cranks no topo e na base)
-        const tR = { x: a.x1 - nx * gap, y: a.y1 - ny * gap };
-        const tL = { x: tR.x - nx * step, y: tR.y - ny * step };
-        const bL = { x: a.x2 - nx * (gap + step), y: a.y2 - ny * (gap + step) };
-        const bR = { x: a.x2 - nx * gap, y: a.y2 - ny * gap };
-        ctx.beginPath();
-        ctx.moveTo(tR.x, tR.y);
-        ctx.lineTo(tL.x, tL.y);
-        ctx.lineTo(bL.x, bL.y);
-        ctx.lineTo(bR.x, bR.y);
-        ctx.stroke();
+        if (a.acabamento === 'com_dobra' && step > 0) {
+          // Barra cranked (Z): crank no topo e na base para o mesmo lado
+          const tA = { x: a.x1, y: a.y1 };
+          const tB = { x: a.x1 + nx * step, y: a.y1 + ny * step };
+          const bB = { x: a.x2 + nx * step, y: a.y2 + ny * step };
+          const bA = { x: a.x2, y: a.y2 };
+          ctx.beginPath();
+          ctx.moveTo(tA.x, tA.y); ctx.lineTo(tB.x, tB.y);
+          ctx.lineTo(bB.x, bB.y); ctx.lineTo(bA.x, bA.y);
+          ctx.stroke();
+        } else {
+          // Barra reta
+          ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
+        }
         // etiqueta
         const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
         const label = `Ø${a.bitola || a.diametro || '8.0'} e${a.espacamento || 0}cm`;
