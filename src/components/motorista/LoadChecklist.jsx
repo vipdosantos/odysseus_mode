@@ -15,14 +15,14 @@ export default function LoadChecklist({ order }) {
   const items = order.items || [];
 
   const [loaded, setLoaded] = useState(() => items.map(i => (i.loaded_units || []).slice()));
-  const [inputs, setInputs] = useState(() => items.map(() => ''));
+  const [bip, setBip] = useState('');
   const [alerta, setAlerta] = useState(null);
   const [mode, setMode] = useState('camera'); // 'camera' | 'teclado'
-  const inputRefs = useRef([]);
+  const bipRef = useRef(null);
 
   useEffect(() => {
     setLoaded(items.map(i => (i.loaded_units || []).slice()));
-    setInputs(items.map(() => ''));
+    setBip('');
     setAlerta(null);
   }, [order.id]);
 
@@ -68,7 +68,6 @@ export default function LoadChecklist({ order }) {
       persist(nova);
       return nova;
     });
-    if (opts.keepFocus) setTimeout(() => inputRefs.current[idx]?.focus(), 10);
   }, [items, order.id]);
 
   // Resolve o conteúdo do QR (mesmo formato das etiquetas do Scanner):
@@ -98,17 +97,13 @@ export default function LoadChecklist({ order }) {
     markUnit(idx, unit);
   }, [items, order.order_number, markUnit]);
 
-  const handleScan = (idx) => {
-    const raw = (inputs[idx] || '').trim();
+  const handleBip = () => {
+    const raw = bip.trim();
     if (!raw) return;
-    // Bipador/leitor envia o conteúdo completo do QR (JSON); número avulso = unidade manual.
-    if (raw.startsWith('{') || isNaN(Number(raw))) {
-      unlockAudio();
-      resolveQR(raw);
-    } else {
-      markUnit(idx, Number(raw), { keepFocus: true });
-    }
-    setInputs(inputs.map((v, j) => (j === idx ? '' : v)));
+    unlockAudio();
+    resolveQR(raw);
+    setBip('');
+    setTimeout(() => bipRef.current?.focus(), 10);
   };
 
   const finalizar = () => {
@@ -144,10 +139,10 @@ export default function LoadChecklist({ order }) {
   const resetar = () => {
     const vazia = items.map(() => []);
     setLoaded(vazia);
-    setInputs(items.map(() => ''));
+    setBip('');
     setAlerta(null);
     saveMutation.mutate({ items: items.map(it => ({ ...it, loaded_units: [] })), load_conferido: false });
-    inputRefs.current[0]?.focus();
+    bipRef.current?.focus();
   };
 
   if (!items.length) return null;
@@ -202,6 +197,30 @@ export default function LoadChecklist({ order }) {
         </div>
       )}
 
+      {mode === 'teclado' && (
+        <div className="px-4 pt-3">
+          <div className="rounded-xl border bg-muted/30 p-3 space-y-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Keyboard className="w-3.5 h-3.5" /> Aponte o bipador para o QR de cada treliça — o sistema identifica automaticamente qual é.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                ref={bipRef}
+                value={bip}
+                onChange={e => setBip(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleBip(); } }}
+                placeholder="Bipar QR da treliça…"
+                className="h-10"
+                autoFocus
+              />
+              <Button onClick={handleBip} className="h-10">
+                Biper
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Alerta visual */}
       {alerta && (
         <div className={cn("mx-4 mt-3 p-3 rounded-xl border flex items-start gap-2 animate-in fade-in",
@@ -238,27 +257,6 @@ export default function LoadChecklist({ order }) {
                 <span className={cn("text-xs font-semibold", done ? "text-green-600" : "text-muted-foreground")}>
                   {loaded[idx].length}/{qtd}
                 </span>
-              </div>
-
-              <div className="flex gap-2 mt-2">
-                <Input
-                  ref={el => (inputRefs.current[idx] = el)}
-                  value={inputs[idx] || ''}
-                  onChange={e => setInputs(inputs.map((v, j) => (j === idx ? e.target.value : v)))}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleScan(idx); } }}
-                  placeholder={done ? 'Conferido' : 'Bipar unidade (1 a ' + qtd + ')'}
-                  disabled={done}
-                  className="h-9"
-                  inputMode="numeric"
-                />
-                <Button
-                  size="sm"
-                  variant={done ? 'secondary' : 'default'}
-                  disabled={done}
-                  onClick={() => handleScan(idx)}
-                >
-                  Biper
-                </Button>
               </div>
 
               {/* Slots de unidades */}
