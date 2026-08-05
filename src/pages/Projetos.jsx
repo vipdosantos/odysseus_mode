@@ -32,6 +32,7 @@ export default function Projetos() {
   const [showGrid, setShowGrid] = useState(true);
   const [ortoAtivo, setOrtoAtivo] = useState(false);
   const [contornoAtivo, setContornoAtivo] = useState(false);
+  const [nucleosAtivo, setNucleosAtivo] = useState(false);
   const [activeColor, setActiveColor] = useState(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -200,6 +201,16 @@ export default function Projetos() {
 
   const deleteSelected = () => { if (selectedSlabId) deleteSlab(selectedSlabId); };
 
+  // Motor: recalcula vigotas (vt) e área de todas as lajes com direção definida
+  const motor = () => {
+    setSlabs(prev => prev.map(s => {
+      if (!s.direction) return s;
+      const vt = computeVt(s.vertices, s.direction, scalePxPerM);
+      return { ...s, vt, area_m2: polygonAreaM2(s.vertices, scalePxPerM) };
+    }));
+    toast({ title: 'Motor de cálculo', description: 'Vigotas e áreas recalculadas para todas as lajes com direção.' });
+  };
+
   const escolherCor = () => {
     const c = window.prompt('Cor para as próximas linhas (hex, ex: #ef4444):', activeColor || '#111827');
     if (c) setActiveColor(c);
@@ -281,8 +292,9 @@ export default function Projetos() {
         tool={tool} setTool={setTool}
         ortoAtivo={ortoAtivo} onToggleOrto={() => setOrtoAtivo(v => !v)}
         contornoAtivo={contornoAtivo} onToggleContorno={() => setContornoAtivo(v => !v)}
+        nucleosAtivo={nucleosAtivo} onToggleNucleos={() => setNucleosAtivo(v => !v)}
         onUndo={undo} onEspelho={espelhar} onGirar={girar} onCopiar={copiar}
-        onAjusteBorda={ajusteBorda} onCores={escolherCor}
+        onAjusteBorda={ajusteBorda} onCores={escolherCor} onMotor={motor}
         onAjuda={ajuda} onExportar={exportar} on3D={ver3D} onAtalhos={atalhos} onConfig={config}
         hasSelection={!!selectedSlabId}
       />
@@ -308,6 +320,7 @@ export default function Projetos() {
             onAddSlabRect={addSlabRect} onAddCota={addCota} onAddTexto={addTexto}
             onAddAnnotation={addAnnotation} onToggleNegativo={toggleNegativo}
             onCalibrate={calibrate} onMoveSlab={moveSlab} onSetDirection={setDirection}
+            nucleosAtivo={nucleosAtivo}
           />
         </div>
 

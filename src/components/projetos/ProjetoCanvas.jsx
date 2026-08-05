@@ -27,8 +27,11 @@ export function polygonAreaM2(vertices, scalePxPerM) {
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
 const LINE_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura']);
-const POINT_TOOLS = new Set(['ponto_luz']);
-const DRAW_TOOLS = new Set(['vertices', 'linha', 'tracejada', 'vigota', 'nervura', 'cotas', 'calibrar', 'retangulo', 'texto', 'ponto_luz', 'negativo', 'direcao']);
+const POINT_TOOLS = new Set(['ponto_luz', 'frigideira']);
+const DRAW_TOOLS = new Set(['vertices', 'linha', 'tracejada', 'vigota', 'nervura', 'cotas', 'calibrar', 'retangulo', 'texto', 'ponto_luz', 'frigideira', 'negativo', 'direcao']);
+
+// Espaçamento entre vigotas (intereixo) por tipo de treliça — usado na visualização de Núcleos
+const INTEREIXO = { H8: 0.42, H12: 0.42, H16: 0.42, H20: 0.42, H25: 0.45, H30: 0.50 };
 
 export default function ProjetoCanvas({
   slabs, drawingPoints, onAddPoint, onFinishDrawing, onSelectSlab,
@@ -37,7 +40,8 @@ export default function ProjetoCanvas({
   panOffset, onPan,
   zoom, onZoom,
   onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation, onToggleNegativo,
-  onCalibrate, onMoveSlab, onSetDirection
+  onCalibrate, onMoveSlab, onSetDirection,
+  nucleosAtivo
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -157,6 +161,21 @@ export default function ProjetoCanvas({
         ctx.beginPath(); ctx.arc(a.x, a.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(a.x - 4, a.y); ctx.lineTo(a.x + 4, a.y);
         ctx.moveTo(a.x, a.y - 4); ctx.lineTo(a.x, a.y + 4); ctx.stroke();
+      } else if (a.type === 'frigideira') {
+        // Frigideira: elemento maciço/rebaixo em região de apoio (quadrado hachurado)
+        const r = 9;
+        ctx.fillStyle = 'rgba(120,53,15,0.30)'; ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 1.5;
+        ctx.fillRect(a.x - r, a.y - r, r * 2, r * 2);
+        ctx.strokeRect(a.x - r, a.y - r, r * 2, r * 2);
+        ctx.beginPath();
+        for (let i = -r; i < r; i += 4) {
+          ctx.moveTo(a.x + i, a.y - r); ctx.lineTo(a.x + i + r, a.y + r);
+        }
+        ctx.save(); ctx.beginPath(); ctx.rect(a.x - r, a.y - r, r * 2, r * 2); ctx.clip();
+        for (let i = -r; i < r; i += 4) {
+          ctx.beginPath(); ctx.moveTo(a.x + i, a.y - r); ctx.lineTo(a.x + i + r, a.y + r); ctx.stroke();
+        }
+        ctx.restore();
       }
     });
 
@@ -219,6 +238,46 @@ export default function ProjetoCanvas({
         ctx.lineWidth = contornoAtivo ? 4 : (isSel ? 2.5 : 1.5);
         ctx.stroke();
       }
+      // Núcleos: distribuição das vigotas + blocos de EPS/cerâmica
+      if (nucleosAtivo && !slab.negativo) {
+        const tt = slab.truss_type || 'H8';
+        const espM = INTEREIXO[tt] || 0.42;
+        const espPx = espM * scalePxPerM;
+        if (slab.direction && espPx > 4) {
+          const dx = (slab.direction.x2 || 0) - (slab.direction.x1 || 0);
+          const dy = (slab.direction.y2 || 0) - (slab.direction.y1 || 0);
+          const len = Math.hypot(dx, dy);
+          if (len > 1) {
+            const ux = dx / len, uy = dy / len; // direção das vigotas
+            const nx = -uy, ny = ux;            // perpendicular (onde ficam os núcleos)
+            let minP = Infinity, maxP = -Infinity, minU = Infinity, maxU = -Infinity;
+            slab.vertices.forEach(v => {
+              const p = (v.x - cx) * nx + (v.y - cy) * ny;
+              const u = (v.x - cx) * ux + (v.y - cy) * uy;
+              if (p < minP) minP = p; if (p > maxP) maxP = p;
+              if (u < minU) minU = u; if (u > maxU) maxU = u;
+            });
+            ctx.save();
+            ctx.beginPath();
+            slab.vertices.forEach((v, i) => { if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y); });
+            ctx.closePath();
+            ctx.clip();
+            // Linhas das vigotas (paralelas à direção), espaçadas pelo intereixo
+            ctx.strokeStyle = 'rgba(146,64,14,0.55)'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+            const start = Math.ceil(minP / espPx) * espPx;
+            for (let p = start; p <= maxP + 0.1; p += espPx) {
+              const ox = cx + nx * p, oy = cy + ny * p;
+              ctx.beginPath();
+              ctx.moveTo(ox + ux * minU, oy + uy * minU);
+              ctx.lineTo(ox + ux * maxU, oy + uy * maxU);
+              ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            ctx.restore();
+          }
+        }
+      }
+
       // Alfinetes: verdes na seleção, azuis no padrão
       ctx.fillStyle = isSel ? '#1E8449' : '#007BFF';
       const r = isSel ? 5 : 4;
@@ -350,7 +409,7 @@ export default function ProjetoCanvas({
     }
 
     ctx.restore();
-  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen]);
+  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen, nucleosAtivo]);
 
   // Roda do mouse → zoom em torno do cursor
   useEffect(() => {
@@ -391,6 +450,7 @@ export default function ProjetoCanvas({
     }
     if (tool === 'vertices') { const p = resolvePoint(e); onAddPoint(p); setPendingLen(null); return; }
     if (tool === 'ponto_luz') { const p = resolvePoint(e); onAddAnnotation({ type: tool, x: p.x, y: p.y }); return; }
+    if (tool === 'frigideira') { const p = resolvePoint(e); onAddAnnotation({ type: tool, x: p.x, y: p.y }); return; }
     if (tool === 'texto') { const p = resolvePoint(e); onAddTexto(p); return; }
     // ferramentas de arrasto confirmam no mouseup
   };
