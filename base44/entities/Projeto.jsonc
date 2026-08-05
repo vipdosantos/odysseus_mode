@@ -189,6 +189,46 @@
             "type": "number",
             "default": 0,
             "description": "Comprimento da barra negativa (m)"
+          },
+          "tipo_aco": {
+            "type": "string",
+            "enum": [
+              "CA50",
+              "CA60"
+            ],
+            "description": "Tipo de a\u00e7o da barra negativa"
+          },
+          "bitola": {
+            "type": "string",
+            "description": "Bitola (mm)"
+          },
+          "quantidade": {
+            "type": "number",
+            "default": 0,
+            "description": "Quantidade de barras"
+          },
+          "acabamento": {
+            "type": "string",
+            "enum": [
+              "reto",
+              "com_dobra"
+            ],
+            "description": "Acabamento das pontas"
+          },
+          "dobra_esq": {
+            "type": "number",
+            "default": 0,
+            "description": "Dobra esquerda (cm)"
+          },
+          "dobra_dir": {
+            "type": "number",
+            "default": 0,
+            "description": "Dobra direita (cm)"
+          },
+          "igualar_dobras": {
+            "type": "boolean",
+            "default": false,
+            "description": "Igualar dobras"
           }
         }
       }

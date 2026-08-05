@@ -7,6 +7,7 @@ import ProjetoLeftPanel from '@/components/projetos/ProjetoLeftPanel';
 import ProjetoRelatorio from '@/components/projetos/ProjetoRelatorio';
 import ProjetoToolbar from '@/components/projetos/ProjetoToolbar';
 import ProjetoAtalhosDialog from '@/components/projetos/ProjetoAtalhosDialog';
+import ProjetoNegativoDialog from '@/components/projetos/ProjetoNegativoDialog';
 import { computeVt } from '@/lib/projetoSnap';
 
 const newProjeto = () => ({
@@ -42,6 +43,15 @@ export default function Projetos() {
   const [generatedOrderId, setGeneratedOrderId] = useState(null);
   const [history, setHistory] = useState([]);
   const [atalhosAberto, setAtalhosAberto] = useState(false);
+  const [negativoDialogOpen, setNegativoDialogOpen] = useState(false);
+  const [negativoParams, setNegativoParams] = useState({
+    tipo_aco: 'CA50', bitola: '8.0', quantidade: 10, espacamento: 15,
+    acabamento: 'com_dobra', igualar_dobras: true, dobra_esq: 10, dobra_dir: 10
+  });
+
+  useEffect(() => {
+    if (tool === 'negativo') setNegativoDialogOpen(true);
+  }, [tool]);
 
   const { data: projetos = [] } = useQuery({
     queryKey: ['projetos'],
@@ -346,6 +356,8 @@ export default function Projetos() {
             onAddAnnotation={addAnnotation}
             onCalibrate={calibrate} onMoveSlab={moveSlab} onSetDirection={setDirection}
             nucleosAtivo={nucleosAtivo}
+            negativoParams={negativoParams}
+            onOpenNegativoDialog={() => setNegativoDialogOpen(true)}
           />
         </div>
 
@@ -357,6 +369,13 @@ export default function Projetos() {
       </div>
 
       <ProjetoAtalhosDialog open={atalhosAberto} onOpenChange={setAtalhosAberto} />
+
+      <ProjetoNegativoDialog
+        open={negativoDialogOpen}
+        onOpenChange={setNegativoDialogOpen}
+        params={negativoParams}
+        onConfirm={(p) => { setNegativoParams(p); setNegativoDialogOpen(false); }}
+      />
     </div>
   );
 }

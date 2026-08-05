@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { snapPoint, orthoLock, applyLength, buildSnapCandidates, computeVt } from '@/lib/projetoSnap';
+import { Settings2 } from 'lucide-react';
 
 export function pointInPolygon(p, poly) {
   let inside = false;
@@ -41,7 +42,7 @@ export default function ProjetoCanvas({
   zoom, onZoom,
   onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation,
   onCalibrate, onMoveSlab, onSetDirection,
-  nucleosAtivo
+  nucleosAtivo, negativoParams, onOpenNegativoDialog
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -49,7 +50,6 @@ export default function ProjetoCanvas({
   const imgRef = useRef(null);
   const [lenVal, setLenVal] = useState(''); // comprimento digitado (metros)
   const [pendingLen, setPendingLen] = useState(null); // metros, aplicado no próximo ponto
-  const [negParams, setNegParams] = useState({ diametro: '6.3', espacamento: 20, transpasse: 25 });
   const lenRef = useRef(null);
   const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, lineFirst: null, moveLast: null, rectStart: null, cur: null, panStart: null, snapped: null });
 
@@ -545,8 +545,15 @@ export default function ProjetoCanvas({
     if (LINE_TOOLS.has(tool) && m.lineFirst) {
       const p = resolvePoint(e);
       if (tool === 'negativo') {
+        const np = negativoParams || {};
         const comp = dist(m.lineFirst, p) / scalePxPerM;
-        onAddAnnotation({ type: 'negativo', x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y, diametro: negParams.diametro, espacamento: negParams.espacamento, transpasse: negParams.transpasse, comprimento: comp });
+        const tp = np.acabamento === 'com_dobra' ? (np.igualar_dobras ? np.dobra_esq : np.dobra_esq) : 0;
+        onAddAnnotation({
+          type: 'negativo', x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y,
+          diametro: np.bitola || '8.0', espacamento: np.espacamento || 0, transpasse: tp, comprimento: comp,
+          tipo_aco: np.tipo_aco, bitola: np.bitola, quantidade: np.quantidade, acabamento: np.acabamento,
+          dobra_esq: np.dobra_esq, dobra_dir: np.dobra_dir, igualar_dobras: np.igualar_dobras
+        });
       } else {
         onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y, color: activeColor });
       }
@@ -663,33 +670,12 @@ export default function ProjetoCanvas({
       )}
 
       {tool === 'negativo' && (
-        <div className="absolute bottom-10 right-3 flex items-center gap-2 bg-white border border-purple-300 rounded-md shadow px-2 py-1.5">
-          <span className="text-xs font-medium text-purple-700">Negativo:</span>
-          <select
-            value={negParams.diametro}
-            onChange={(e) => setNegParams(p => ({ ...p, diametro: e.target.value }))}
-            className="text-xs border border-border rounded px-1 py-0.5"
-          >
-            <option value="5.0">Ø5.0</option>
-            <option value="6.3">Ø6.3</option>
-            <option value="8.0">Ø8.0</option>
-            <option value="12.5">Ø12.5</option>
-          </select>
-          <span className="text-xs text-muted-foreground">esp:</span>
-          <input
-            type="number"
-            value={negParams.espacamento}
-            onChange={(e) => setNegParams(p => ({ ...p, espacamento: +e.target.value }))}
-            className="w-12 text-xs outline-none border-b border-border px-1"
-          />cm
-          <span className="text-xs text-muted-foreground">transp:</span>
-          <input
-            type="number"
-            value={negParams.transpasse}
-            onChange={(e) => setNegParams(p => ({ ...p, transpasse: +e.target.value }))}
-            className="w-12 text-xs outline-none border-b border-border px-1"
-          />cm
-        </div>
+        <button
+          onClick={onOpenNegativoDialog}
+          className="absolute bottom-10 right-3 flex items-center gap-1.5 bg-white border border-purple-300 rounded-md shadow px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-50"
+        >
+          <Settings2 className="w-3.5 h-3.5" /> Configurar Negativo
+        </button>
       )}
 
       <div className="absolute bottom-2 right-3 text-xs text-muted-foreground bg-white/80 px-2 py-1 rounded">

@@ -97,7 +97,7 @@ export default function ProjetoRelatorio({
             <p className="text-[11px] font-semibold text-purple-700 uppercase tracking-wide">Negativos (barras de aço)</p>
             {negBars.map((b, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <span>Ø{b.diametro || '6.3'} • e{b.espacamento || 0}cm • tp {b.transpasse || 0}cm</span>
+                <span>{b.tipo_aco || ''} Ø{b.bitola || b.diametro || '8.0'} • {b.quantidade || 0}x • e{b.espacamento || 0}cm{b.acabamento === 'com_dobra' ? ' • c/ dobra' : ''}</span>
                 <span className="font-semibold">{(b.comprimento || 0).toFixed(2)} m</span>
               </div>
             ))}
