@@ -181,30 +181,34 @@ export default function ProjetoCanvas({
         const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
         const len = Math.hypot(dx, dy) || 1;
         const ux = dx / len, uy = dy / len;
-        const nx = uy, ny = -ux; // perpendicular à barra
-        const step = Math.max(24, ((a.dobra_esq || 0) / 100) * scalePxPerM);
-        ctx.strokeStyle = '#000000'; ctx.lineWidth = 2.5; ctx.setLineDash([]);
-        if (a.acabamento === 'com_dobra' && step > 0) {
-          // Barra cranked (Z): crank no topo e na base para o mesmo lado
-          const tA = { x: a.x1, y: a.y1 };
-          const tB = { x: a.x1 + nx * step, y: a.y1 + ny * step };
-          const bB = { x: a.x2 + nx * step, y: a.y2 + ny * step };
-          const bA = { x: a.x2, y: a.y2 };
-          ctx.beginPath();
-          ctx.moveTo(tA.x, tA.y); ctx.lineTo(tB.x, tB.y);
-          ctx.lineTo(bB.x, bB.y); ctx.lineTo(bA.x, bA.y);
-          ctx.stroke();
-        } else {
-          // Barra reta
-          ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
-        }
-        // etiqueta
+        const nx = uy, ny = -ux;            // perpendicular à barra
+        const color = '#7B68EE';
+        ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.setLineDash([]);
+        // barra principal (reta)
+        ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
+        // ganchos (dobras) nas pontas — lado -n
+        const dEsq = a.igualar_dobras ? a.dobra_esq : a.dobra_esq;
+        const dDir = a.igualar_dobras ? a.dobra_esq : a.dobra_dir;
+        const hookPx = (cm) => Math.max(14, ((cm || 0) / 100) * scalePxPerM);
+        const drawHook = (px, py, cm) => {
+          if (a.acabamento !== 'com_dobra' || !cm) return;
+          const h = hookPx(cm);
+          const ex = px - nx * h, ey = py - ny * h;
+          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.font = 'bold 9px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillStyle = color; ctx.fillText(String(cm), ex - nx * 9, ey - ny * 9); ctx.textBaseline = 'alphabetic';
+        };
+        drawHook(a.x1, a.y1, dEsq);
+        drawHook(a.x2, a.y2, dDir);
+        // etiqueta de especificação acima do centro (+n)
         const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
-        const label = `Ø${a.bitola || a.diametro || '8.0'} e${a.espacamento || 0}cm`;
+        const mm = Math.round((a.comprimento || 0) * 1000);
+        const spec = `${a.quantidade || 0} Ø${a.bitola || a.diametro || '8.0'} c/${a.espacamento || 0} C=${mm}`;
         ctx.font = 'bold 10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        const tw = ctx.measureText(label).width + 6;
-        ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(mx - tw / 2, my - 7, tw, 14);
-        ctx.fillStyle = '#000000'; ctx.fillText(label, mx, my); ctx.textBaseline = 'alphabetic';
+        const tw = ctx.measureText(spec).width + 6;
+        const lx = mx + nx * 14, ly = my + ny * 14;
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(lx - tw / 2, ly - 7, tw, 14);
+        ctx.fillStyle = color; ctx.fillText(spec, lx, ly); ctx.textBaseline = 'alphabetic';
       }
     });
 
@@ -397,7 +401,7 @@ export default function ProjetoCanvas({
       if (ortoAtivo) end = orthoLock(m.lineFirst, m.cur);
       if (pendingLen != null) end = applyLength(m.lineFirst, end, pendingLen, scalePxPerM);
       const dM = dist(m.lineFirst, end) / scalePxPerM;
-      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : tool === 'negativo' ? '#000000' : (activeColor || '#111827');
+      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : tool === 'negativo' ? '#7B68EE' : (activeColor || '#111827');
       ctx.lineWidth = tool === 'vigota' ? 3 : tool === 'negativo' ? 2.5 : 2;
       ctx.setLineDash(tool === 'tracejada' || tool === 'nervura' ? [5, 4] : []);
       ctx.beginPath(); ctx.moveTo(m.lineFirst.x, m.lineFirst.y); ctx.lineTo(end.x, end.y); ctx.stroke();
