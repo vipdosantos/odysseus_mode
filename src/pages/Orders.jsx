@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useOutletContext } from 'react-router-dom';
@@ -187,6 +187,15 @@ export default function Orders() {
     // Busca por qr_code_id de qualquer item ( Bipador lê o QR da treliça)
     return (o.items || []).some(it => norm(it.qr_code_id).includes(s));
   });
+
+  // QR/bipador: se a busca achar exatamente um pedido, abre o card e limpa a pesquisa
+  useEffect(() => {
+    if (s && filtered.length === 1) {
+      setDetailOrder(filtered[0]);
+      setSearch('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s, filtered.length]);
 
   const canEdit = ['admin', 'operador'].includes(user?.role);
 
