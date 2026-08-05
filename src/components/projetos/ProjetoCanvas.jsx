@@ -181,26 +181,27 @@ export default function ProjetoCanvas({
         const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
         const len = Math.hypot(dx, dy) || 1;
         const ux = dx / len, uy = dy / len;
-        const nx = -uy, ny = ux;
-        const hookPx = a.acabamento === 'com_dobra' ? Math.max(8, (a.dobra_esq || 0) * scalePxPerM) : 0;
-        const edge = Math.max(16, hookPx + 8);
+        const nx = uy, ny = -ux; // perpendicular apontando para a direita do sentido da barra
+        const hookPx = a.acabamento === 'com_dobra' ? Math.max(8, ((a.dobra_esq || 0) / 100) * scalePxPerM) : 0;
+        const step = Math.max(18, hookPx);
+        const gap = 12; // meio-espaçamento entre as duas barras paralelas
         ctx.strokeStyle = '#000000'; ctx.lineWidth = 2.5; ctx.setLineDash([]);
-        // corpo da barra
-        ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
-        // ganchos (staple) — mesmo lado
-        if (hookPx > 0) {
-          ctx.beginPath();
-          ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x1 + nx * hookPx, a.y1 + ny * hookPx);
-          ctx.moveTo(a.x2, a.y2); ctx.lineTo(a.x2 + nx * hookPx, a.y2 + ny * hookPx);
-          ctx.stroke();
-        }
-        // linhas de borda (faces da laje) perpendiculares nas pontas
-        ctx.lineWidth = 1.2;
+        // Barra direita (reta)
         ctx.beginPath();
-        ctx.moveTo(a.x1 - nx * edge, a.y1 - ny * edge); ctx.lineTo(a.x1 + nx * edge, a.y1 + ny * edge);
-        ctx.moveTo(a.x2 - nx * edge, a.y2 - ny * edge); ctx.lineTo(a.x2 + nx * edge, a.y2 + ny * edge);
+        ctx.moveTo(a.x1 + nx * gap, a.y1 + ny * gap);
+        ctx.lineTo(a.x2 + nx * gap, a.y2 + ny * gap);
         ctx.stroke();
-        ctx.lineWidth = 1.5;
+        // Barra esquerda (cobre/Z — cranks no topo e na base)
+        const tR = { x: a.x1 - nx * gap, y: a.y1 - ny * gap };
+        const tL = { x: tR.x - nx * step, y: tR.y - ny * step };
+        const bL = { x: a.x2 - nx * (gap + step), y: a.y2 - ny * (gap + step) };
+        const bR = { x: a.x2 - nx * gap, y: a.y2 - ny * gap };
+        ctx.beginPath();
+        ctx.moveTo(tR.x, tR.y);
+        ctx.lineTo(tL.x, tL.y);
+        ctx.lineTo(bL.x, bL.y);
+        ctx.lineTo(bR.x, bR.y);
+        ctx.stroke();
         // etiqueta
         const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
         const label = `Ø${a.bitola || a.diametro || '8.0'} e${a.espacamento || 0}cm`;
