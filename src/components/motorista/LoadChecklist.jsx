@@ -101,8 +101,13 @@ export default function LoadChecklist({ order }) {
   const handleScan = (idx) => {
     const raw = (inputs[idx] || '').trim();
     if (!raw) return;
-    const unit = Number(raw);
-    markUnit(idx, unit, { keepFocus: true });
+    // Bipador/leitor envia o conteúdo completo do QR (JSON); número avulso = unidade manual.
+    if (raw.startsWith('{') || isNaN(Number(raw))) {
+      unlockAudio();
+      resolveQR(raw);
+    } else {
+      markUnit(idx, Number(raw), { keepFocus: true });
+    }
     setInputs(inputs.map((v, j) => (j === idx ? '' : v)));
   };
 
