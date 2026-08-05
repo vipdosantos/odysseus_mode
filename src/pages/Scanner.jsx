@@ -123,32 +123,25 @@ export default function Scanner() {
       clearInterval(scanIntervalRef.current);
       return;
     }
-    scanIntervalRef.current = setInterval(() => {
-      if (!videoRef.current || videoRef.current.readyState < 2) return;
+    const MAX_DIM = 640;
+    scanIntervalRef.current = setInterval(async () => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const w = videoRef.current.videoWidth;
-      const h = videoRef.current.videoHeight;
-      if (!w || !h) return;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoRef.current, 0, 0, w, h);
-      const imageData = ctx.getImageData(0, 0, w, h);
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return;
+      // Reduz a resolução do frame para acelerar a decodificação
+      const scale = Math.min(1, MAX_DIM / Math.max(vw, vh));
+      const w = Math.round(vw * scale), h = Math.round(vh * scale);
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(video, 0, 0, w, h);
 
-      if (jsQRRef.current) {
-        const code = jsQRRef.current(imageData.data, w, h);
-        if (code?.data && code.data !== lastScanned.current) {
-          lastScanned.current = code.data;
-          setTimeout(() => { lastScanned.current = ''; }, 3000);
-          processScan(code.data);
-          return;
-        }
-      }
-
+      // Prioriza o BarcodeDetector nativo (mais rápido e preciso)
       if ('BarcodeDetector' in window) {
-        const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-        detector.detect(canvas).then(codes => {
+        try {
+          const codes = await new window.BarcodeDetector({ formats: ['qr_code'] }).detect(canvas);
           if (codes.length > 0) {
             const val = codes[0].rawValue;
             if (val && val !== lastScanned.current) {
@@ -156,10 +149,22 @@ export default function Scanner() {
               setTimeout(() => { lastScanned.current = ''; }, 3000);
               processScan(val);
             }
+            return;
           }
-        }).catch(() => {});
+        } catch (_) {}
       }
-    }, 400);
+
+      // Fallback: jsQR no frame reduzido
+      if (jsQRRef.current) {
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const code = jsQRRef.current(imageData.data, w, h);
+        if (code?.data && code.data !== lastScanned.current) {
+          lastScanned.current = code.data;
+          setTimeout(() => { lastScanned.current = ''; }, 3000);
+          processScan(code.data);
+        }
+      }
+    }, 120);
     return () => clearInterval(scanIntervalRef.current);
   }, [mode, orders]);
 
