@@ -181,24 +181,33 @@ export default function ProjetoCanvas({
         const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
         const len = Math.hypot(dx, dy) || 1;
         const ux = dx / len, uy = dy / len;
-        const tp = (a.transpasse || 0) * scalePxPerM;
-        const hook = Math.max(10, tp);
-        const px = -uy, py = ux;
-        ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 3; ctx.setLineDash([]);
+        const nx = -uy, ny = ux;
+        const hookPx = a.acabamento === 'com_dobra' ? Math.max(8, (a.dobra_esq || 0) * scalePxPerM) : 0;
+        const edge = Math.max(16, hookPx + 8);
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 2.5; ctx.setLineDash([]);
+        // corpo da barra
         ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
+        // ganchos (staple) — mesmo lado
+        if (hookPx > 0) {
+          ctx.beginPath();
+          ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x1 + nx * hookPx, a.y1 + ny * hookPx);
+          ctx.moveTo(a.x2, a.y2); ctx.lineTo(a.x2 + nx * hookPx, a.y2 + ny * hookPx);
+          ctx.stroke();
+        }
+        // linhas de borda (faces da laje) perpendiculares nas pontas
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x1 - ux * hook + px * hook * 0.5, a.y1 - uy * hook + py * hook * 0.5);
-        ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x1 - ux * hook - px * hook * 0.5, a.y1 - uy * hook - py * hook * 0.5);
-        ctx.moveTo(a.x2, a.y2); ctx.lineTo(a.x2 + ux * hook + px * hook * 0.5, a.y2 + uy * hook + py * hook * 0.5);
-        ctx.moveTo(a.x2, a.y2); ctx.lineTo(a.x2 + ux * hook - px * hook * 0.5, a.y2 + uy * hook - py * hook * 0.5);
+        ctx.moveTo(a.x1 - nx * edge, a.y1 - ny * edge); ctx.lineTo(a.x1 + nx * edge, a.y1 + ny * edge);
+        ctx.moveTo(a.x2 - nx * edge, a.y2 - ny * edge); ctx.lineTo(a.x2 + nx * edge, a.y2 + ny * edge);
         ctx.stroke();
         ctx.lineWidth = 1.5;
+        // etiqueta
         const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
-        const label = `Ø${a.diametro || '6.3'} e${a.espacamento || 0}cm`;
+        const label = `Ø${a.bitola || a.diametro || '8.0'} e${a.espacamento || 0}cm`;
         ctx.font = 'bold 10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const tw = ctx.measureText(label).width + 6;
         ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(mx - tw / 2, my - 7, tw, 14);
-        ctx.fillStyle = '#7c3aed'; ctx.fillText(label, mx, my); ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#000000'; ctx.fillText(label, mx, my); ctx.textBaseline = 'alphabetic';
       }
     });
 
@@ -391,8 +400,8 @@ export default function ProjetoCanvas({
       if (ortoAtivo) end = orthoLock(m.lineFirst, m.cur);
       if (pendingLen != null) end = applyLength(m.lineFirst, end, pendingLen, scalePxPerM);
       const dM = dist(m.lineFirst, end) / scalePxPerM;
-      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : tool === 'negativo' ? '#7c3aed' : (activeColor || '#111827');
-      ctx.lineWidth = tool === 'vigota' ? 3 : tool === 'negativo' ? 3 : 2;
+      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : tool === 'negativo' ? '#000000' : (activeColor || '#111827');
+      ctx.lineWidth = tool === 'vigota' ? 3 : tool === 'negativo' ? 2.5 : 2;
       ctx.setLineDash(tool === 'tracejada' || tool === 'nervura' ? [5, 4] : []);
       ctx.beginPath(); ctx.moveTo(m.lineFirst.x, m.lineFirst.y); ctx.lineTo(end.x, end.y); ctx.stroke();
       ctx.setLineDash([]);
