@@ -26,7 +26,7 @@ export function polygonAreaM2(vertices, scalePxPerM) {
 
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
-const LINE_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura']);
+const LINE_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura', 'negativo']);
 const POINT_TOOLS = new Set(['ponto_luz', 'frigideira']);
 const DRAW_TOOLS = new Set(['vertices', 'linha', 'tracejada', 'vigota', 'nervura', 'cotas', 'calibrar', 'retangulo', 'texto', 'ponto_luz', 'frigideira', 'negativo', 'direcao']);
 
@@ -39,7 +39,7 @@ export default function ProjetoCanvas({
   cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, activeColor,
   panOffset, onPan,
   zoom, onZoom,
-  onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation, onToggleNegativo,
+  onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation,
   onCalibrate, onMoveSlab, onSetDirection,
   nucleosAtivo
 }) {
@@ -49,6 +49,7 @@ export default function ProjetoCanvas({
   const imgRef = useRef(null);
   const [lenVal, setLenVal] = useState(''); // comprimento digitado (metros)
   const [pendingLen, setPendingLen] = useState(null); // metros, aplicado no próximo ponto
+  const [negParams, setNegParams] = useState({ diametro: '6.3', espacamento: 20, transpasse: 25 });
   const lenRef = useRef(null);
   const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, lineFirst: null, moveLast: null, rectStart: null, cur: null, panStart: null, snapped: null });
 
@@ -176,6 +177,28 @@ export default function ProjetoCanvas({
           ctx.beginPath(); ctx.moveTo(a.x + i, a.y - r); ctx.lineTo(a.x + i + r, a.y + r); ctx.stroke();
         }
         ctx.restore();
+      } else if (a.type === 'negativo') {
+        const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len, uy = dy / len;
+        const tp = (a.transpasse || 0) * scalePxPerM;
+        const hook = Math.max(10, tp);
+        const px = -uy, py = ux;
+        ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 3; ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x1 - ux * hook + px * hook * 0.5, a.y1 - uy * hook + py * hook * 0.5);
+        ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x1 - ux * hook - px * hook * 0.5, a.y1 - uy * hook - py * hook * 0.5);
+        ctx.moveTo(a.x2, a.y2); ctx.lineTo(a.x2 + ux * hook + px * hook * 0.5, a.y2 + uy * hook + py * hook * 0.5);
+        ctx.moveTo(a.x2, a.y2); ctx.lineTo(a.x2 + ux * hook - px * hook * 0.5, a.y2 + uy * hook - py * hook * 0.5);
+        ctx.stroke();
+        ctx.lineWidth = 1.5;
+        const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
+        const label = `Ø${a.diametro || '6.3'} e${a.espacamento || 0}cm`;
+        ctx.font = 'bold 10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const tw = ctx.measureText(label).width + 6;
+        ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(mx - tw / 2, my - 7, tw, 14);
+        ctx.fillStyle = '#7c3aed'; ctx.fillText(label, mx, my); ctx.textBaseline = 'alphabetic';
       }
     });
 
@@ -368,8 +391,8 @@ export default function ProjetoCanvas({
       if (ortoAtivo) end = orthoLock(m.lineFirst, m.cur);
       if (pendingLen != null) end = applyLength(m.lineFirst, end, pendingLen, scalePxPerM);
       const dM = dist(m.lineFirst, end) / scalePxPerM;
-      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : (activeColor || '#111827');
-      ctx.lineWidth = tool === 'vigota' ? 3 : 2;
+      ctx.strokeStyle = tool === 'vigota' ? '#92400e' : tool === 'nervura' ? '#16a34a' : tool === 'negativo' ? '#7c3aed' : (activeColor || '#111827');
+      ctx.lineWidth = tool === 'vigota' ? 3 : tool === 'negativo' ? 3 : 2;
       ctx.setLineDash(tool === 'tracejada' || tool === 'nervura' ? [5, 4] : []);
       ctx.beginPath(); ctx.moveTo(m.lineFirst.x, m.lineFirst.y); ctx.lineTo(end.x, end.y); ctx.stroke();
       ctx.setLineDash([]);
@@ -441,11 +464,10 @@ export default function ProjetoCanvas({
 
   // Clique — usado apenas para ferramentas de clique único (vértices, ponto, texto, seleção, negativo)
   const handleClick = (e) => {
-    if (tool === 'select' || tool === 'negativo') {
+    if (tool === 'select') {
       const p = rawPos(e);
       const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-      if (tool === 'select') { onSelectSlab(hit ? hit.id : null); return; }
-      if (hit) onToggleNegativo(hit.id);
+      onSelectSlab(hit ? hit.id : null);
       return;
     }
     if (tool === 'vertices') { const p = resolvePoint(e); onAddPoint(p); setPendingLen(null); return; }
@@ -522,7 +544,12 @@ export default function ProjetoCanvas({
     m.midPan = null;
     if (LINE_TOOLS.has(tool) && m.lineFirst) {
       const p = resolvePoint(e);
-      onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y, color: activeColor });
+      if (tool === 'negativo') {
+        const comp = dist(m.lineFirst, p) / scalePxPerM;
+        onAddAnnotation({ type: 'negativo', x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y, diametro: negParams.diametro, espacamento: negParams.espacamento, transpasse: negParams.transpasse, comprimento: comp });
+      } else {
+        onAddAnnotation({ type: tool, x1: m.lineFirst.x, y1: m.lineFirst.y, x2: p.x, y2: p.y, color: activeColor });
+      }
       m.lineFirst = null; setPendingLen(null);
     } else if (tool === 'cotas' && m.cotaFirst) {
       const p = resolvePoint(e);
@@ -597,10 +624,10 @@ export default function ProjetoCanvas({
     calibrar: 'cursor-crosshair', texto: 'cursor-text', mover: 'cursor-move', pan: 'cursor-grab',
     select: 'cursor-pointer', negativo: 'cursor-pointer',
     linha: 'cursor-crosshair', tracejada: 'cursor-crosshair', vigota: 'cursor-crosshair',
-    nervura: 'cursor-crosshair', ponto_luz: 'cursor-crosshair', direcao: 'cursor-crosshair',
+    nervura: 'cursor-crosshair', ponto_luz: 'cursor-crosshair', negativo: 'cursor-crosshair', direcao: 'cursor-crosshair',
   }[tool] || 'cursor-pointer';
 
-  const showLenBox = DRAW_TOOLS.has(tool) && tool !== 'ponto_luz' && tool !== 'texto';
+  const showLenBox = DRAW_TOOLS.has(tool) && tool !== 'ponto_luz' && tool !== 'texto' && tool !== 'negativo';
 
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-white">
@@ -635,6 +662,36 @@ export default function ProjetoCanvas({
         </div>
       )}
 
+      {tool === 'negativo' && (
+        <div className="absolute bottom-10 right-3 flex items-center gap-2 bg-white border border-purple-300 rounded-md shadow px-2 py-1.5">
+          <span className="text-xs font-medium text-purple-700">Negativo:</span>
+          <select
+            value={negParams.diametro}
+            onChange={(e) => setNegParams(p => ({ ...p, diametro: e.target.value }))}
+            className="text-xs border border-border rounded px-1 py-0.5"
+          >
+            <option value="5.0">Ø5.0</option>
+            <option value="6.3">Ø6.3</option>
+            <option value="8.0">Ø8.0</option>
+            <option value="12.5">Ø12.5</option>
+          </select>
+          <span className="text-xs text-muted-foreground">esp:</span>
+          <input
+            type="number"
+            value={negParams.espacamento}
+            onChange={(e) => setNegParams(p => ({ ...p, espacamento: +e.target.value }))}
+            className="w-12 text-xs outline-none border-b border-border px-1"
+          />cm
+          <span className="text-xs text-muted-foreground">transp:</span>
+          <input
+            type="number"
+            value={negParams.transpasse}
+            onChange={(e) => setNegParams(p => ({ ...p, transpasse: +e.target.value }))}
+            className="w-12 text-xs outline-none border-b border-border px-1"
+          />cm
+        </div>
+      )}
+
       <div className="absolute bottom-2 right-3 text-xs text-muted-foreground bg-white/80 px-2 py-1 rounded">
         Escala: 1 m = {Math.round(scalePxPerM)} px • Zoom: {Math.round((zoom || 1) * 100)}%{ortoAtivo ? ' • ORTO' : ''}{contornoAtivo ? ' • Contorno' : ''}{activeColor ? ` • ${activeColor}` : ''}{pendingLen != null ? ` • Próx: ${pendingLen}m` : ''}
       </div>
@@ -643,9 +700,14 @@ export default function ProjetoCanvas({
           Pressione e arraste entre dois pontos da planta e informe a distância real em metros
         </div>
       )}
-      {LINE_TOOLS.has(tool) && (
+      {LINE_TOOLS.has(tool) && tool !== 'negativo' && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-3 py-1.5 rounded-full shadow">
           Pressione e arraste para desenhar (digite o comprimento para precisão exata)
+        </div>
+      )}
+      {tool === 'negativo' && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs bg-purple-700 text-white px-3 py-1.5 rounded-full shadow">
+          Pressione e arraste para lançar a barra negativa (ajuste Ø, espaçamento e transpasse ao lado)
         </div>
       )}
       {tool === 'direcao' && (

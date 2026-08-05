@@ -149,7 +149,8 @@
               "vigota",
               "nervura",
               "nucleo",
-              "frigideira"
+              "frigideira",
+              "negativo"
             ]
           },
           "x1": {
@@ -169,6 +170,25 @@
           },
           "y": {
             "type": "number"
+          },
+          "diametro": {
+            "type": "string",
+            "description": "Di\u00e2metro da barra negativa (mm)"
+          },
+          "espacamento": {
+            "type": "number",
+            "default": 0,
+            "description": "Espa\u00e7amento entre barras negativas (cm)"
+          },
+          "transpasse": {
+            "type": "number",
+            "default": 0,
+            "description": "Transpasse/ancoragem nas pontas (cm)"
+          },
+          "comprimento": {
+            "type": "number",
+            "default": 0,
+            "description": "Comprimento da barra negativa (m)"
           }
         }
       }

@@ -10,10 +10,12 @@ const TIPO_LAJE_OPTS = ['Laje', 'Painel', 'Mista', 'Laje Treliçada Intereixo'];
 const TIPO_ENCH_OPTS = ['Nenhum', 'EPS', 'Lajota', 'EPS+Lajota'];
 
 export default function ProjetoRelatorio({
-  projeto, slabs, onUpdateSlab, onDeleteSlab, onGenerateOrcamento, generating, generatedOrderId
+  projeto, slabs, annotations, onUpdateSlab, onDeleteSlab, onGenerateOrcamento, generating, generatedOrderId
 }) {
   const totalArea = slabs.filter(s => !s.negativo).reduce((a, s) => a + (s.area_m2 || 0), 0);
   const negativoArea = slabs.filter(s => s.negativo).reduce((a, s) => a + (s.area_m2 || 0), 0);
+  const negBars = (annotations || []).filter(a => a.type === 'negativo');
+  const negBarTotalLen = negBars.reduce((a, b) => a + (b.comprimento || 0), 0);
 
   return (
     <div className="w-80 shrink-0 bg-gray-50 border-l border-border flex flex-col">
@@ -89,6 +91,22 @@ export default function ProjetoRelatorio({
             </Button>
           </div>
         ))}
+
+        {negBars.length > 0 && (
+          <div className="bg-white border border-purple-200 rounded-lg p-3 space-y-1">
+            <p className="text-[11px] font-semibold text-purple-700 uppercase tracking-wide">Negativos (barras de aço)</p>
+            {negBars.map((b, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <span>Ø{b.diametro || '6.3'} • e{b.espacamento || 0}cm • tp {b.transpasse || 0}cm</span>
+                <span className="font-semibold">{(b.comprimento || 0).toFixed(2)} m</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-purple-100">
+              <span className="font-semibold">Total ({negBars.length} barras)</span>
+              <span className="font-semibold">{negBarTotalLen.toFixed(2)} m</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Summary */}
@@ -104,7 +122,7 @@ export default function ProjetoRelatorio({
         </div>
         {negativoArea > 0 && (
           <div className="flex justify-between text-sm text-destructive">
-            <span>Negativos</span>
+            <span>Aberturas (vãos)</span>
             <span className="font-semibold">- {negativoArea.toFixed(2)} m²</span>
           </div>
         )}

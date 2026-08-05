@@ -128,11 +128,6 @@ export default function Projetos() {
     }));
   };
 
-  const toggleNegativo = (id) => {
-    pushHistory();
-    setSlabs(prev => prev.map(s => s.id === id ? { ...s, negativo: !s.negativo } : s));
-  };
-
   // Espelho: mirror selected slab horizontally around its centroid
   const espelhar = () => {
     if (!selectedSlabId) return;
@@ -318,14 +313,14 @@ export default function Projetos() {
             panOffset={panOffset} onPan={setPanOffset}
             zoom={zoom} onZoom={handleZoom}
             onAddSlabRect={addSlabRect} onAddCota={addCota} onAddTexto={addTexto}
-            onAddAnnotation={addAnnotation} onToggleNegativo={toggleNegativo}
+            onAddAnnotation={addAnnotation}
             onCalibrate={calibrate} onMoveSlab={moveSlab} onSetDirection={setDirection}
             nucleosAtivo={nucleosAtivo}
           />
         </div>
 
         <ProjetoRelatorio
-          projeto={projeto} slabs={slabs} onUpdateSlab={updateSlab}
+          projeto={projeto} slabs={slabs} annotations={annotations} onUpdateSlab={updateSlab}
           onDeleteSlab={deleteSlab} onGenerateOrcamento={generateOrcamento}
           generating={generating} generatedOrderId={generatedOrderId}
         />
