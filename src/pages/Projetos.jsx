@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
@@ -6,6 +6,7 @@ import ProjetoCanvas, { polygonAreaM2 } from '@/components/projetos/ProjetoCanva
 import ProjetoLeftPanel from '@/components/projetos/ProjetoLeftPanel';
 import ProjetoRelatorio from '@/components/projetos/ProjetoRelatorio';
 import ProjetoToolbar from '@/components/projetos/ProjetoToolbar';
+import ProjetoAtalhosDialog from '@/components/projetos/ProjetoAtalhosDialog';
 import { computeVt } from '@/lib/projetoSnap';
 
 const newProjeto = () => ({
@@ -40,6 +41,7 @@ export default function Projetos() {
   const [generating, setGenerating] = useState(false);
   const [generatedOrderId, setGeneratedOrderId] = useState(null);
   const [history, setHistory] = useState([]);
+  const [atalhosAberto, setAtalhosAberto] = useState(false);
 
   const { data: projetos = [] } = useQuery({
     queryKey: ['projetos'],
@@ -211,7 +213,7 @@ export default function Projetos() {
     if (c) setActiveColor(c);
   };
   const ajuda = () => toast({ title: 'Ajuda', description: 'Selecione uma ferramenta, desenhe lajes/elementos sobre a planta, calibre a escala e gere o orçamento.' });
-  const atalhos = () => toast({ title: 'Atalhos', description: 'Duplo clique finaliza a laje vértice • Del remove selecionada • Pan arrasta a vista.' });
+  const atalhos = () => setAtalhosAberto(true);
   const config = () => toast({ title: 'Configurações', description: 'Use o painel esquerdo para planta, escala e visualização.' });
   const ver3D = () => toast({ title: '3D', description: 'Visualização 3D em desenvolvimento.' });
   const exportar = () => {
@@ -276,6 +278,34 @@ export default function Projetos() {
     finally { setGenerating(false); }
   };
 
+  const actionsRef = useRef({});
+  actionsRef.current = { setTool, setOrtoAtivo, escolherCor, espelhar, copiar, undo, deleteSelected, toast, setAtalhosAberto, setSelectedSlabId, setDrawingPoints, selectedSlabId };
+  useEffect(() => {
+    const onKey = (e) => {
+      const a = actionsRef.current;
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); a.undo(); return; }
+      if (e.key === 'Escape') { a.setSelectedSlabId(null); a.setDrawingPoints([]); return; }
+      if (e.key === 'Delete' || e.key === 'Backspace') { if (a.selectedSlabId) { e.preventDefault(); a.deleteSelected(); } return; }
+      if (e.key === '?') { a.setAtalhosAberto(true); return; }
+      const k = e.key.toLowerCase();
+      const map = {
+        s: () => a.setTool('select'), l: () => a.setTool('linha'), r: () => a.setTool('retangulo'),
+        d: () => a.setTool('tracejada'), t: () => a.setTool('texto'), v: () => a.setTool('direcao'),
+        n: () => a.setTool('negativo'), p: () => a.setTool('pan'), g: () => a.setTool('vigota'),
+        j: () => a.setTool('nervura'), w: () => a.setTool('mover'),
+        '0': () => { e.stopPropagation(); a.setOrtoAtivo(v => !v); }, h: () => a.escolherCor(),
+        m: () => a.espelhar(), c: () => a.copiar(),
+        b: () => a.toast({ title: 'Beiral', description: 'Ferramenta em desenvolvimento.' }),
+        e: () => a.toast({ title: 'Deletar Vigota', description: 'Ferramenta em desenvolvimento.' }),
+      };
+      if (map[k]) { e.preventDefault(); map[k](); }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, []);
+
   return (
     <div className="h-screen flex flex-col">
       <div className="shrink-0 bg-white border-b border-border px-4 py-2 flex items-center gap-3">
@@ -325,6 +355,8 @@ export default function Projetos() {
           generating={generating} generatedOrderId={generatedOrderId}
         />
       </div>
+
+      <ProjetoAtalhosDialog open={atalhosAberto} onOpenChange={setAtalhosAberto} />
     </div>
   );
 }
