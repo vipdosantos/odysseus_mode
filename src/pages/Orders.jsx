@@ -175,10 +175,18 @@ export default function Orders() {
     : orders // admin, operador, financeiro veem todos
   ).filter(o => o.tipo !== 'orcamento'); // Orçamentos não aparecem no Kanban de pedidos
 
-  const filtered = visibleOrders.filter(o =>
-    !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
-    o.client_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const norm = (s) => (s || '').toString().toLowerCase().trim();
+  const s = norm(search);
+  // Se colar/ Bipar um QR (JSON), extrai o número do pedido contido nele
+  let qrPedido = '';
+  try { const p = JSON.parse(s); if (p?.pedido) qrPedido = norm(p.pedido); } catch { /* não é JSON */ }
+  const filtered = visibleOrders.filter(o => {
+    if (!s) return true;
+    if (norm(o.order_number).includes(s) || norm(o.client_name).includes(s)) return true;
+    if (qrPedido && norm(o.order_number).includes(qrPedido)) return true;
+    // Busca por qr_code_id de qualquer item ( Bipador lê o QR da treliça)
+    return (o.items || []).some(it => norm(it.qr_code_id).includes(s));
+  });
 
   const canEdit = ['admin', 'operador'].includes(user?.role);
 
