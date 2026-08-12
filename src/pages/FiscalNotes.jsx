@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Search, Printer, CheckCircle2, Clock, XCircle, Send, Loader2, FileCheck2, Zap } from 'lucide-react';
+import { FileText, Search, Printer, CheckCircle2, Clock, XCircle, Send, Loader2, FileCheck2, Zap, ListChecks, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format, parseISO } from 'date-fns';
 import { DEFAULT_EMITENTE, recalcular } from '@/lib/nfTax';
 import { buildDanfeHtml, buildNfseHtml } from '@/lib/nfPrintLayouts';
@@ -19,6 +20,8 @@ const STATUS_MAP = {
 export default function FiscalNotes() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkPending, setBulkPending] = useState(false);
 
   const { data: notes = [] } = useQuery({
     queryKey: ['fiscal_notes'],
@@ -127,6 +130,46 @@ export default function FiscalNotes() {
     w.document.close();
   };
 
+  const toggleSel = (id) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const allFilteredSelected = filtered.length > 0 && filtered.every(n => selectedIds.has(n.id));
+  const toggleAll = () => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (allFilteredSelected) filtered.forEach(n => next.delete(n.id));
+    else filtered.forEach(n => next.add(n.id));
+    return next;
+  });
+
+  const selected = notes.filter(n => selectedIds.has(n.id));
+  const selRascunhoNfs = selected.filter(n => n.status === 'rascunho' && n.tipo === 'nfs');
+  const selRascunhoNfe = selected.filter(n => n.status === 'rascunho' && n.tipo === 'nfe');
+
+  const bulkTransmit = async () => {
+    setBulkPending(true);
+    let ok = 0, fail = 0;
+    for (const n of selRascunhoNfs) {
+      try { await transmitNfse.mutateAsync(n); ok++; } catch { fail++; }
+    }
+    setBulkPending(false); setSelectedIds(new Set());
+    if (ok) toast.success(`${ok} NFS-e transmitida(s)` + (fail ? ` • ${fail} falha(s)` : ''));
+    else if (fail) toast.error(`${fail} NFS-e falharam`);
+  };
+  const bulkMarkEmitida = async () => {
+    setBulkPending(true);
+    for (const n of selRascunhoNfe) {
+      try { await updateStatus.mutateAsync({ id: n.id, status: 'emitida' }); } catch {}
+    }
+    setBulkPending(false); setSelectedIds(new Set());
+    toast.success(`${selRascunhoNfe.length} NF-e marcada(s) como emitida(s)`);
+  };
+  const bulkPrint = () => {
+    selected.forEach(handlePrint);
+    setSelectedIds(new Set());
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div>
@@ -201,6 +244,31 @@ export default function FiscalNotes() {
           </div>
         </div>
 
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-primary/10 border border-primary/30 rounded-xl flex-wrap">
+            <span className="text-sm font-medium text-primary flex items-center gap-1.5">
+              <ListChecks className="w-4 h-4" /> {selectedIds.size} selecionada(s)
+            </span>
+            {selRascunhoNfs.length > 0 && (
+              <Button size="sm" variant="outline" className="h-7 text-xs border-green-300 text-green-700 hover:bg-green-50" disabled={bulkPending} onClick={bulkTransmit}>
+                {bulkPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                Transmitir NFS-e ({selRascunhoNfs.length})
+              </Button>
+            )}
+            {selRascunhoNfe.length > 0 && (
+              <Button size="sm" variant="outline" className="h-7 text-xs" disabled={bulkPending} onClick={bulkMarkEmitida}>
+                Marcar NF-e Emitidas ({selRascunhoNfe.length})
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={bulkPrint}>
+              <Printer className="w-3 h-3" /> Imprimir
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto" onClick={() => setSelectedIds(new Set())}>
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        )}
+
         {filtered.length === 0 ? (
           <div className="text-center text-muted-foreground py-10 border border-dashed rounded-xl">
             <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
@@ -211,6 +279,9 @@ export default function FiscalNotes() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
+                  <th className="w-10 p-3">
+                    <Checkbox checked={allFilteredSelected} onCheckedChange={toggleAll} aria-label="Selecionar todas" />
+                  </th>
                   <th className="text-left p-3 font-semibold text-xs">Nº Nota</th>
                   <th className="text-left p-3 font-semibold text-xs">Pedido</th>
                   <th className="text-left p-3 font-semibold text-xs">Cliente</th>
@@ -225,6 +296,9 @@ export default function FiscalNotes() {
                   const st = STATUS_MAP[note.status] || STATUS_MAP.rascunho;
                   return (
                     <tr key={note.id} className="border-t hover:bg-muted/30 transition-colors">
+                      <td className="p-3">
+                        <Checkbox checked={selectedIds.has(note.id)} onCheckedChange={() => toggleSel(note.id)} aria-label="Selecionar nota" />
+                      </td>
                       <td className="p-3 font-mono font-medium">{note.numero}</td>
                       <td className="p-3">#{note.order_number}</td>
                       <td className="p-3">{note.client_name}</td>
