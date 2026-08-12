@@ -21,6 +21,7 @@ export default function FiscalNotes() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
   const [bulkPending, setBulkPending] = useState(false);
 
   const { data: notes = [] } = useQuery({
@@ -170,6 +171,30 @@ export default function FiscalNotes() {
     setSelectedIds(new Set());
   };
 
+  const toggleOrderSel = (id) => setSelectedOrderIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const allOrdersSelected = ordersWithoutNF.length > 0 && ordersWithoutNF.every(o => selectedOrderIds.has(o.id));
+  const toggleAllOrders = () => setSelectedOrderIds(prev => {
+    const next = new Set(prev);
+    if (allOrdersSelected) ordersWithoutNF.forEach(o => next.delete(o.id));
+    else ordersWithoutNF.forEach(o => next.add(o.id));
+    return next;
+  });
+  const selectedOrders = ordersWithoutNF.filter(o => selectedOrderIds.has(o.id));
+  const bulkEmitNFe = async () => {
+    setBulkPending(true);
+    let ok = 0, fail = 0;
+    for (const o of selectedOrders) {
+      try { await emitNFe.mutateAsync(o); ok++; } catch { fail++; }
+    }
+    setBulkPending(false); setSelectedOrderIds(new Set());
+    if (ok) toast.success(`${ok} NF-e gerada(s)` + (fail ? ` • ${fail} falha(s)` : ''));
+    else if (fail) toast.error(`${fail} NF-e falharam`);
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div>
@@ -196,10 +221,27 @@ export default function FiscalNotes() {
       {ordersWithoutNF.length > 0 && (
         <div>
           <h2 className="font-semibold text-sm mb-2 text-red-600">⚠ Pedidos sem Nota Fiscal ({ordersWithoutNF.length})</h2>
+          {selectedOrderIds.size > 0 && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-red-50 border border-red-200 rounded-xl flex-wrap">
+              <span className="text-sm font-medium text-red-700 flex items-center gap-1.5">
+                <ListChecks className="w-4 h-4" /> {selectedOrderIds.size} pedido(s) selecionado(s)
+              </span>
+              <Button size="sm" className="bg-primary text-primary-foreground h-7 text-xs" disabled={bulkPending} onClick={bulkEmitNFe}>
+                {bulkPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                Emitir NF-e em massa ({selectedOrders.length})
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto" onClick={() => setSelectedOrderIds(new Set())}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          )}
           <div className="border border-red-200 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-red-50">
                 <tr>
+                  <th className="w-10 p-3">
+                    <Checkbox checked={allOrdersSelected} onCheckedChange={toggleAllOrders} aria-label="Selecionar todos os pedidos" />
+                  </th>
                   <th className="text-left p-3 font-semibold text-xs">Pedido</th>
                   <th className="text-left p-3 font-semibold text-xs">Cliente</th>
                   <th className="text-left p-3 font-semibold text-xs">Valor</th>
@@ -210,6 +252,9 @@ export default function FiscalNotes() {
               <tbody>
                 {ordersWithoutNF.slice(0, 10).map(o => (
                   <tr key={o.id} className="border-t border-red-100">
+                    <td className="p-3">
+                      <Checkbox checked={selectedOrderIds.has(o.id)} onCheckedChange={() => toggleOrderSel(o.id)} aria-label="Selecionar pedido" />
+                    </td>
                     <td className="p-3 font-mono font-medium">#{o.order_number}</td>
                     <td className="p-3">{o.client_name}</td>
                     <td className="p-3">{o.total_value ? `R$ ${Number(o.total_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</td>
