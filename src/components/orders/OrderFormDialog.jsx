@@ -204,6 +204,7 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
     const telaQty = Math.ceil(calcTotalSquareMeters(form.items, form.quote_tipo_laje) / 5.2);
     onSave({
       ...form,
+      access_key: form.access_key || generateAccessKey(),
       total_value: Number(form.total_value) || 0,
       items: items.map(item => ({
         ...item,

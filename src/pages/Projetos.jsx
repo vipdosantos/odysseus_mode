@@ -18,6 +18,13 @@ const newProjeto = () => ({
 
 const uid = (p) => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
+function generateAccessKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({ length: 16 }, (_, i) =>
+    (i > 0 && i % 4 === 0 ? '-' : '') + chars[Math.floor(Math.random() * chars.length)]
+  ).join('');
+}
+
 export default function Projetos() {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -278,7 +285,8 @@ export default function Projetos() {
       }));
       const order = await base44.entities.Order.create({
         order_number, client_name: projeto.client_name || 'Cliente', tipo: 'orcamento',
-        items, total_value: 0, notes: `Projeto: ${projeto.name} | Área total: ${total.toFixed(2)}m²`
+        items, total_value: 0, access_key: generateAccessKey(),
+        notes: `Projeto: ${projeto.name} | Área total: ${total.toFixed(2)}m²`
       });
       setGeneratedOrderId(order.id);
       if (projeto.id) await base44.entities.Projeto.update(projeto.id, { order_id: order.id });
