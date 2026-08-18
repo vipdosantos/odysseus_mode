@@ -153,6 +153,7 @@
                     "5.0",
                     "6.3",
                     "8.0",
+                    "10.0",
                     "12.5"
                   ],
                   "description": "Di\u00e2metro do ferro"
@@ -388,6 +389,11 @@
     "contract_link_sent_at": {
       "type": "string",
       "description": "Data/hora em que o link de assinatura do contrato foi enviado"
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Or\u00e7amento/pedido arquivado (oculta das listas principais)"
     },
     "scan_log": {
       "type": "array",

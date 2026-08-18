@@ -13,6 +13,7 @@ export const FERRO_DIAMETERS = [
   { code: '5.0', label: 'Ø5,0mm' },
   { code: '6.3', label: 'Ø6,3mm' },
   { code: '8.0', label: 'Ø8,0mm' },
+  { code: '10.0', label: 'Ø10,0mm' },
   { code: '12.5', label: 'Ø12,5mm' },
 ];
 

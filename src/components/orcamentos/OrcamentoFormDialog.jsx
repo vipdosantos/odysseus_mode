@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { TRUSS_TYPES, getTrussTypesForLaje, INTEREIXO_TRUSS_TYPES } from '@/lib/trussTypes';
+import { TRUSS_TYPES, getTrussTypesForLaje, INTEREIXO_TRUSS_TYPES, FERRO_DIAMETERS } from '@/lib/trussTypes';
 import { lookupEpsDimension } from '@/lib/epsDimensions';
 import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, calcLajotas, calcTotalLajotas, fmtM2, fmtQty } from '@/lib/squareMeters';
 import PaymentsEditor from '@/components/orders/PaymentsEditor';
@@ -36,7 +36,7 @@ const PAG_OPTIONS = [
 
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const emptyItem = { size: '', truss_type: 'H8', quantity: 1, unit_price: 0 };
+const emptyItem = { size: '', truss_type: 'H8', quantity: 1, unit_price: 0, adicionais: [] };
 
 export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
   const [form, setForm] = useState({
@@ -106,6 +106,21 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { ...emptyItem }] }));
   const removeItem = (idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
 
+  const updateAdicional = (idx, diametro, value) => {
+    const qty = Number(value) || 0;
+    const items = [...form.items];
+    const adicionais = [...(items[idx].adicionais || [])];
+    const existing = adicionais.findIndex(a => a.diametro === diametro);
+    if (existing >= 0) {
+      if (qty > 0) adicionais[existing] = { diametro, quantity: qty };
+      else adicionais.splice(existing, 1);
+    } else if (qty > 0) {
+      adicionais.push({ diametro, quantity: qty });
+    }
+    items[idx] = { ...items[idx], adicionais };
+    setForm(f => ({ ...f, items }));
+  };
+
   const subtotal = form.items.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0);
 
   useEffect(() => {
@@ -126,7 +141,7 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
         delivered_units: [],
         loaded_units: [],
         stage_conferencias: {},
-        adicionais: [],
+        adicionais: (it.adicionais || []).filter(a => Number(a.quantity) > 0),
         qr_code_id: '',
       })),
     });
@@ -306,6 +321,24 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                         )}
                       </>
                     )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1 border-t border-border/50">
+                    <span className="text-[10px] font-medium text-muted-foreground">Adicionais (ferros):</span>
+                    {FERRO_DIAMETERS.map(f => {
+                      const adc = (item.adicionais || []).find(a => a.diametro === f.code);
+                      return (
+                        <div key={f.code} className="flex items-center gap-1">
+                          <span className="text-[10px] font-medium">{f.label}</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            className="w-14 h-7 text-xs"
+                            value={adc?.quantity ?? 0}
+                            onChange={e => updateAdicional(idx, f.code, e.target.value)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="text-right text-[11px] text-muted-foreground">
                     Subtotal: <strong className="text-foreground">R$ {fmtBRL((Number(item.quantity) || 0) * (Number(item.unit_price) || 0))}</strong>
