@@ -24,6 +24,7 @@ export const SCREENS = [
   { path: '/insumos', label: 'Insumos' },
   { path: '/patrimonio', label: 'Patrimônio' },
   { path: '/produtividade', label: 'Produtividade' },
+  { path: '/chamados-ti', label: 'Chamados de TI' },
   { path: '/cadastros', label: 'Cadastros' },
   { path: '/api-config', label: 'Integração API' },
   { path: '/projetos', label: 'Projetos' },
@@ -47,6 +48,7 @@ const ROLE_DEFAULTS = {
     '/calendario': ACCESS_VER,
     '/insumos': ACCESS_EDITAR,
     '/produtividade': ACCESS_EDITAR,
+    '/chamados-ti': ACCESS_EDITAR,
     '/cadastros': ACCESS_EDITAR,
   },
   financeiro: {
@@ -60,12 +62,14 @@ const ROLE_DEFAULTS = {
     '/contas-bancarias': ACCESS_EDITAR,
     '/notas-fiscais': ACCESS_EDITAR,
     '/relatorio-fiscal': ACCESS_EDITAR,
+    '/chamados-ti': ACCESS_EDITAR,
   },
   vendedor: {
     '/': ACCESS_VER,
     '/pedidos': ACCESS_EDITAR,
     '/orcamentos': ACCESS_EDITAR,
     '/projetos': ACCESS_EDITAR,
+    '/chamados-ti': ACCESS_EDITAR,
   },
   visualizador: {
     '/': ACCESS_VER,
@@ -73,6 +77,7 @@ const ROLE_DEFAULTS = {
     '/orcamentos': ACCESS_VER,
     '/projetos': ACCESS_VER,
     '/calendario': ACCESS_VER,
+    '/chamados-ti': ACCESS_EDITAR,
   },
   motorista: {
     '/': ACCESS_VER,
@@ -80,6 +85,7 @@ const ROLE_DEFAULTS = {
     '/calendario': ACCESS_EDITAR,
     '/scanner': ACCESS_VER,
     '/motorista': ACCESS_VER,
+    '/chamados-ti': ACCESS_EDITAR,
   },
   encarregado: {
     '/': ACCESS_VER,
@@ -95,6 +101,7 @@ const ROLE_DEFAULTS = {
     '/insumos': ACCESS_EDITAR,
     '/produtividade': ACCESS_EDITAR,
     '/patrimonio': ACCESS_VER,
+    '/chamados-ti': ACCESS_EDITAR,
     '/cadastros': ACCESS_EDITAR,
     '/motorista': ACCESS_VER,
   },

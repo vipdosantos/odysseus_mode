@@ -31,6 +31,7 @@ import ApiConfig from './pages/ApiConfig';
 import Motorista from './pages/Motorista';
 import OrderStatusLookup from './pages/OrderStatusLookup';
 import ContractSign from './pages/ContractSign';
+import ChamadosTI from './pages/ChamadosTI';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
@@ -122,6 +123,7 @@ const AuthenticatedApp = () => {
         <Route path="/estoque" element={<ControleEstoque />} />
         <Route path="/sobra-trelica" element={<SobraTrelica />} />
         <Route path="/motorista" element={<Motorista />} />
+        <Route path="/chamados-ti" element={<ChamadosTI />} />
         <Route path="/api-config" element={<ApiConfig />} />
         <Route path="/usuarios" element={<Users />} />
       </Route>
