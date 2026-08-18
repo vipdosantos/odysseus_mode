@@ -166,51 +166,28 @@ export default function Users() {
         </div>
       )}
 
-      <div className="bg-card rounded-2xl border overflow-x-auto">
-        <table className="w-full text-sm min-w-[640px]">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="text-left p-3 font-medium">Usuário</th>
-              <th className="text-left p-3 font-medium">Email</th>
-              <th className="text-left p-3 font-medium">Função</th>
-              <th className="text-left p-3 font-medium">Etapa (Scanner)</th>
-              <th className="text-right p-3 font-medium">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(u => {
-              const r = roleLabels[u.role] || roleLabels.visualizador;
-              return (
-                <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="p-3 font-medium">{u.full_name || '—'}</td>
-                  <td className="p-3 text-muted-foreground">{u.email}</td>
-                  <td className="p-3">
-                    <span className={cn("text-xs px-2 py-1 rounded-full font-medium", r.class)}>{r.label}</span>
-                  </td>
-                  <td className="p-3">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 w-44 justify-start text-xs font-normal">
-                          <span className="truncate text-left">
-                            {u.role === 'admin' && !(u.assigned_stages || []).length ? 'Todas' : stageSummary(u)}
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-56 p-1" align="start">
-                        {kanbanColumns.map(col => {
-                          const checked = (u.assigned_stages || []).includes(col.key);
-                          return (
-                            <label key={col.key} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted rounded text-sm">
-                              <Checkbox checked={checked} onCheckedChange={v => toggleStage(u, col.key, !!v)} />
-                              <span>{col.label}</span>
-                            </label>
-                          );
-                        })}
-                      </PopoverContent>
-                    </Popover>
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
+      <div className="bg-card rounded-2xl border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left p-3 font-medium whitespace-nowrap">Usuário</th>
+                <th className="text-left p-3 font-medium whitespace-nowrap hidden md:table-cell">Email</th>
+                <th className="text-left p-3 font-medium whitespace-nowrap">Função</th>
+                <th className="text-left p-3 font-medium whitespace-nowrap">Etapa (Scanner)</th>
+                <th className="text-right p-3 font-medium whitespace-nowrap">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => {
+                return (
+                  <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="p-3">
+                      <div className="font-medium">{u.full_name || '—'}</div>
+                      <div className="text-xs text-muted-foreground md:hidden">{u.email}</div>
+                    </td>
+                    <td className="p-3 text-muted-foreground hidden md:table-cell">{u.email}</td>
+                    <td className="p-3">
                       <Select
                         value={u.role || 'visualizador'}
                         onValueChange={v => updateRoleMutation.mutate({ id: u.id, data: { role: v } })}
@@ -229,23 +206,49 @@ export default function Users() {
                           <SelectItem value="encarregado">Encarregado</SelectItem>
                         </SelectContent>
                       </Select>
-                      {u.role !== 'admin' && (
-                        <Button variant="outline" size="sm" className="h-8" onClick={() => openPermissions(u)}>
-                          <Lock className="w-3.5 h-3.5 mr-1" /> Permissões
-                        </Button>
-                      )}
-                      {u.id !== user?.id && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(u)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="p-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 w-40 justify-start text-xs font-normal">
+                            <span className="truncate text-left">
+                              {u.role === 'admin' && !(u.assigned_stages || []).length ? 'Todas' : stageSummary(u)}
+                            </span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-1" align="start">
+                          {kanbanColumns.map(col => {
+                            const checked = (u.assigned_stages || []).includes(col.key);
+                            return (
+                              <label key={col.key} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted rounded text-sm">
+                                <Checkbox checked={checked} onCheckedChange={v => toggleStage(u, col.key, !!v)} />
+                                <span>{col.label}</span>
+                              </label>
+                            );
+                          })}
+                        </PopoverContent>
+                      </Popover>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {u.role !== 'admin' && (
+                          <Button variant="outline" size="sm" className="h-8" onClick={() => openPermissions(u)}>
+                            <Lock className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Permissões</span>
+                          </Button>
+                        )}
+                        {u.id !== user?.id && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(u)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
