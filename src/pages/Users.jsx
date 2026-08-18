@@ -23,6 +23,7 @@ const roleLabels = {
   visualizador: { label: 'Visualizador', class: 'bg-gray-100 text-gray-600' },
   motorista: { label: 'Motorista', class: 'bg-amber-100 text-amber-700' },
   encarregado: { label: 'Encarregado', class: 'bg-teal-100 text-teal-700' },
+  projectista: { label: 'Projectista', class: 'bg-indigo-100 text-indigo-700' },
 };
 
 const roleDescriptions = [
@@ -33,6 +34,7 @@ const roleDescriptions = [
   { role: 'visualizador', label: 'Visualizador', color: 'bg-gray-100 text-gray-600 border-gray-200', desc: 'Apenas visualiza pedidos e dashboard. Não pode criar, editar ou excluir nada.' },
   { role: 'motorista', label: 'Motorista', color: 'bg-amber-100 text-amber-700 border-amber-200', desc: 'Acessa calendário de entregas e pedidos para conferir cargas e rotas.' },
   { role: 'encarregado', label: 'Encarregado', color: 'bg-teal-100 text-teal-700 border-teal-200', desc: 'Supervisiona produção, scanner, pedidos, estoque e cadastros. Sem acesso financeiro.' },
+  { role: 'projectista', label: 'Projectista', color: 'bg-indigo-100 text-indigo-700 border-indigo-200', desc: 'Cria e edita projetos no módulo CAD e orçamentos. Sem acesso a financeiro ou produção.' },
 ];
 
 export default function Users() {
@@ -204,6 +206,7 @@ export default function Users() {
                           <SelectItem value="visualizador">Visualizador</SelectItem>
                           <SelectItem value="motorista">Motorista</SelectItem>
                           <SelectItem value="encarregado">Encarregado</SelectItem>
+                          <SelectItem value="projectista">Projectista</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
@@ -290,6 +293,7 @@ export default function Users() {
                   <SelectItem value="visualizador">Visualizador</SelectItem>
                   <SelectItem value="motorista">Motorista</SelectItem>
                   <SelectItem value="encarregado">Encarregado</SelectItem>
+                  <SelectItem value="projectista">Projectista</SelectItem>
                 </SelectContent>
               </Select>
             </div>

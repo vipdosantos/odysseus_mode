@@ -105,6 +105,13 @@ const ROLE_DEFAULTS = {
     '/cadastros': ACCESS_EDITAR,
     '/motorista': ACCESS_VER,
   },
+  projectista: {
+    '/': ACCESS_VER,
+    '/pedidos': ACCESS_VER,
+    '/orcamentos': ACCESS_EDITAR,
+    '/projetos': ACCESS_EDITAR,
+    '/chamados-ti': ACCESS_EDITAR,
+  },
 };
 
 // Resolves the effective access level for a user on a screen.
