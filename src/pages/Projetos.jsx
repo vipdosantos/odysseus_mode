@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { PanelLeft, PanelRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ProjetoCanvas, { polygonAreaM2 } from '@/components/projetos/ProjetoCanvas';
@@ -50,6 +51,8 @@ export default function Projetos() {
   const [generatedOrderId, setGeneratedOrderId] = useState(null);
   const [history, setHistory] = useState([]);
   const [atalhosAberto, setAtalhosAberto] = useState(false);
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
   const [negativoDialogOpen, setNegativoDialogOpen] = useState(false);
   const [negativoParams, setNegativoParams] = useState({
     tipo_aco: 'CA50', bitola: '8.0', quantidade: 10, espacamento: 15,
@@ -342,13 +345,32 @@ export default function Projetos() {
         hasSelection={!!selectedSlabId}
       />
 
-      <div className="flex-1 flex min-h-0">
-        <ProjetoLeftPanel
-          projeto={projeto} onChangeProjeto={changeProjeto} projetos={projetos}
-          onLoadProjeto={loadProjeto} onNewProjeto={newProj} onSave={saveProjeto} saving={saving}
-          floorPlanOpacity={floorPlanOpacity} setFloorPlanOpacity={setFloorPlanOpacity}
-          onCalibrarClick={() => setTool('calibrar')} onReloadPlan={reloadPlan}
-        />
+      <div className="flex-1 flex min-h-0 relative">
+        {/* Painel esquerdo — fixo no desktop, drawer no mobile */}
+        <div className="hidden lg:block w-72 shrink-0">
+          <ProjetoLeftPanel
+            projeto={projeto} onChangeProjeto={changeProjeto} projetos={projetos}
+            onLoadProjeto={loadProjeto} onNewProjeto={newProj} onSave={saveProjeto} saving={saving}
+            floorPlanOpacity={floorPlanOpacity} setFloorPlanOpacity={setFloorPlanOpacity}
+            onCalibrarClick={() => setTool('calibrar')} onReloadPlan={reloadPlan}
+          />
+        </div>
+        {leftOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setLeftOpen(false)} />
+            <div className="relative z-10 h-full w-[85%] max-w-xs">
+              <ProjetoLeftPanel
+                projeto={projeto} onChangeProjeto={changeProjeto} projetos={projetos}
+                onLoadProjeto={(p) => { loadProjeto(p); setLeftOpen(false); }}
+                onNewProjeto={() => { newProj(); setLeftOpen(false); }}
+                onSave={saveProjeto} saving={saving}
+                floorPlanOpacity={floorPlanOpacity} setFloorPlanOpacity={setFloorPlanOpacity}
+                onCalibrarClick={() => { setTool('calibrar'); setLeftOpen(false); }}
+                onReloadPlan={reloadPlan}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <ProjetoCanvas
@@ -369,11 +391,40 @@ export default function Projetos() {
           />
         </div>
 
-        <ProjetoRelatorio
-          projeto={projeto} slabs={slabs} annotations={annotations} onUpdateSlab={updateSlab}
-          onDeleteSlab={deleteSlab} onGenerateOrcamento={generateOrcamento}
-          generating={generating} generatedOrderId={generatedOrderId}
-        />
+        {/* Painel direito — fixo no desktop, drawer no mobile */}
+        <div className="hidden lg:block w-80 shrink-0">
+          <ProjetoRelatorio
+            projeto={projeto} slabs={slabs} annotations={annotations} onUpdateSlab={updateSlab}
+            onDeleteSlab={deleteSlab} onGenerateOrcamento={generateOrcamento}
+            generating={generating} generatedOrderId={generatedOrderId}
+          />
+        </div>
+        {rightOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex justify-end">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setRightOpen(false)} />
+            <div className="relative z-10 h-full w-[85%] max-w-xs">
+              <ProjetoRelatorio
+                projeto={projeto} slabs={slabs} annotations={annotations} onUpdateSlab={updateSlab}
+                onDeleteSlab={deleteSlab} onGenerateOrcamento={(...args) => { setRightOpen(false); generateOrcamento(...args); }}
+                generating={generating} generatedOrderId={generatedOrderId}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Botões flutuantes para abrir os painéis no mobile */}
+        <button
+          onClick={() => setLeftOpen(true)}
+          className="lg:hidden absolute top-2 left-2 z-30 flex items-center gap-1 bg-white border border-border rounded-md shadow px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+        >
+          <PanelLeft className="w-4 h-4" /> Projeto
+        </button>
+        <button
+          onClick={() => setRightOpen(true)}
+          className="lg:hidden absolute top-2 right-2 z-30 flex items-center gap-1 bg-white border border-border rounded-md shadow px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+        >
+          <PanelRight className="w-4 h-4" /> Lajes
+        </button>
       </div>
 
       <ProjetoAtalhosDialog open={atalhosAberto} onOpenChange={setAtalhosAberto} />

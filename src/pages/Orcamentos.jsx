@@ -52,14 +52,14 @@ export default function Orcamentos() {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileText className="w-6 h-6 text-primary" /> Orçamentos
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary" /> Orçamentos
           </h1>
           <p className="text-sm text-muted-foreground">Crie orçamentos, envie ao cliente e converta em pedido quando aceitar.</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground shrink-0">
+        <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground shrink-0 w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-1" /> Novo Orçamento
         </Button>
       </div>

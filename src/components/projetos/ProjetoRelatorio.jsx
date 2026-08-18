@@ -18,7 +18,7 @@ export default function ProjetoRelatorio({
   const negBarTotalLen = negBars.reduce((a, b) => a + (b.comprimento || 0), 0);
 
   return (
-    <div className="w-80 shrink-0 bg-gray-50 border-l border-border flex flex-col">
+    <div className="w-full h-full bg-gray-50 border-l border-border flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-white">
         <div>

@@ -572,16 +572,16 @@ export default function Scanner() {
         <Button
           variant={mode === 'keyboard' ? 'default' : 'outline'}
           onClick={() => setMode('keyboard')}
-          className="flex-1"
+          className="flex-1 whitespace-normal text-xs sm:text-sm"
         >
-          <Keyboard className="w-4 h-4 mr-2" /> Teclado / Leitor
+          <Keyboard className="w-4 h-4 sm:mr-2" /> Teclado / Leitor
         </Button>
         <Button
           variant={mode === 'camera' ? 'default' : 'outline'}
           onClick={() => setMode('camera')}
-          className="flex-1"
+          className="flex-1 whitespace-normal text-xs sm:text-sm"
         >
-          <Camera className="w-4 h-4 mr-2" /> Câmera do Celular
+          <Camera className="w-4 h-4 sm:mr-2" /> Câmera do Celular
         </Button>
       </div>
 

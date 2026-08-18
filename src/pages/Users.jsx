@@ -140,14 +140,14 @@ export default function Users() {
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Usuários</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Usuários</h1>
           <p className="text-sm text-muted-foreground">Gerencie os acessos do sistema</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowRoles(!showRoles)}>
-            <Info className="w-4 h-4 mr-1" /> Níveis de Acesso
+          <Button variant="outline" onClick={() => setShowRoles(!showRoles)} className="px-3">
+            <Info className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Níveis de Acesso</span>
           </Button>
           <Button onClick={() => setShowInvite(true)} className="bg-primary text-primary-foreground">
             <UserPlus className="w-4 h-4 mr-1" /> Convidar
@@ -166,8 +166,8 @@ export default function Users() {
         </div>
       )}
 
-      <div className="bg-card rounded-2xl border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card rounded-2xl border overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 font-medium">Usuário</th>

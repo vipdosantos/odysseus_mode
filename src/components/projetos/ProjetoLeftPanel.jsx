@@ -47,7 +47,7 @@ export default function ProjetoLeftPanel({
   };
 
   return (
-    <div className="w-72 shrink-0 bg-gray-50 border-r border-border overflow-y-auto p-4 space-y-5">
+    <div className="w-full h-full bg-gray-50 border-r border-border overflow-y-auto p-4 space-y-5">
       {/* Projeto header */}
       <div>
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Projeto</p>
