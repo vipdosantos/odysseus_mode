@@ -51,6 +51,10 @@ export function beep(type) {
         tone(1320, 0.24, 0.2, 'sine', 0.65);
         tone(1760, 0.42, 0.22, 'sine', 0.55);
         break;
+      case 'msg':
+        tone(880, 0, 0.12, 'sine', 0.5);
+        tone(1175, 0.13, 0.16, 'sine', 0.5);
+        break;
       case 'dup':
         tone(440, 0, 0.1, 'square', 0.4);
         tone(440, 0.16, 0.1, 'square', 0.4);

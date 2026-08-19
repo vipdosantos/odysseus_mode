@@ -2,8 +2,13 @@ import React from 'react';
 import { Hash, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function ChatSidebar({ users, currentUser, activeChannel, onSelect }) {
+export default function ChatSidebar({ users, currentUser, activeChannel, onSelect, unread = {} }) {
   const dmChannel = (otherId) => `dm:${[currentUser.id, otherId].sort().join(':')}`;
+  const Badge = ({ count }) => count > 0 ? (
+    <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center">
+      {count > 99 ? '99+' : count}
+    </span>
+  ) : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -22,6 +27,7 @@ export default function ChatSidebar({ users, currentUser, activeChannel, onSelec
             <Hash className="w-4 h-4 text-primary" />
           </div>
           <span className="truncate">Geral</span>
+          <Badge count={unread['geral'] || 0} />
         </button>
 
         <div className="pt-3 pb-1 px-3 text-xs font-medium text-muted-foreground uppercase">Direto</div>
@@ -45,6 +51,7 @@ export default function ChatSidebar({ users, currentUser, activeChannel, onSelec
                 )}
               </div>
               <span className="truncate">{u.full_name || u.email}</span>
+              <Badge count={unread[ch] || 0} />
             </button>
           );
         })}
