@@ -16,12 +16,15 @@
     },
     "content": {
       "type": "string",
-      "description": "Conte\u00fado da mensagem"
+      "description": "Conte\u00fado da mensagem (texto ou legenda da foto)"
+    },
+    "attachment_url": {
+      "type": "string",
+      "description": "URL da imagem anexada (foto)"
     }
   },
   "required": [
     "channel",
-    "sender_id",
-    "content"
+    "sender_id"
   ]
 }
