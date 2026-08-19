@@ -1,0 +1,27 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "channel": {
+      "type": "string",
+      "description": "Canal: 'geral' para grupo, ou 'dm:idA:idB' (ids ordenados) para conversa direta"
+    },
+    "sender_id": {
+      "type": "string",
+      "description": "ID do remetente"
+    },
+    "sender_name": {
+      "type": "string",
+      "description": "Nome do remetente"
+    },
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado da mensagem"
+    }
+  },
+  "required": [
+    "channel",
+    "sender_id",
+    "content"
+  ]
+}
