@@ -21,6 +21,11 @@
     "attachment_url": {
       "type": "string",
       "description": "URL da imagem anexada (foto)"
+    },
+    "seen": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mensagem j\u00e1 foi vista por algum destinat\u00e1rio (define se pode editar/apagar)"
     }
   },
   "required": [

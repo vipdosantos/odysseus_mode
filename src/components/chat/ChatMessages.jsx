@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Send, Camera, Paperclip, X } from 'lucide-react';
+import { Send, Camera, Paperclip, X, Pencil, Trash2, Check, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -14,6 +14,8 @@ export default function ChatMessages({ channel, currentUser }) {
   const [pendingImage, setPendingImage] = useState(null); // { file, previewUrl }
   const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editingText, setEditingText] = useState('');
   const scrollRef = useRef(null);
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
@@ -27,6 +29,36 @@ export default function ChatMessages({ channel, currentUser }) {
     mutationFn: (payload) => base44.entities.Message.create(payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages', channel] }),
   });
+
+  const editMutation = useMutation({
+    mutationFn: ({ id, content }) => base44.entities.Message.update(id, { content }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages', channel] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Message.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages', channel] }),
+  });
+
+  // Marca mensagens de outros usuários como vistas ao carregar o canal
+  useEffect(() => {
+    const toMark = messages.filter((m) => m.sender_id !== currentUser.id && !m.seen);
+    if (!toMark.length) return;
+    base44.entities.Message.bulkUpdate(toMark.map((m) => ({ id: m.id, seen: true })))
+      .then(() => queryClient.invalidateQueries({ queryKey: ['messages', channel] }))
+      .catch(() => {});
+  }, [messages, currentUser.id, channel, queryClient]);
+
+  const startEdit = (m) => { setEditingId(m.id); setEditingText(m.content || ''); };
+  const cancelEdit = () => { setEditingId(null); setEditingText(''); };
+  const saveEdit = () => {
+    const t = editingText.trim();
+    if (!t || !editingId) return;
+    editMutation.mutate({ id: editingId, content: t }, { onSuccess: cancelEdit });
+  };
+  const deleteMsg = (m) => {
+    if (window.confirm('Apagar esta mensagem?')) deleteMutation.mutate(m.id);
+  };
 
   useEffect(() => {
     const unsubscribe = base44.entities.Message.subscribe((event) => {
@@ -131,22 +163,63 @@ export default function ChatMessages({ channel, currentUser }) {
                   {!sameSender && !mine && (
                     <span className="text-xs font-medium text-muted-foreground mb-0.5 px-1">{m.sender_name}</span>
                   )}
-                  <div className={cn(
-                    "px-3 py-2 rounded-2xl text-sm break-words overflow-hidden",
-                    mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted rounded-bl-sm"
-                  )}>
-                    {m.attachment_url && (
-                      <img
-                        src={m.attachment_url}
-                        alt="foto"
-                        className="rounded-lg max-w-full max-h-72 object-cover mb-1 cursor-pointer"
-                        onClick={() => window.open(m.attachment_url, '_blank')}
+                  {editingId === m.id ? (
+                    <div className="flex flex-col gap-2 w-72">
+                      <textarea
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        rows={2}
+                        autoFocus
+                        className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
                       />
-                    )}
-                    {m.content && <p>{m.content}</p>}
-                  </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="ghost" size="sm" onClick={cancelEdit}>Cancelar</Button>
+                        <Button size="sm" onClick={saveEdit} disabled={!editingText.trim() || editMutation.isPending} className="bg-primary text-primary-foreground">
+                          Salvar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative group/msg">
+                      <div className={cn(
+                        "px-3 py-2 rounded-2xl text-sm break-words overflow-hidden",
+                        mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted rounded-bl-sm"
+                      )}>
+                        {m.attachment_url && (
+                          <img
+                            src={m.attachment_url}
+                            alt="foto"
+                            className="rounded-lg max-w-full max-h-72 object-cover mb-1 cursor-pointer"
+                            onClick={() => window.open(m.attachment_url, '_blank')}
+                          />
+                        )}
+                        {m.content && <p>{m.content}</p>}
+                      </div>
+                      {mine && !m.seen && (
+                        <div className="absolute -left-16 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => startEdit(m)}
+                            className="w-7 h-7 rounded-full bg-card border border-border shadow-sm flex items-center justify-center hover:bg-muted"
+                            title="Editar"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => deleteMsg(m)}
+                            className="w-7 h-7 rounded-full bg-card border border-border shadow-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground"
+                            title="Apagar"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {d && (
-                    <span className="text-[10px] text-muted-foreground px-1 mt-0.5">{format(d, 'HH:mm')}</span>
+                    <span className="text-[10px] text-muted-foreground px-1 mt-0.5 flex items-center gap-1">
+                      {format(d, 'HH:mm')}
+                      {mine && (m.seen ? <CheckCheck className="w-3 h-3 text-primary" /> : <Check className="w-3 h-3" />)}
+                    </span>
                   )}
                 </div>
               </div>
