@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Boxes, Landmark, FileText, Users, Settings, Wrench, ClipboardList, ShoppingCart, ClipboardCheck, BookUser, LogOut, TrendingUp, Truck, Receipt, PencilRuler, Headphones } from 'lucide-react';
+import { LayoutDashboard, Package, Factory, DollarSign, ScanLine, Menu, X, Calendar, BarChart2, Boxes, Landmark, FileText, Users, Settings, Wrench, ClipboardList, ShoppingCart, ClipboardCheck, BookUser, LogOut, Truck, Receipt, PencilRuler, Headphones } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { canView } from '@/lib/userPermissions';
 
@@ -11,8 +11,7 @@ const allItems = [
   { path: '/producao', icon: Factory, label: 'Produção' },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR' },
   { path: '/motorista', icon: Truck, label: 'Entregas' },
-  { path: '/financeiro', icon: DollarSign, label: 'Contas a Pagar' },
-  { path: '/receber', icon: TrendingUp, label: 'Contas a Receber' },
+  { path: '/financeiro', icon: DollarSign, label: 'Financeiro' },
   { path: '/ordem-pedido', icon: ShoppingCart, label: 'Ordem de Compras' },
   { path: '/aprovacoes', icon: ClipboardCheck, label: 'Aprovações' },
   { path: '/estoque', icon: Boxes, label: 'Controle Estoque' },

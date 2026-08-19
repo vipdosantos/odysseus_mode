@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, Factory, DollarSign, Users, 
   ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser,
-  TrendingUp, CalendarDays, ClipboardList, Wrench, FlaskConical,
+  CalendarDays, ClipboardList, Wrench, FlaskConical,
   Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck, Ruler, Code2, Truck, Receipt, PencilRuler, Headphones
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -21,8 +21,7 @@ const navItems = [
   { path: '/producao', icon: Factory, label: 'Produção', roles: ['admin', 'operador', 'encarregado'] },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR', roles: ['admin', 'operador', 'motorista', 'encarregado'] },
   { path: '/motorista', icon: Truck, label: 'Entregas', roles: ['admin', 'operador', 'motorista', 'encarregado'] },
-  { path: '/financeiro', icon: DollarSign, label: 'Contas a Pagar', roles: ['admin', 'financeiro'] },
-  { path: '/receber', icon: TrendingUp, label: 'Contas a Receber', roles: ['admin', 'financeiro'] },
+  { path: '/financeiro', icon: DollarSign, label: 'Financeiro', roles: ['admin', 'financeiro'] },
   { path: '/contas-bancarias', icon: Landmark, label: 'Contas Bancárias', roles: ['admin', 'financeiro'] },
   { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais', roles: ['admin', 'financeiro'] },
   { path: '/calendario', icon: CalendarDays, label: 'Calendário', roles: ['admin', 'operador', 'visualizador', 'motorista', 'encarregado'] },

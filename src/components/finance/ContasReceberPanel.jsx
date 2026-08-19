@@ -23,7 +23,7 @@ const paymentLabels = { boleto:'Boleto', pix:'PIX', transferencia:'Transferênci
 
 const emptyForm = { description:'', client_name:'', order_number:'', amount:0, due_date:'', received_date:'', status:'pendente', payment_method:'pix', notes:'' };
 
-export default function Receivables() {
+export default function ContasReceberPanel() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
@@ -71,12 +71,9 @@ export default function Receivables() {
   const handleSave = () => editing ? updateMutation.mutate({ id: editing.id, data: form }) : createMutation.mutate(form);
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><TrendingUp className="w-6 h-6 text-primary" /> Contas a Receber</h1>
-          <p className="text-sm text-muted-foreground">Gerencie seus recebíveis</p>
-        </div>
+        <p className="text-sm text-muted-foreground">Gerencie seus recebíveis</p>
         <Button onClick={openNew} className="bg-primary text-primary-foreground"><Plus className="w-4 h-4 mr-1" /> Nova Conta</Button>
       </div>
 
