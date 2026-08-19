@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { snapPoint, orthoLock, applyLength, buildSnapCandidates, computeVt } from '@/lib/projetoSnap';
+import { computeVigotas, computeEscoras } from '@/lib/projetoCalculos';
 import { Settings2 } from 'lucide-react';
 
 export function pointInPolygon(p, poly) {
@@ -42,7 +43,8 @@ export default function ProjetoCanvas({
   zoom, onZoom,
   onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation,
   onCalibrate, onMoveSlab, onSetDirection,
-  nucleosAtivo, negativoParams, onOpenNegativoDialog
+  nucleosAtivo, negativoParams, onOpenNegativoDialog,
+  planoEscoras, escoraCfg
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -271,44 +273,36 @@ export default function ProjetoCanvas({
         ctx.lineWidth = contornoAtivo ? 4 : (isSel ? 2.5 : 1.5);
         ctx.stroke();
       }
-      // Núcleos: distribuição das vigotas + blocos de EPS/cerâmica
-      if (nucleosAtivo && !slab.negativo) {
-        const tt = slab.truss_type || 'H8';
-        const espM = INTEREIXO[tt] || 0.42;
-        const espPx = espM * scalePxPerM;
-        if (slab.direction && espPx > 4) {
-          const dx = (slab.direction.x2 || 0) - (slab.direction.x1 || 0);
-          const dy = (slab.direction.y2 || 0) - (slab.direction.y1 || 0);
-          const len = Math.hypot(dx, dy);
-          if (len > 1) {
-            const ux = dx / len, uy = dy / len; // direção das vigotas
-            const nx = -uy, ny = ux;            // perpendicular (onde ficam os núcleos)
-            let minP = Infinity, maxP = -Infinity, minU = Infinity, maxU = -Infinity;
-            slab.vertices.forEach(v => {
-              const p = (v.x - cx) * nx + (v.y - cy) * ny;
-              const u = (v.x - cx) * ux + (v.y - cy) * uy;
-              if (p < minP) minP = p; if (p > maxP) maxP = p;
-              if (u < minU) minU = u; if (u > maxU) maxU = u;
-            });
-            ctx.save();
-            ctx.beginPath();
-            slab.vertices.forEach((v, i) => { if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y); });
-            ctx.closePath();
-            ctx.clip();
-            // Linhas das vigotas (paralelas à direção), espaçadas pelo intereixo
-            ctx.strokeStyle = 'rgba(146,64,14,0.55)'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
-            const start = Math.ceil(minP / espPx) * espPx;
-            for (let p = start; p <= maxP + 0.1; p += espPx) {
-              const ox = cx + nx * p, oy = cy + ny * p;
+      // Vigotas automáticas + núcleos (EPS) + plano de escoras
+      if (!slab.negativo && slab.direction) {
+        const vig = computeVigotas(slab, scalePxPerM);
+        ctx.save();
+        ctx.beginPath();
+        slab.vertices.forEach((v, i) => { if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y); });
+        ctx.closePath();
+        ctx.clip();
+        if (planoEscoras) {
+          const esc = computeEscoras(slab, scalePxPerM, escoraCfg);
+          ctx.strokeStyle = 'rgba(220,38,38,0.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+          esc.lines.forEach(l => { ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke(); });
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#dc2626';
+          esc.props.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2); ctx.fill(); });
+        } else {
+          ctx.strokeStyle = 'rgba(146,64,14,0.75)'; ctx.lineWidth = 1.2; ctx.setLineDash([]);
+          vig.lines.forEach(l => { ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke(); });
+          if (nucleosAtivo) {
+            ctx.fillStyle = 'rgba(245,158,11,0.18)';
+            for (let i = 0; i < vig.lines.length - 1; i++) {
+              const a = vig.lines[i], b = vig.lines[i + 1];
               ctx.beginPath();
-              ctx.moveTo(ox + ux * minU, oy + uy * minU);
-              ctx.lineTo(ox + ux * maxU, oy + uy * maxU);
-              ctx.stroke();
+              ctx.moveTo(a.x1, a.y1); ctx.lineTo(a.x2, a.y2);
+              ctx.lineTo(b.x2, b.y2); ctx.lineTo(b.x1, b.y1);
+              ctx.closePath(); ctx.fill();
             }
-            ctx.setLineDash([]);
-            ctx.restore();
           }
         }
+        ctx.restore();
       }
 
       // Alfinetes: verdes na seleção, azuis no padrão
@@ -350,7 +344,7 @@ export default function ProjetoCanvas({
       }
 
       ctx.fillStyle = '#111827'; ctx.font = 'bold 13px Inter, sans-serif'; ctx.textAlign = 'center';
-      const vt = slab.vt || computeVt(slab.vertices, slab.direction, scalePxPerM);
+      const vt = computeVigotas(slab, scalePxPerM).vt || slab.vt || 0;
       const tag = slab.negativo
         ? `${slab.label} (Neg)`
         : `${slab.label} (${slab.area_m2.toFixed(2)} m²)${vt ? ` (${vt}vt)` : ''}`;
@@ -442,7 +436,7 @@ export default function ProjetoCanvas({
     }
 
     ctx.restore();
-  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen, nucleosAtivo]);
+  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen, nucleosAtivo, planoEscoras, escoraCfg]);
 
   // Roda do mouse → zoom em torno do cursor
   useEffect(() => {

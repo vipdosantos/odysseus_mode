@@ -10,6 +10,7 @@ import ProjetoToolbar from '@/components/projetos/ProjetoToolbar';
 import ProjetoAtalhosDialog from '@/components/projetos/ProjetoAtalhosDialog';
 import ProjetoNegativoDialog from '@/components/projetos/ProjetoNegativoDialog';
 import { computeVt } from '@/lib/projetoSnap';
+import { computeVigotas } from '@/lib/projetoCalculos';
 
 const newProjeto = () => ({
   name: 'Novo Projeto', client_name: '', floor_plan_url: '',
@@ -125,8 +126,8 @@ export default function Projetos() {
   const setDirection = (id, direction) => {
     setSlabs(prev => prev.map(s => {
       if (s.id !== id) return s;
-      const vt = computeVt(s.vertices, direction, scalePxPerM);
-      return { ...s, direction, vt };
+      const vig = computeVigotas({ ...s, direction }, scalePxPerM);
+      return { ...s, direction, vt: vig.vt };
     }));
   };
 
@@ -222,8 +223,8 @@ export default function Projetos() {
   const motor = () => {
     setSlabs(prev => prev.map(s => {
       if (!s.direction) return s;
-      const vt = computeVt(s.vertices, s.direction, scalePxPerM);
-      return { ...s, vt, area_m2: polygonAreaM2(s.vertices, scalePxPerM) };
+      const vig = computeVigotas(s, scalePxPerM);
+      return { ...s, vt: vig.vt, area_m2: polygonAreaM2(s.vertices, scalePxPerM) };
     }));
     toast({ title: 'Motor de cálculo', description: 'Vigotas e áreas recalculadas para todas as lajes com direção.' });
   };
@@ -388,6 +389,8 @@ export default function Projetos() {
             nucleosAtivo={nucleosAtivo}
             negativoParams={negativoParams}
             onOpenNegativoDialog={() => setNegativoDialogOpen(true)}
+            planoEscoras={!!projeto.plano_escoras}
+            escoraCfg={{ escoraEspacamentoM: projeto.escora_espacamento_m ?? 1, pontaleteEspacamentoM: projeto.pontalete_espacamento_m ?? 1 }}
           />
         </div>
 
@@ -397,6 +400,8 @@ export default function Projetos() {
             projeto={projeto} slabs={slabs} annotations={annotations} onUpdateSlab={updateSlab}
             onDeleteSlab={deleteSlab} onGenerateOrcamento={generateOrcamento}
             generating={generating} generatedOrderId={generatedOrderId}
+            scalePxPerM={scalePxPerM}
+            escoraCfg={{ escoraEspacamentoM: projeto.escora_espacamento_m ?? 1, pontaleteEspacamentoM: projeto.pontalete_espacamento_m ?? 1 }}
           />
         </div>
         {rightOpen && (
@@ -407,6 +412,8 @@ export default function Projetos() {
                 projeto={projeto} slabs={slabs} annotations={annotations} onUpdateSlab={updateSlab}
                 onDeleteSlab={deleteSlab} onGenerateOrcamento={(...args) => { setRightOpen(false); generateOrcamento(...args); }}
                 generating={generating} generatedOrderId={generatedOrderId}
+                scalePxPerM={scalePxPerM}
+                escoraCfg={{ escoraEspacamentoM: projeto.escora_espacamento_m ?? 1, pontaleteEspacamentoM: projeto.pontalete_espacamento_m ?? 1 }}
               />
             </div>
           </div>

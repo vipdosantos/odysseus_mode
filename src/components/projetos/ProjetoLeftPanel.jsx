@@ -139,6 +139,28 @@ export default function ProjetoLeftPanel({
             onCheckedChange={(v) => onChangeProjeto({ plano_escoras: v })}
           />
         </div>
+        {projeto.plano_escoras && (
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Entre linhas (m)</Label>
+              <Input
+                type="number" step="0.1" min="0.3"
+                value={projeto.escora_espacamento_m ?? 1}
+                onChange={(e) => onChangeProjeto({ escora_espacamento_m: parseFloat(e.target.value) || 1 })}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Entre pontaletes (m)</Label>
+              <Input
+                type="number" step="0.1" min="0.3"
+                value={projeto.pontalete_espacamento_m ?? 1}
+                onChange={(e) => onChangeProjeto({ pontalete_espacamento_m: parseFloat(e.target.value) || 1 })}
+                className="h-8 text-xs"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

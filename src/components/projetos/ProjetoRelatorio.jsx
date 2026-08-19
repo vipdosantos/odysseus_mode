@@ -1,5 +1,8 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { FileText, Trash2, Maximize2 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { computeQuantitativo } from '@/lib/projetoCalculos';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem
@@ -10,12 +13,19 @@ const TIPO_LAJE_OPTS = ['Laje', 'Painel', 'Mista', 'Laje Treliçada Intereixo'];
 const TIPO_ENCH_OPTS = ['Nenhum', 'EPS', 'Lajota', 'EPS+Lajota'];
 
 export default function ProjetoRelatorio({
-  projeto, slabs, annotations, onUpdateSlab, onDeleteSlab, onGenerateOrcamento, generating, generatedOrderId
+  projeto, slabs, annotations, onUpdateSlab, onDeleteSlab, onGenerateOrcamento, generating, generatedOrderId,
+  scalePxPerM, escoraCfg
 }) {
   const totalArea = slabs.filter(s => !s.negativo).reduce((a, s) => a + (s.area_m2 || 0), 0);
   const negativoArea = slabs.filter(s => s.negativo).reduce((a, s) => a + (s.area_m2 || 0), 0);
   const negBars = (annotations || []).filter(a => a.type === 'negativo');
   const negBarTotalLen = negBars.reduce((a, b) => a + (b.comprimento || 0), 0);
+
+  const { data: epsDimensions = [] } = useQuery({
+    queryKey: ['epsDimensions'],
+    queryFn: () => base44.entities.EpsDimension.list()
+  });
+  const qt = computeQuantitativo(slabs, scalePxPerM || 100, epsDimensions, escoraCfg || {});
 
   return (
     <div className="w-full h-full bg-gray-50 border-l border-border flex flex-col">
@@ -109,13 +119,29 @@ export default function ProjetoRelatorio({
         )}
       </div>
 
-      {/* Summary */}
+      {/* Quantitativo de Materiais */}
       <div className="border-t border-border p-3 bg-white space-y-2">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Orçado (Resumo)</p>
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Quantitativo de Materiais</p>
         <div className="flex justify-between text-sm">
           <span>Área total</span>
-          <span className="font-semibold">{totalArea.toFixed(2)} m²</span>
+          <span className="font-semibold">{qt.area.toFixed(2)} m²</span>
         </div>
+        <div className="flex justify-between text-sm">
+          <span>Vigotas</span>
+          <span className="font-semibold">{qt.vigotasUn} un • {qt.vigotasM.toFixed(1)} m</span>
+        </div>
+        {qt.epsUn > 0 && (
+          <div className="flex justify-between text-sm">
+            <span>EPS / enchimento</span>
+            <span className="font-semibold">{qt.epsUn} un</span>
+          </div>
+        )}
+        {qt.escorasUn > 0 && (
+          <div className="flex justify-between text-sm">
+            <span>Escoras (pontaletes)</span>
+            <span className="font-semibold">{qt.escorasUn} un • {qt.escorasLinhas} linhas</span>
+          </div>
+        )}
         <div className="flex justify-between text-sm">
           <span>Lajes</span>
           <span className="font-semibold">{slabs.length}</span>
@@ -126,6 +152,10 @@ export default function ProjetoRelatorio({
             <span className="font-semibold">- {negativoArea.toFixed(2)} m²</span>
           </div>
         )}
+      </div>
+
+      {/* Ações */}
+      <div className="border-t border-border p-3 bg-white">
         {generatedOrderId ? (
           <Button size="sm" className="w-full" variant="outline" asChild>
             <a href={`/orcamentos`}>Orçamento gerado — ver</a>
