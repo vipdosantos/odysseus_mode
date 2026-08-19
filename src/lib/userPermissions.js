@@ -19,7 +19,6 @@ export const SCREENS = [
   { path: '/receber', label: 'Contas a Receber' },
   { path: '/contas-bancarias', label: 'Contas Bancárias' },
   { path: '/notas-fiscais', label: 'Notas Fiscais' },
-  { path: '/relatorio-fiscal', label: 'Relatório Fiscal' },
   { path: '/calendario', label: 'Calendário' },
   { path: '/insumos', label: 'Insumos' },
   { path: '/patrimonio', label: 'Patrimônio' },
@@ -61,7 +60,6 @@ const ROLE_DEFAULTS = {
     '/receber': ACCESS_EDITAR,
     '/contas-bancarias': ACCESS_EDITAR,
     '/notas-fiscais': ACCESS_EDITAR,
-    '/relatorio-fiscal': ACCESS_EDITAR,
     '/chamados-ti': ACCESS_EDITAR,
   },
   vendedor: {

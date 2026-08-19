@@ -20,7 +20,6 @@ import Assets from './pages/Assets';
 import Supplies from './pages/Supplies';
 import BankAccounts from './pages/BankAccounts';
 import FiscalNotes from './pages/FiscalNotes';
-import RelatorioFiscal from './pages/RelatorioFiscal';
 import Orcamentos from './pages/Orcamentos';
 import Projetos from './pages/Projetos';
 import OrdemPedido from './pages/OrdemPedido';
@@ -116,8 +115,6 @@ const AuthenticatedApp = () => {
         <Route path="/contas-bancarias" element={<BankAccounts />} />
         <Route path="/notas-fiscais" element={<FiscalNotes />} />
         <Route path="/orcamentos" element={<Orcamentos />} />
-        <Route path="/projetos" element={<Projetos />} />
-        <Route path="/relatorio-fiscal" element={<RelatorioFiscal />} />
         <Route path="/ordem-pedido" element={<OrdemPedido />} />
         <Route path="/aprovacoes" element={<OrdemCompra />} />
         <Route path="/estoque" element={<ControleEstoque />} />

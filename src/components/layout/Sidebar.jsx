@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Factory, DollarSign, Users, 
   ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser,
   TrendingUp, CalendarDays, ClipboardList, Wrench, FlaskConical,
-  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck, Ruler, Code2, BarChart3, Truck, Receipt, PencilRuler, Headphones
+  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck, Ruler, Code2, Truck, Receipt, PencilRuler, Headphones
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,6 @@ const navItems = [
   { path: '/receber', icon: TrendingUp, label: 'Contas a Receber', roles: ['admin', 'financeiro'] },
   { path: '/contas-bancarias', icon: Landmark, label: 'Contas Bancárias', roles: ['admin', 'financeiro'] },
   { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais', roles: ['admin', 'financeiro'] },
-  { path: '/relatorio-fiscal', icon: BarChart3, label: 'Relatório Fiscal', roles: ['admin', 'financeiro'] },
   { path: '/calendario', icon: CalendarDays, label: 'Calendário', roles: ['admin', 'operador', 'visualizador', 'motorista', 'encarregado'] },
   { path: '/insumos', icon: FlaskConical, label: 'Insumos', roles: ['admin', 'operador', 'encarregado'] },
   { path: '/patrimonio', icon: Wrench, label: 'Patrimônio', roles: ['admin', 'encarregado'] },

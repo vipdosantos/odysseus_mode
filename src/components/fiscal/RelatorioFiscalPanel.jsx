@@ -3,19 +3,18 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Printer, FileText, BarChart3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Printer, FileText } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const BRL = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// Soma de impostos por nota conforme o tipo.
 function impostosNota(n) {
   if (n.tipo === 'nfs') return Number(n.valor_iss) || 0;
   return (Number(n.valor_icms) || 0) + (Number(n.valor_ipi) || 0) + (Number(n.valor_icms_st) || 0);
 }
 
-export default function RelatorioFiscal() {
+export default function RelatorioFiscalPanel() {
   const hoje = new Date();
   const [monthOffset, setMonthOffset] = useState(0);
   const base = new Date(hoje.getFullYear(), hoje.getMonth() + monthOffset, 1);
@@ -109,14 +108,9 @@ export default function RelatorioFiscal() {
   ];
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-primary" /> Relatório Fiscal
-          </h1>
-          <p className="text-sm text-muted-foreground">Notas emitidas no mês com totais de impostos e valores</p>
-        </div>
+        <p className="text-sm text-muted-foreground">Notas emitidas no mês com totais de impostos e valores</p>
         <Button onClick={handlePrint} variant="outline" disabled={emitidas.length === 0}>
           <Printer className="w-4 h-4 mr-1" /> Imprimir Relatório
         </Button>
