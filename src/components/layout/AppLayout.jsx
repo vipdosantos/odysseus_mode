@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
+import FloatingChat from '@/components/chat/FloatingChat';
 import { base44 } from '@/api/base44Client';
 import { canView } from '@/lib/userPermissions';
 
@@ -37,6 +38,7 @@ export default function AppLayout() {
       <main className="flex-1 min-w-0 lg:pb-0 pb-16">
         <Outlet context={{ user }} />
       </main>
+      <FloatingChat user={user} />
     </div>
   );
 }
