@@ -52,6 +52,7 @@ export default function ProjetoCanvas({
   const imgRef = useRef(null);
   const [lenVal, setLenVal] = useState(''); // comprimento digitado (metros)
   const [pendingLen, setPendingLen] = useState(null); // metros, aplicado no próximo ponto
+  const [imgLoaded, setImgLoaded] = useState(0); // força redraw quando a planta carrega
   const lenRef = useRef(null);
   const mouseRef = useRef({ down: false, start: null, calibFirst: null, cotaFirst: null, lineFirst: null, moveLast: null, rectStart: null, cur: null, panStart: null, snapped: null });
 
@@ -71,9 +72,10 @@ export default function ProjetoCanvas({
   }, []);
 
   useEffect(() => {
-    if (!floorPlanUrl) { imgRef.current = null; return; }
+    if (!floorPlanUrl) { imgRef.current = null; setImgLoaded(v => v + 1); return; }
     const img = new Image();
-    img.onload = () => { imgRef.current = img; };
+    img.onload = () => { imgRef.current = img; setImgLoaded(v => v + 1); };
+    img.onerror = () => { imgRef.current = null; setImgLoaded(v => v + 1); };
     img.src = floorPlanUrl;
   }, [floorPlanUrl]);
 
@@ -436,7 +438,7 @@ export default function ProjetoCanvas({
     }
 
     ctx.restore();
-  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen, nucleosAtivo, planoEscoras, escoraCfg]);
+  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen, nucleosAtivo, planoEscoras, escoraCfg, imgLoaded, floorPlanUrl]);
 
   // Roda do mouse → zoom em torno do cursor
   useEffect(() => {
