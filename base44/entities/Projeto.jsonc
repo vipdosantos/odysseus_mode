@@ -160,7 +160,8 @@
               "nervura",
               "nucleo",
               "frigideira",
-              "negativo"
+              "negativo",
+              "circulo"
             ]
           },
           "x1": {
@@ -180,6 +181,11 @@
           },
           "y": {
             "type": "number"
+          },
+          "raio": {
+            "type": "number",
+            "default": 0,
+            "description": "Raio do c\u00edrculo (m) \u2014 usado em anota\u00e7\u00f5es do tipo 'circulo'"
           },
           "diametro": {
             "type": "string",

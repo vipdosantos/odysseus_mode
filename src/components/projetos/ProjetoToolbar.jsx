@@ -4,7 +4,7 @@ import {
   MousePointer2, PenLine, Square, Ruler, Type, Undo2, Frame, RotateCw,
   Minus, Slash, Spline, GitBranch, Cable, Lightbulb, Crosshair, Copy, FlipHorizontal2, Magnet,
   Hand, HelpCircle, FileDown, Box, Keyboard, Settings, MoveVertical,
-  Disc3, Grid3x3, Cog
+  Disc3, Grid3x3, Cog, Circle, Calculator, FileText
 } from 'lucide-react';
 
 // Linha superior — 21 ferramentas (desenho, cotas/detalhes, edição/CAD) conforme print ProjLAJE
@@ -23,6 +23,7 @@ const TOP_TOOLS = [
   { key: 'cotas', label: 'Cotas', icon: Ruler, kind: 'tool' },
   { key: 'texto', label: 'Texto', icon: Type, kind: 'tool' },
   { key: 'contorno', label: 'Contorno', icon: Frame, kind: 'toggle' },
+  { key: 'circulo', label: 'Círculo', icon: Circle, kind: 'tool' },
   { key: 'frigideira', label: 'Frigideira', icon: Disc3, kind: 'tool' },
   { key: 'ajuste_borda', label: 'Ajuste Borda', icon: Magnet, kind: 'action', needSelection: true },
   // Edição e comandos CAD
@@ -40,6 +41,7 @@ const TOP_TOOLS = [
 // Linha inferior — 5 utilitários de sistema e exportação
 const BOTTOM_TOOLS = [
   { key: 'ajuda', label: 'Ajuda', icon: HelpCircle },
+  { key: 'memorial', label: 'Memorial', icon: Calculator },
   { key: 'exportar', label: 'Exportar', icon: FileDown },
   { key: '3d', label: '3D', icon: Box, accent: true },
   { key: 'atalhos', label: 'Atalhos', icon: Keyboard },
@@ -50,7 +52,7 @@ export default function ProjetoToolbar({
   tool, setTool, ortoAtivo, onToggleOrto, contornoAtivo, onToggleContorno,
   nucleosAtivo, onToggleNucleos,
   onUndo, onEspelho, onGirar, onCopiar, onAjusteBorda, onCores, onMotor,
-  onAjuda, onExportar, on3D, onAtalhos, onConfig, hasSelection
+  onAjuda, onExportar, on3D, onAtalhos, onConfig, onMemorial, hasSelection
 }) {
   const handleAction = (key) => {
     if (key === 'desfazer') return onUndo();
@@ -127,6 +129,7 @@ export default function ProjetoToolbar({
               title={t.label}
               onClick={() => {
                 if (t.key === 'ajuda') return onAjuda();
+                if (t.key === 'memorial') return onMemorial?.();
                 if (t.key === 'exportar') return onExportar();
                 if (t.key === '3d') return on3D();
                 if (t.key === 'atalhos') return onAtalhos();

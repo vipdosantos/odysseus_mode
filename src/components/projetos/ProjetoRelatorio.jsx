@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FileText, Trash2, Maximize2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { computeQuantitativo } from '@/lib/projetoCalculos';
+import { computeEstrutural } from '@/lib/projetoEstrutural';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem
@@ -26,6 +27,7 @@ export default function ProjetoRelatorio({
     queryFn: () => base44.entities.EpsDimension.list()
   });
   const qt = computeQuantitativo(slabs, scalePxPerM || 100, epsDimensions, escoraCfg || {});
+  const est = computeEstrutural(slabs, annotations, scalePxPerM || 100);
 
   return (
     <div className="w-full h-full bg-gray-50 border-l border-border flex flex-col">
@@ -152,6 +154,35 @@ export default function ProjetoRelatorio({
             <span className="font-semibold">- {negativoArea.toFixed(2)} m²</span>
           </div>
         )}
+      </div>
+
+      {/* Cálculos Estruturais */}
+      <div className="border-t border-border p-3 bg-white space-y-2">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cálculos Estruturais</p>
+        <div className="flex justify-between text-sm">
+          <span>Carga média</span>
+          <span className="font-semibold">{est.cargaMedia_kN_m2.toFixed(2)} kN/m²</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span>Peso total</span>
+          <span className="font-semibold">{est.pesoTotal_kN.toFixed(2)} kN</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span>Aço treliça</span>
+          <span className="font-semibold">{est.acoTrelica_kg.toFixed(1)} kg</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span>Aço negativos</span>
+          <span className="font-semibold">{est.acoNegativos_kg.toFixed(1)} kg</span>
+        </div>
+        <div className="flex justify-between text-sm font-semibold border-t border-border pt-1">
+          <span>Aço total</span>
+          <span>{est.acoTotal_kg.toFixed(1)} kg</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span>Concreto (capa)</span>
+          <span className="font-semibold">{est.concreto_m3.toFixed(2)} m³</span>
+        </div>
       </div>
 
       {/* Ações */}

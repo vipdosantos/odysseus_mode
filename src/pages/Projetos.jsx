@@ -9,6 +9,8 @@ import ProjetoRelatorio from '@/components/projetos/ProjetoRelatorio';
 import ProjetoToolbar from '@/components/projetos/ProjetoToolbar';
 import ProjetoAtalhosDialog from '@/components/projetos/ProjetoAtalhosDialog';
 import ProjetoNegativoDialog from '@/components/projetos/ProjetoNegativoDialog';
+import ProjetoMemorialDialog from '@/components/projetos/ProjetoMemorialDialog';
+import ProjetoExportDialog from '@/components/projetos/ProjetoExportDialog';
 import { computeVt } from '@/lib/projetoSnap';
 import { computeVigotas } from '@/lib/projetoCalculos';
 
@@ -56,6 +58,9 @@ export default function Projetos() {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
   const [negativoDialogOpen, setNegativoDialogOpen] = useState(false);
+  const [memorialOpen, setMemorialOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const canvasRef = useRef(null);
   const [negativoParams, setNegativoParams] = useState({
     tipo_aco: 'CA50', bitola: '8.0', quantidade: 10, espacamento: 15,
     acabamento: 'com_dobra', igualar_dobras: true, dobra_esq: 10, dobra_dir: 10
@@ -246,10 +251,7 @@ export default function Projetos() {
   const atalhos = () => setAtalhosAberto(true);
   const config = () => toast({ title: 'Configurações', description: 'Use o painel esquerdo para planta, escala e visualização.' });
   const ver3D = () => toast({ title: '3D', description: 'Visualização 3D em desenvolvimento.' });
-  const exportar = () => {
-    toast({ title: 'Exportar', description: 'Salvando e abrelhando para impressão/PDF…' });
-    setTimeout(() => window.print(), 400);
-  };
+  const exportar = () => setExportOpen(true);
 
   const calibrate = (pxDistance) => {
     const input = window.prompt('Distância real entre os dois pontos (em metros):', '1.00');
@@ -325,7 +327,7 @@ export default function Projetos() {
         s: () => a.setTool('select'), l: () => a.setTool('linha'), r: () => a.setTool('retangulo'),
         d: () => a.setTool('tracejada'), t: () => a.setTool('texto'), v: () => a.setTool('direcao'),
         n: () => a.setTool('negativo'), p: () => a.setTool('pan'), g: () => a.setTool('vigota'),
-        j: () => a.setTool('nervura'), w: () => a.setTool('mover'),
+        j: () => a.setTool('nervura'), w: () => a.setTool('mover'), o: () => a.setTool('circulo'),
         '0': () => { e.stopPropagation(); a.setOrtoAtivo(v => !v); }, h: () => a.escolherCor(),
         m: () => a.espelhar(), c: () => a.copiar(),
         b: () => a.toast({ title: 'Beiral', description: 'Ferramenta em desenvolvimento.' }),
@@ -352,6 +354,7 @@ export default function Projetos() {
         onUndo={undo} onEspelho={espelhar} onGirar={girar} onCopiar={copiar}
         onAjusteBorda={ajusteBorda} onCores={escolherCor} onMotor={motor}
         onAjuda={ajuda} onExportar={exportar} on3D={ver3D} onAtalhos={atalhos} onConfig={config}
+        onMemorial={() => setMemorialOpen(true)}
         hasSelection={!!selectedSlabId}
       />
 
@@ -396,6 +399,7 @@ export default function Projetos() {
             onAddAnnotation={addAnnotation}
             onCalibrate={calibrate} onMoveSlab={moveSlab} onSetDirection={setDirection}
             selectedAnnotationId={selectedAnnotationId} onSelectAnnotation={setSelectedAnnotationId}
+            externalRef={canvasRef}
             nucleosAtivo={nucleosAtivo}
             negativoParams={negativoParams}
             onOpenNegativoDialog={() => setNegativoDialogOpen(true)}
@@ -451,6 +455,24 @@ export default function Projetos() {
         onOpenChange={setNegativoDialogOpen}
         params={negativoParams}
         onConfirm={(p) => { setNegativoParams(p); setNegativoDialogOpen(false); }}
+      />
+
+      <ProjetoMemorialDialog
+        open={memorialOpen}
+        onOpenChange={setMemorialOpen}
+        projeto={projeto}
+        slabs={slabs}
+        annotations={annotations}
+        scalePxPerM={scalePxPerM}
+        escoraCfg={{ escoraEspacamentoM: projeto.escora_espacamento_m ?? 1, pontaleteEspacamentoM: projeto.pontalete_espacamento_m ?? 1 }}
+      />
+
+      <ProjetoExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        projeto={projeto}
+        canvasRef={canvasRef}
+        dados={{ slabs, annotations, cotas, textos, scalePxPerM, escoraCfg: { escoraEspacamentoM: projeto.escora_espacamento_m ?? 1, pontaleteEspacamentoM: projeto.pontalete_espacamento_m ?? 1 } }}
       />
     </div>
   );
