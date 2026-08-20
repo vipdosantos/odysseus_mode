@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Boxes } from 'lucide-react';
 import InsumosPanel from '@/components/estoque/InsumosPanel';
+import ProdutosPanel from '@/components/estoque/ProdutosPanel';
 import PatrimonioPanel from '@/components/estoque/PatrimonioPanel';
 
 export default function EstoquePatrimonio() {
@@ -13,15 +14,17 @@ export default function EstoquePatrimonio() {
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <Boxes className="w-6 h-6 text-primary" /> Estoque & Patrimônio
         </h1>
-        <p className="text-sm text-muted-foreground">Gerencie insumos de fabricação e bens patrimoniais</p>
+        <p className="text-sm text-muted-foreground">Controle de insumos, produtos (treliças) e bens patrimoniais</p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="insumos">Insumos</TabsTrigger>
+          <TabsTrigger value="produtos">Produtos</TabsTrigger>
           <TabsTrigger value="patrimonio">Patrimônio</TabsTrigger>
         </TabsList>
         <TabsContent value="insumos"><InsumosPanel /></TabsContent>
+        <TabsContent value="produtos"><ProdutosPanel /></TabsContent>
         <TabsContent value="patrimonio"><PatrimonioPanel /></TabsContent>
       </Tabs>
     </div>

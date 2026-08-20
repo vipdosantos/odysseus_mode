@@ -16,7 +16,6 @@ const navItems = [
   { path: '/pedidos', icon: Package, label: 'Pedidos', roles: ['admin', 'operador', 'financeiro', 'vendedor', 'visualizador', 'motorista', 'encarregado'] },
   { path: '/ordem-pedido', icon: ShoppingCart, label: 'Ordem de Compras', roles: ['admin', 'financeiro'] },
   { path: '/aprovacoes', icon: ClipboardCheck, label: 'Aprovação de Ordens', roles: ['admin', 'financeiro', 'operador', 'encarregado'] },
-  { path: '/estoque', icon: Boxes, label: 'Controle de Estoque', roles: ['admin', 'operador', 'encarregado'] },
   { path: '/sobra-trelica', icon: Ruler, label: 'Sobra de Treliça', roles: ['admin', 'operador', 'encarregado'] },
   { path: '/relatorios-producao', icon: Factory, label: 'Relatórios de Produção', roles: ['admin', 'operador', 'encarregado'] },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR', roles: ['admin', 'operador', 'motorista', 'encarregado'] },
