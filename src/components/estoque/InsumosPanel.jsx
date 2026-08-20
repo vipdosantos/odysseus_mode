@@ -8,14 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Search, Pencil, Trash2, AlertTriangle, FlaskConical, FileUp, Loader2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, AlertTriangle, FileUp, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const categoryLabels = { arame:'Arame', madeira:'Madeira', prego:'Prego/Grampo', cola:'Cola/Resina', tinta:'Tinta', outros:'Outros' };
 
 const emptyForm = { name:'', code:'', unit:'un', stock:0, min_stock:0, cost_per_unit:0, supplier_name:'', category:'outros', notes:'' };
 
-export default function Supplies() {
+export default function InsumosPanel() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -41,7 +41,7 @@ export default function Supplies() {
   });
 
   const [importLoading, setImportLoading] = useState(false);
-  const fileRef = React.useRef();
+  const fileRef = useRef();
 
   const handleNFImport = async (e) => {
     const file = e.target.files?.[0];
@@ -118,12 +118,9 @@ export default function Supplies() {
   const lowStock = supplies.filter(s => (s.stock || 0) <= (s.min_stock || 0));
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><FlaskConical className="w-6 h-6 text-primary" /> Insumos de Fabricação</h1>
-          <p className="text-sm text-muted-foreground">{supplies.length} insumos cadastrados</p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{supplies.length} insumos cadastrados</p>
         <div className="flex gap-2">
           <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.xml,.xlsx,.csv" className="hidden" onChange={handleNFImport} />
           <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={importLoading}>

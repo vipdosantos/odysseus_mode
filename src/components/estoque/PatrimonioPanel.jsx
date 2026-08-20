@@ -7,8 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Search, Printer, Package } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { Plus, Pencil, Trash2, Search, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const categoryLabels = { maquina:'Máquina', veiculo:'Veículo', ferramenta:'Ferramenta', movel:'Móvel', eletronico:'Eletrônico', outros:'Outros' };
@@ -17,7 +16,7 @@ const conditionColors = { otimo:'text-green-600 bg-green-50', bom:'text-blue-600
 
 const emptyForm = { name:'', code:'', category:'outros', acquisition_date:'', acquisition_value:0, current_value:0, location:'', responsible:'', condition:'bom', serial_number:'', notes:'' };
 
-export default function Assets() {
+export default function PatrimonioPanel() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -77,12 +76,9 @@ export default function Assets() {
   const totalValue = assets.reduce((s, a) => s + (a.current_value || 0), 0);
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Package className="w-6 h-6 text-primary" /> Patrimônio</h1>
-          <p className="text-sm text-muted-foreground">Total: R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} — {assets.length} bens</p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">Total: R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} — {assets.length} bens</p>
         <Button onClick={openNew} className="bg-primary text-primary-foreground"><Plus className="w-4 h-4 mr-1" /> Novo Bem</Button>
       </div>
 

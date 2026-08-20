@@ -14,8 +14,7 @@ import Finance from './pages/Finance';
 import Users from './pages/Users';
 import Cadastros from './pages/Cadastros';
 import DeliveryCalendar from './pages/DeliveryCalendar';
-import Assets from './pages/Assets';
-import Supplies from './pages/Supplies';
+import EstoquePatrimonio from './pages/EstoquePatrimonio';
 import BankAccounts from './pages/BankAccounts';
 import FiscalNotes from './pages/FiscalNotes';
 import Orcamentos from './pages/Orcamentos';
@@ -107,8 +106,7 @@ const AuthenticatedApp = () => {
         <Route path="/cadastros" element={<Cadastros />} />
         <Route path="/calendario" element={<DeliveryCalendar />} />
 
-        <Route path="/patrimonio" element={<Assets />} />
-        <Route path="/insumos" element={<Supplies />} />
+        <Route path="/estoque-patrimonio" element={<EstoquePatrimonio />} />
         <Route path="/contas-bancarias" element={<BankAccounts />} />
         <Route path="/notas-fiscais" element={<FiscalNotes />} />
         <Route path="/orcamentos" element={<Orcamentos />} />
