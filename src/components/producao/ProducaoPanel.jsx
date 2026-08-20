@@ -1,14 +1,11 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useOutletContext } from 'react-router-dom';
-import { Factory, Clock, User, Package } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { Factory, Clock, User } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-export default function Production() {
-  const { user } = useOutletContext();
-
+export default function ProducaoPanel() {
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
     queryFn: () => base44.entities.Order.list('-created_date', 200),
@@ -22,13 +19,7 @@ export default function Production() {
   const inProduction = orders.filter(o => o.status === 'em_producao');
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Produção</h1>
-        <p className="text-sm text-muted-foreground">Acompanhe o progresso da fabricação</p>
-      </div>
-
-      {/* In Production Orders */}
+    <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
           <Factory className="w-5 h-5 text-primary" />
@@ -55,7 +46,7 @@ export default function Production() {
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">{order.client_name}</p>
-                  
+
                   <div className="space-y-2">
                     {order.items?.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between text-sm">
@@ -79,7 +70,6 @@ export default function Production() {
         )}
       </div>
 
-      {/* Recent Production Logs */}
       <div>
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
           <Clock className="w-5 h-5 text-primary" />

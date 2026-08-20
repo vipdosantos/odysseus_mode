@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,8 +22,7 @@ const emptyForm = {
   rating: 3,
 };
 
-export default function Productivity() {
-  const { user } = useOutletContext();
+export default function ProdutividadePanel({ user }) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
@@ -52,14 +50,8 @@ export default function Productivity() {
   const f = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <ClipboardList className="w-6 h-6 text-primary" /> Produtividade
-          </h1>
-          <p className="text-sm text-muted-foreground">Registre suas atividades diárias</p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-end">
         <Button onClick={openForm} className="bg-primary text-primary-foreground">
           <Plus className="w-4 h-4 mr-1" /> Novo Registro
         </Button>

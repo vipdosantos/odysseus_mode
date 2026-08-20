@@ -8,7 +8,7 @@ import { canView } from '@/lib/userPermissions';
 const allItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/pedidos', icon: Package, label: 'Pedidos' },
-  { path: '/producao', icon: Factory, label: 'Produção' },
+  { path: '/relatorios-producao', icon: Factory, label: 'Relatórios' },
   { path: '/scanner', icon: ScanLine, label: 'Scanner QR' },
   { path: '/motorista', icon: Truck, label: 'Entregas' },
   { path: '/financeiro', icon: DollarSign, label: 'Financeiro' },
@@ -18,7 +18,6 @@ const allItems = [
   { path: '/calendario', icon: Calendar, label: 'Calendário' },
   { path: '/insumos', icon: Boxes, label: 'Insumos' },
   { path: '/patrimonio', icon: Wrench, label: 'Patrimônio' },
-  { path: '/produtividade', icon: ClipboardList, label: 'Produtividade' },
   { path: '/projetos', icon: PencilRuler, label: 'Projetos' },
   { path: '/orcamentos', icon: Receipt, label: 'Orçamentos' },
   { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais' },

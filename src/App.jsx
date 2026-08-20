@@ -8,13 +8,12 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
-import Production from './pages/Production';
+import RelatoriosProducao from './pages/RelatoriosProducao';
 import Scanner from './pages/Scanner';
 import Finance from './pages/Finance';
 import Users from './pages/Users';
 import Cadastros from './pages/Cadastros';
 import DeliveryCalendar from './pages/DeliveryCalendar';
-import Productivity from './pages/Productivity';
 import Assets from './pages/Assets';
 import Supplies from './pages/Supplies';
 import BankAccounts from './pages/BankAccounts';
@@ -102,12 +101,12 @@ const AuthenticatedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/pedidos" element={<Orders />} />
-        <Route path="/producao" element={<Production />} />
+        <Route path="/relatorios-producao" element={<RelatoriosProducao />} />
         <Route path="/scanner" element={<Scanner />} />
         <Route path="/financeiro" element={<Finance />} />
         <Route path="/cadastros" element={<Cadastros />} />
         <Route path="/calendario" element={<DeliveryCalendar />} />
-        <Route path="/produtividade" element={<Productivity />} />
+
         <Route path="/patrimonio" element={<Assets />} />
         <Route path="/insumos" element={<Supplies />} />
         <Route path="/contas-bancarias" element={<BankAccounts />} />
