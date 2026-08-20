@@ -28,6 +28,15 @@ export function polygonAreaM2(vertices, scalePxPerM) {
 
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
+function distToSegment(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
 const LINE_TOOLS = new Set(['linha', 'tracejada', 'vigota', 'nervura', 'negativo']);
 const POINT_TOOLS = new Set(['ponto_luz', 'frigideira']);
 const DRAW_TOOLS = new Set(['vertices', 'linha', 'tracejada', 'vigota', 'nervura', 'cotas', 'calibrar', 'retangulo', 'texto', 'ponto_luz', 'frigideira', 'negativo', 'direcao']);
@@ -44,7 +53,8 @@ export default function ProjetoCanvas({
   onAddSlabRect, onAddCota, onAddTexto, onAddAnnotation,
   onCalibrate, onMoveSlab, onSetDirection,
   nucleosAtivo, negativoParams, onOpenNegativoDialog,
-  planoEscoras, escoraCfg
+  planoEscoras, escoraCfg,
+  selectedAnnotationId, onSelectAnnotation
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -215,6 +225,26 @@ export default function ProjetoCanvas({
         ctx.fillStyle = color; ctx.fillText(spec, lx, ly); ctx.textBaseline = 'alphabetic';
       }
     });
+
+    // Destaque da anotação selecionada (linhas, vigotas, nervuras, negativos, pontos, frigideiras)
+    const selAnn = (annotations || []).find(a => a.id === selectedAnnotationId);
+    if (selAnn) {
+      const z = zoom || 1;
+      ctx.save();
+      ctx.strokeStyle = '#D35400'; ctx.lineWidth = 4 / z; ctx.setLineDash([]);
+      if (selAnn.x1 != null) {
+        ctx.beginPath(); ctx.moveTo(selAnn.x1, selAnn.y1); ctx.lineTo(selAnn.x2, selAnn.y2); ctx.stroke();
+        ctx.fillStyle = '#1E8449';
+        [[selAnn.x1, selAnn.y1], [selAnn.x2, selAnn.y2]].forEach(([px, py]) => {
+          ctx.beginPath(); ctx.arc(px, py, 5 / z, 0, Math.PI * 2); ctx.fill();
+        });
+      } else {
+        ctx.beginPath(); ctx.arc(selAnn.x, selAnn.y, 11 / z, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#1E8449';
+        ctx.beginPath(); ctx.arc(selAnn.x, selAnn.y, 4 / z, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
 
     // Cotas (medidas de paredes)
     (cotas || []).forEach(c => {
@@ -438,7 +468,7 @@ export default function ProjetoCanvas({
     }
 
     ctx.restore();
-  }, [slabs, drawingPoints, selectedSlabId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen, nucleosAtivo, planoEscoras, escoraCfg, imgLoaded, floorPlanUrl]);
+  }, [slabs, drawingPoints, selectedSlabId, selectedAnnotationId, floorPlanOpacity, scalePxPerM, size, cotas, textos, annotations, showGrid, contornoAtivo, ortoAtivo, tool, activeColor, panOffset, zoom, snapCandidates, gridPx, pendingLen, nucleosAtivo, planoEscoras, escoraCfg, imgLoaded, floorPlanUrl]);
 
   // Roda do mouse → zoom em torno do cursor
   useEffect(() => {
@@ -472,8 +502,25 @@ export default function ProjetoCanvas({
   const handleClick = (e) => {
     if (tool === 'select') {
       const p = rawPos(e);
+      const z = zoom || 1;
+      const threshold = 9 / z; // tolerância em px de tela
+      // 1) anotações (linhas, vigotas, nervuras, negativos, pontos, frigideiras)
+      let bestAnn = null, bestDist = threshold;
+      (annotations || []).forEach(a => {
+        let d = Infinity;
+        if (a.type === 'ponto_luz' || a.type === 'frigideira') {
+          d = Math.hypot(p.x - a.x, p.y - a.y);
+        } else {
+          d = distToSegment(p, { x: a.x1, y: a.y1 }, { x: a.x2, y: a.y2 });
+        }
+        if (d < bestDist) { bestDist = d; bestAnn = a; }
+      });
+      if (bestAnn) { onSelectAnnotation(bestAnn.id); onSelectSlab(null); return; }
+      // 2) lajes
       const hit = slabs.find(s => pointInPolygon(p, s.vertices));
-      onSelectSlab(hit ? hit.id : null);
+      if (hit) { onSelectSlab(hit.id); onSelectAnnotation(null); return; }
+      // 3) vazio → limpa seleção
+      onSelectSlab(null); onSelectAnnotation(null);
       return;
     }
     if (tool === 'vertices') { const p = resolvePoint(e); onAddPoint(p); setPendingLen(null); return; }

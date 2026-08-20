@@ -38,6 +38,7 @@ export default function Projetos() {
   const [drawingPoints, setDrawingPoints] = useState([]);
   const [tool, setTool] = useState('vertices');
   const [selectedSlabId, setSelectedSlabId] = useState(null);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState(null);
   const [scalePxPerM, setScalePxPerM] = useState(100);
   const [floorPlanOpacity, setFloorPlanOpacity] = useState(0.5);
   const [showGrid, setShowGrid] = useState(true);
@@ -92,13 +93,13 @@ export default function Projetos() {
     setSlabs(p.slabs || []); setCotas(p.cotas || []); setTextos(p.textos || []); setAnnotations(p.annotations || []);
     setScalePxPerM(p.scale_px_per_m || 100); setFloorPlanOpacity(p.floor_plan_opacity ?? 0.5);
     setShowGrid(p.show_grid !== false); setGeneratedOrderId(p.order_id || null);
-    setDrawingPoints([]); setSelectedSlabId(null); setHistory([]);
+    setDrawingPoints([]); setSelectedSlabId(null); setSelectedAnnotationId(null); setHistory([]);
     setZoom(1); setPanOffset({ x: 0, y: 0 });
   };
 
   const newProj = () => {
     setProjeto(newProjeto()); setSlabs([]); setCotas([]); setTextos([]); setAnnotations([]);
-    setDrawingPoints([]); setSelectedSlabId(null); setGeneratedOrderId(null);
+    setDrawingPoints([]); setSelectedSlabId(null); setSelectedAnnotationId(null); setGeneratedOrderId(null);
     setScalePxPerM(100); setFloorPlanOpacity(0.5); setShowGrid(true); setHistory([]);
     setZoom(1); setPanOffset({ x: 0, y: 0 });
   };
@@ -206,18 +207,26 @@ export default function Projetos() {
     if (!text) return; pushHistory(); setTextos(prev => [...prev, { x: p.x, y: p.y, text }]);
   };
   const addAnnotation = (a) => { pushHistory(); setAnnotations(prev => [...prev, { id: uid('ann'), ...a }]); };
+  const deleteAnnotation = (id) => {
+    pushHistory();
+    setAnnotations(prev => prev.filter(a => a.id !== id));
+    if (selectedAnnotationId === id) setSelectedAnnotationId(null);
+  };
 
   const undo = () => {
     setHistory(prev => {
       if (prev.length === 0) return prev;
       const last = prev[prev.length - 1];
       setSlabs(last.slabs); setCotas(last.cotas); setTextos(last.textos); setAnnotations(last.annotations);
-      setDrawingPoints([]); setSelectedSlabId(null);
+      setDrawingPoints([]); setSelectedSlabId(null); setSelectedAnnotationId(null);
       return prev.slice(0, -1);
     });
   };
 
-  const deleteSelected = () => { if (selectedSlabId) deleteSlab(selectedSlabId); };
+  const deleteSelected = () => {
+    if (selectedAnnotationId) deleteAnnotation(selectedAnnotationId);
+    else if (selectedSlabId) deleteSlab(selectedSlabId);
+  };
 
   // Motor: recalcula vigotas (vt) e área de todas as lajes com direção definida
   const motor = () => {
@@ -301,15 +310,15 @@ export default function Projetos() {
   };
 
   const actionsRef = useRef({});
-  actionsRef.current = { setTool, setOrtoAtivo, escolherCor, espelhar, copiar, undo, deleteSelected, toast, setAtalhosAberto, setSelectedSlabId, setDrawingPoints, selectedSlabId };
+  actionsRef.current = { setTool, setOrtoAtivo, escolherCor, espelhar, copiar, undo, deleteSelected, toast, setAtalhosAberto, setSelectedSlabId, setSelectedAnnotationId, setDrawingPoints, selectedSlabId, selectedAnnotationId };
   useEffect(() => {
     const onKey = (e) => {
       const a = actionsRef.current;
       const tag = document.activeElement && document.activeElement.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
       if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); a.undo(); return; }
-      if (e.key === 'Escape') { a.setSelectedSlabId(null); a.setDrawingPoints([]); return; }
-      if (e.key === 'Delete' || e.key === 'Backspace') { if (a.selectedSlabId) { e.preventDefault(); a.deleteSelected(); } return; }
+      if (e.key === 'Escape') { a.setSelectedSlabId(null); a.setSelectedAnnotationId(null); a.setDrawingPoints([]); return; }
+      if (e.key === 'Delete' || e.key === 'Backspace') { if (a.selectedSlabId || a.selectedAnnotationId) { e.preventDefault(); a.deleteSelected(); } return; }
       if (e.key === '?') { a.setAtalhosAberto(true); return; }
       const k = e.key.toLowerCase();
       const map = {
@@ -386,6 +395,7 @@ export default function Projetos() {
             onAddSlabRect={addSlabRect} onAddCota={addCota} onAddTexto={addTexto}
             onAddAnnotation={addAnnotation}
             onCalibrate={calibrate} onMoveSlab={moveSlab} onSetDirection={setDirection}
+            selectedAnnotationId={selectedAnnotationId} onSelectAnnotation={setSelectedAnnotationId}
             nucleosAtivo={nucleosAtivo}
             negativoParams={negativoParams}
             onOpenNegativoDialog={() => setNegativoDialogOpen(true)}
