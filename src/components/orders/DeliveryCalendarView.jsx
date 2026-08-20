@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Package, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import OrderDetailDialog from '@/components/orders/OrderDetailDialog';
-import OrderFormDialog from '@/components/orders/OrderFormDialog';
-import { useAuth } from '@/lib/AuthContext';
 
 const PRIORITY_COLORS = {
   urgente: 'bg-red-500',
@@ -17,47 +12,8 @@ const PRIORITY_COLORS = {
   baixa: 'bg-gray-400',
 };
 
-export default function DeliveryCalendar() {
+export default function DeliveryCalendarView({ orders, onOpenOrder }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  const { data: orders = [] } = useQuery({
-    queryKey: ['orders'],
-    queryFn: () => base44.entities.Order.list('-delivery_date', 500),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Order.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
-  });
-
-  const canEdit = user?.role === 'admin' || user?.role === 'operador';
-
-  const openOrder = (order) => {
-    setSelectedOrder(order);
-    setDetailOpen(true);
-  };
-
-  const handleStatusChange = (order, newStatus) => {
-    updateMutation.mutate({ id: order.id, data: { ...order, status: newStatus } });
-    setDetailOpen(false);
-  };
-
-  const handleEdit = (order) => {
-    setDetailOpen(false);
-    setEditOpen(true);
-  };
-
-  const handleSave = (data) => {
-    if (selectedOrder?.id) {
-      updateMutation.mutate({ id: selectedOrder.id, data });
-    }
-    setEditOpen(false);
-  };
 
   const ordersWithDate = orders.filter(o => o.delivery_date);
 
@@ -65,18 +21,17 @@ export default function DeliveryCalendar() {
   const end = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start, end });
 
-  // Fill week start blanks
-  const firstDow = start.getDay(); // 0=Sun
+  const firstDow = start.getDay();
   const blanks = Array(firstDow).fill(null);
 
   const getOrdersForDay = (day) =>
     ordersWithDate.filter(o => isSameDay(parseISO(o.delivery_date), day));
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-5xl mx-auto">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Calendário de Entregas</h1>
+          <h2 className="text-lg font-bold tracking-tight">Calendário de Entregas</h2>
           <p className="text-sm text-muted-foreground">Pedidos agendados para entrega</p>
         </div>
         <div className="flex items-center gap-2">
@@ -93,14 +48,12 @@ export default function DeliveryCalendar() {
       </div>
 
       <div className="bg-card rounded-2xl border overflow-hidden">
-        {/* Day headers */}
         <div className="grid grid-cols-7 border-b">
           {['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => (
             <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-2">{d}</div>
           ))}
         </div>
 
-        {/* Calendar grid */}
         <div className="grid grid-cols-7">
           {blanks.map((_, i) => <div key={`b${i}`} className="min-h-[100px] border-b border-r bg-muted/20" />)}
           {days.map(day => {
@@ -124,7 +77,7 @@ export default function DeliveryCalendar() {
                   {dayOrders.slice(0, 3).map(order => (
                     <div
                       key={order.id}
-                      onClick={() => openOrder(order)}
+                      onClick={() => onOpenOrder(order)}
                       className={cn(
                         "text-[10px] px-1.5 py-0.5 rounded text-white font-medium truncate flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity",
                         PRIORITY_COLORS[order.priority] || 'bg-blue-500'
@@ -145,7 +98,6 @@ export default function DeliveryCalendar() {
         </div>
       </div>
 
-      {/* Today's deliveries */}
       {(() => {
         const todayOrders = ordersWithDate.filter(o => isSameDay(parseISO(o.delivery_date), new Date()));
         if (!todayOrders.length) return null;
@@ -156,7 +108,7 @@ export default function DeliveryCalendar() {
             </h3>
             <div className="space-y-2">
               {todayOrders.map(order => (
-                <div key={order.id} onClick={() => openOrder(order)} className="flex items-center gap-3 bg-card rounded-xl p-3 border cursor-pointer hover:bg-muted/30 transition-colors">
+                <div key={order.id} onClick={() => onOpenOrder(order)} className="flex items-center gap-3 bg-card rounded-xl p-3 border cursor-pointer hover:bg-muted/30 transition-colors">
                   <div className={cn("w-2 h-8 rounded-full shrink-0", PRIORITY_COLORS[order.priority] || 'bg-blue-500')} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">#{order.order_number} — {order.client_name}</p>
@@ -172,22 +124,6 @@ export default function DeliveryCalendar() {
           </div>
         );
       })()}
-
-      <OrderDetailDialog
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        order={selectedOrder}
-        onEdit={handleEdit}
-        canEdit={canEdit}
-        onStatusChange={handleStatusChange}
-      />
-
-      <OrderFormDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        order={selectedOrder}
-        onSave={handleSave}
-      />
     </div>
   );
 }

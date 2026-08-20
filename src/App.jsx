@@ -13,7 +13,6 @@ import Scanner from './pages/Scanner';
 import Finance from './pages/Finance';
 import Users from './pages/Users';
 import Cadastros from './pages/Cadastros';
-import DeliveryCalendar from './pages/DeliveryCalendar';
 import EstoquePatrimonio from './pages/EstoquePatrimonio';
 import BankAccounts from './pages/BankAccounts';
 import FiscalNotes from './pages/FiscalNotes';
@@ -103,7 +102,6 @@ const AuthenticatedApp = () => {
         <Route path="/scanner" element={<Scanner />} />
         <Route path="/financeiro" element={<Finance />} />
         <Route path="/cadastros" element={<Cadastros />} />
-        <Route path="/calendario" element={<DeliveryCalendar />} />
 
         <Route path="/estoque-patrimonio" element={<EstoquePatrimonio />} />
         <Route path="/contas-bancarias" element={<BankAccounts />} />

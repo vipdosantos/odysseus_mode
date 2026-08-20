@@ -23,7 +23,6 @@ const navItems = [
   { path: '/financeiro', icon: DollarSign, label: 'Financeiro', roles: ['admin', 'financeiro'] },
   { path: '/contas-bancarias', icon: Landmark, label: 'Contas Bancárias', roles: ['admin', 'financeiro'] },
   { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais', roles: ['admin', 'financeiro'] },
-  { path: '/calendario', icon: CalendarDays, label: 'Calendário', roles: ['admin', 'operador', 'visualizador', 'motorista', 'encarregado'] },
   { path: '/estoque-patrimonio', icon: Boxes, label: 'Estoque & Patrimônio', roles: ['admin', 'operador', 'encarregado'] },
   { path: '/projetos', icon: PencilRuler, label: 'Projetos', roles: ['admin', 'operador', 'vendedor', 'visualizador', 'encarregado'] },
   { path: '/orcamentos', icon: Receipt, label: 'Orçamentos', roles: ['admin', 'operador', 'financeiro', 'vendedor', 'visualizador', 'encarregado'] },

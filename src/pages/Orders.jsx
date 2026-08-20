@@ -11,6 +11,7 @@ import KanbanColumn, { DEFAULT_STATUSES } from '../components/orders/KanbanColum
 import KanbanColumnEditor from '../components/orders/KanbanColumnEditor';
 import OrderFormDialog from '../components/orders/OrderFormDialog';
 import OrderDetailDialog from '../components/orders/OrderDetailDialog';
+import DeliveryCalendarView from '@/components/orders/DeliveryCalendarView';
 import { applyStockDecrement } from '@/lib/stockSync';
 import { cn } from '@/lib/utils';
 import { Settings2 } from 'lucide-react';
@@ -47,6 +48,7 @@ export default function Orders() {
   const TABS = [
     { key: 'pedidos', label: 'Pedidos' },
     ...columnsAll.filter(c => c.active !== false).map(s => ({ key: s.key, label: s.label })),
+    { key: 'calendario', label: 'Calendário' },
   ];
 
   const saveColumnsMutation = useMutation({
@@ -274,6 +276,8 @@ export default function Orders() {
               ))}
             </div>
           </DragDropContext>
+        ) : activeTab === 'calendario' ? (
+          <DeliveryCalendarView orders={filtered} onOpenOrder={handleCardClick} />
         ) : (
           // Single status filtered view
           <div className="max-w-2xl">

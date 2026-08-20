@@ -14,7 +14,6 @@ const allItems = [
   { path: '/financeiro', icon: DollarSign, label: 'Financeiro' },
   { path: '/ordem-pedido', icon: ShoppingCart, label: 'Ordem de Compras' },
   { path: '/aprovacoes', icon: ClipboardCheck, label: 'Aprovações' },
-  { path: '/calendario', icon: Calendar, label: 'Calendário' },
   { path: '/estoque-patrimonio', icon: Boxes, label: 'Estoque & Patrim.' },
   { path: '/projetos', icon: PencilRuler, label: 'Projetos' },
   { path: '/orcamentos', icon: Receipt, label: 'Orçamentos' },
