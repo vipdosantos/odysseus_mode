@@ -1,10 +1,9 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configura o worker do pdf.js (Vite resolve a URL)
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).href;
+// Usa o worker do pdf.js via CDN (mesma versão instalada) — evita problemas
+// de bundling do Vite com módulos .mjs de worker.
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 
 const MAX_DIM = 2200; // largura/alura máxima da imagem gerada
 
