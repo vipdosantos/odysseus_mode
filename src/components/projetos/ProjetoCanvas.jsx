@@ -606,7 +606,7 @@ export default function ProjetoCanvas({
     const makeEvt = (t) => ({ clientX: t.clientX, clientY: t.clientY, button: 0, buttons: 1, preventDefault() {}, stopPropagation() {} });
     const ts = (e) => { if (e.touches.length === 1) handleMouseDown(makeEvt(e.touches[0])); };
     const tm = (e) => { if (e.touches.length === 1) { e.preventDefault(); handleMouseMove(makeEvt(e.touches[0])); } };
-    const te = (e) => { if (e.changedTouches.length === 1) handleMouseUp(makeEvt(e.changedTouches[0])); };
+    const te = (e) => { if (e.changedTouches.length === 1) { const evt = makeEvt(e.changedTouches[0]); handleMouseUp(evt); handleClick(evt); } };
     canvas.addEventListener('touchstart', ts, { passive: false });
     canvas.addEventListener('touchmove', tm, { passive: false });
     canvas.addEventListener('touchend', te, { passive: false });
@@ -617,7 +617,7 @@ export default function ProjetoCanvas({
       canvas.removeEventListener('touchend', te);
       canvas.removeEventListener('touchcancel', te);
     };
-  }, [handleMouseDown, handleMouseMove, handleMouseUp]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleClick]);
 
   // Foca o campo de comprimento ao digitar número enquanto desenha
   useEffect(() => {
