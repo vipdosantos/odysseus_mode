@@ -17,7 +17,6 @@ import EstoquePatrimonio from './pages/EstoquePatrimonio';
 import BankAccounts from './pages/BankAccounts';
 import FiscalNotes from './pages/FiscalNotes';
 import Orcamentos from './pages/Orcamentos';
-import Projetos from './pages/Projetos';
 import OrdemPedido from './pages/OrdemPedido';
 import OrdemCompra from './pages/OrdemCompra';
 import SobraTrelica from './pages/SobraTrelica';
@@ -107,7 +106,6 @@ const AuthenticatedApp = () => {
         <Route path="/contas-bancarias" element={<BankAccounts />} />
         <Route path="/notas-fiscais" element={<FiscalNotes />} />
         <Route path="/orcamentos" element={<Orcamentos />} />
-        <Route path="/projetos" element={<Projetos />} />
         <Route path="/ordem-pedido" element={<OrdemPedido />} />
         <Route path="/aprovacoes" element={<OrdemCompra />} />
         <Route path="/sobra-trelica" element={<SobraTrelica />} />

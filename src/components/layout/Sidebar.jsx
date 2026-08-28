@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Factory, DollarSign, Users, 
   ChevronLeft, ChevronRight, ScanLine, LogOut, BookUser,
   CalendarDays, ClipboardList, Wrench, FlaskConical,
-  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck, Ruler, Code2, Truck, Receipt, PencilRuler, Headphones
+  Landmark, FileText, ShoppingCart, Boxes, ClipboardCheck, Ruler, Code2, Truck, Receipt, Headphones
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,6 @@ const navItems = [
   { path: '/contas-bancarias', icon: Landmark, label: 'Contas Bancárias', roles: ['admin', 'financeiro'] },
   { path: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais', roles: ['admin', 'financeiro'] },
   { path: '/estoque-patrimonio', icon: Boxes, label: 'Estoque & Patrimônio', roles: ['admin', 'operador', 'encarregado'] },
-  { path: '/projetos', icon: PencilRuler, label: 'Projetos', roles: ['admin', 'operador', 'vendedor', 'visualizador', 'encarregado'] },
   { path: '/orcamentos', icon: Receipt, label: 'Orçamentos', roles: ['admin', 'operador', 'financeiro', 'vendedor', 'visualizador', 'encarregado'] },
   { path: '/chamados-ti', icon: Headphones, label: 'Chamados de TI', roles: ['admin', 'operador', 'financeiro', 'visualizador', 'motorista', 'encarregado', 'vendedor'] },
   { path: '/cadastros', icon: BookUser, label: 'Cadastros', roles: ['admin', 'operador', 'encarregado'] },
