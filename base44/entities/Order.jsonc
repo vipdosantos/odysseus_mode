@@ -76,6 +76,11 @@
           "size": {
             "type": "string"
           },
+          "l": {
+            "type": "number",
+            "default": 0,
+            "description": "Comprimento de cada treli\u00e7a/vigota (m)"
+          },
           "truss_type": {
             "type": "string",
             "enum": [

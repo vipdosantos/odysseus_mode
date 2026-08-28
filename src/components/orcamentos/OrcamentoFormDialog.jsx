@@ -36,7 +36,7 @@ const PAG_OPTIONS = [
 
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const emptyItem = { size: '', truss_type: 'H8', quantity: 1, unit_price: 0, adicionais: [] };
+const emptyItem = { size: '', l: '', truss_type: 'H8', quantity: 1, unit_price: 0, adicionais: [] };
 
 export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
   const [form, setForm] = useState({
@@ -275,6 +275,10 @@ export default function OrcamentoFormDialog({ open, onOpenChange, onSave }) {
                     <div className="flex-1 min-w-0">
                       <Label className="text-[10px] text-muted-foreground">Tamanho / Metragem</Label>
                       <Input value={item.size} onChange={e => updateItem(idx, 'size', e.target.value)} placeholder="Ex: 8cm x 3m" className="h-8 text-xs" />
+                    </div>
+                    <div className="w-16 shrink-0">
+                      <Label className="text-[10px] text-muted-foreground">L (m)</Label>
+                      <Input type="number" step="0.01" value={item.l || ''} onChange={e => updateItem(idx, 'l', e.target.value)} placeholder="3.5" className="h-8 text-xs" />
                     </div>
                     <div className="w-16 shrink-0">
                       <Label className="text-[10px] text-muted-foreground">Qtd</Label>
