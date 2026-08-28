@@ -32,7 +32,7 @@ const TIPO_LAJE_OPTIONS = ['Laje', 'Painel', 'Mista', 'Cortina de contenção', 
 const TIPO_ENCHIMENTO_OPTIONS = ['Nenhum', 'EPS', 'Lajota', 'EPS+Lajota'];
 const NO_FILLING_LAJE_TYPES = ['Cortina de contenção', 'Treliçado Maciço', 'Painel Maciço'];
 
-const emptyItem = { truss_type: 'H8', size: '', l: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
+const emptyItem = { truss_type: 'H8', size: '', local_montagem: '', quantity: 1, produced: 0, qr_code_id: '', adicionais: [] };
 
 export default function OrderFormDialog({ open, onOpenChange, order, onSave, defaultTipo = 'pedido' }) {
   const [form, setForm] = useState({
@@ -476,9 +476,9 @@ export default function OrderFormDialog({ open, onOpenChange, order, onSave, def
                       <Input value={item.size} onChange={e => updateItem(idx, 'size', e.target.value)} placeholder="Ex: 8cm x 3m" />
                     )}
                   </div>
-                  <div className="w-20">
-                    <Label className="text-xs">L (m)</Label>
-                    <Input type="number" step="0.01" value={item.l || ''} onChange={e => updateItem(idx, 'l', e.target.value)} placeholder="Ex: 3.5" />
+                  <div className="w-40">
+                    <Label className="text-xs">Local de Montagem</Label>
+                    <Input value={item.local_montagem || ''} onChange={e => updateItem(idx, 'local_montagem', e.target.value)} placeholder="Ex: Sala, Cozinha, Quarto" />
                   </div>
                   <div className="w-24">
                     <Label className="text-xs">Quantidade</Label>

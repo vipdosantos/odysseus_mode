@@ -16,7 +16,7 @@ export function parseSizeToMeters(size) {
 }
 
 export function calcSquareMeters(item, tipoLaje) {
-  const meters = Number(item.l) || parseSizeToMeters(item.size);
+  const meters = parseSizeToMeters(item.size);
   const qty = Number(item.quantity) || 0;
   if (!meters || !qty) return 0;
   const factor = tipoLaje === 'Painel' ? 0.25 : tipoLaje === 'Laje Treliçada Intereixo' ? 0.495 : 0.425;

@@ -76,10 +76,10 @@
           "size": {
             "type": "string"
           },
-          "l": {
-            "type": "number",
-            "default": 0,
-            "description": "Comprimento de cada treli\u00e7a/vigota (m)"
+          "local_montagem": {
+            "type": "string",
+            "description": "Local/\u00e1rea onde a treli\u00e7a ser\u00e1 montada na obra",
+            "default": ""
           },
           "truss_type": {
             "type": "string",
