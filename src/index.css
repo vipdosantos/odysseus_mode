@@ -99,4 +99,6 @@
   .romaneio-page .romaneio-table-wrap { flex: 0 0 auto; }
   .romaneio-page .romaneio-obs { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
   .romaneio-page .romaneio-obs-box { flex: 1 1 auto; min-height: 20mm; }
+  .ordem-producao-print, .ordem-producao-print * { visibility: visible; }
+  .ordem-producao-print { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; margin: 0 !important; max-width: none !important; }
 }

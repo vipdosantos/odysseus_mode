@@ -11,12 +11,14 @@ import OrderNFTab from './OrderNFTab';
 import QRZoomModal from './QRZoomModal';
 import DeliveryReceiptTab from './DeliveryReceiptTab';
 import OrderQuoteTab from './OrderQuoteTab';
+import OrdemProducaoPrint from './OrdemProducaoPrint';
 import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 import { calcSquareMeters, calcTotalSquareMeters, calcEpsPlates, calcTotalEpsPlates, fmtM2, fmtQty } from '@/lib/squareMeters';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 
 export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, canEdit, onStatusChange, onDelete, onArchive, columns }) {
   const [zoomQR, setZoomQR] = useState(null); // { url, label }
+  const [showOrdemProducao, setShowOrdemProducao] = useState(false);
   if (!order) return null;
   const cols = (columns && columns.length > 0) ? columns : DEFAULT_STATUSES;
   const STATUS_MAP = Object.fromEntries(cols.map(c => [c.key, c]));
@@ -300,6 +302,9 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
                 <Button onClick={handlePrintLabels} variant="outline" className="flex-1 min-w-[140px]">
                   <Printer className="w-4 h-4 mr-2" /> Imprimir Etiquetas
                 </Button>
+                <Button onClick={() => setShowOrdemProducao(true)} variant="outline" className="flex-1 min-w-[140px]">
+                  <Printer className="w-4 h-4 mr-2" /> Ordem de Produção
+                </Button>
                 {canEdit && (
                   <Button onClick={() => onEdit(order)} className="flex-1 min-w-[100px] bg-primary text-primary-foreground">
                     <Pencil className="w-4 h-4 mr-2" /> Editar
@@ -424,6 +429,11 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         qrUrl={zoomQR.url}
         label={zoomQR.label}
       />
+    )}
+
+    {/* Ordem de Produção (imprimível) */}
+    {showOrdemProducao && (
+      <OrdemProducaoPrint order={order} onClose={() => setShowOrdemProducao(false)} />
     )}
   </>
   );
