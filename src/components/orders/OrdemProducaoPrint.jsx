@@ -95,18 +95,18 @@ export default function OrdemProducaoPrint({ order, onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
-      <div className="no-print sticky top-0 bg-white/90 backdrop-blur border-b flex items-center justify-between p-3 z-10">
-        <h2 className="font-bold">Ordem de Produção — #{order.order_number}</h2>
+    <div className="fixed inset-0 z-[100] bg-black/50 flex items-start justify-center overflow-y-auto p-4">
+      <div className="no-print sticky top-0 z-10 flex items-center justify-between p-3 w-full max-w-[280mm] mx-auto bg-white rounded-t-lg shadow-lg border-b">
+        <h2 className="font-bold text-lg">Ordem de Produção — #{order.order_number}</h2>
         <div className="flex gap-2">
-          <button onClick={() => window.print()} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-primary text-primary-foreground">
+          <button onClick={() => window.print()} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90">
             <Printer className="w-4 h-4" /> Imprimir
           </button>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted border"><X className="w-5 h-5" /></button>
         </div>
       </div>
 
-      <div className="ordem-producao-print p-6 max-w-[280mm] mx-auto w-full">
+      <div className="ordem-producao-print bg-white rounded-b-lg shadow-2xl p-6 max-w-[280mm] mx-auto w-full">
         <div className="border-2 border-black p-5 text-black" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
           {/* Cabeçalho com logo + título */}
           <div className="flex items-center gap-3 border-b-2 border-black pb-2 mb-3">
