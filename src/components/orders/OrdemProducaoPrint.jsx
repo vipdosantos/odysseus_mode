@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
 import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
@@ -138,8 +139,8 @@ export default function OrdemProducaoPrint({ order, onClose }) {
     </div>
   );
 
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/50 overflow-y-auto p-4" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-[200] bg-black/50 overflow-y-auto p-4" style={{ pointerEvents: 'auto' }} onClick={onClose}>
       <div className="max-w-[280mm] mx-auto" onClick={(e) => e.stopPropagation()}>
         <div className="no-print sticky top-0 z-10 flex items-center justify-between p-3 bg-white rounded-t-lg shadow-lg border-b">
           <h2 className="font-bold text-lg">Ordem de Produção — #{order.order_number}</h2>
@@ -232,5 +233,5 @@ export default function OrdemProducaoPrint({ order, onClose }) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
