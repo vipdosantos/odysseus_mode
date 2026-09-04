@@ -259,7 +259,15 @@ export default function Orders() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-x-auto p-4 md:p-6 pt-4">
+      <div
+        className="flex-1 overflow-x-auto p-4 md:p-6 pt-4"
+        onWheel={(e) => {
+          // Converte scroll vertical do mouse em scroll horizontal do Kanban
+          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            e.currentTarget.scrollLeft += e.deltaY;
+          }
+        }}
+      >
         {activeTab === 'pedidos' ? (
           // Full Kanban view
           <DragDropContext onDragEnd={onDragEnd}>
