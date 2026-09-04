@@ -88,13 +88,13 @@
 }
 
 @media print {
-  @page { size: A4 landscape; margin: 5mm; }
+  @page { size: A4 portrait; margin: 5mm; }
   .no-print { display: none !important; }
   .print-only { display: block !important; }
   body * { visibility: hidden; }
   .romaneio-print, .romaneio-print * { visibility: visible; }
-  .romaneio-print { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; margin: 0 !important; max-width: none !important; height: 200mm !important; max-height: 200mm !important; overflow: hidden !important; }
-  .romaneio-page { display: flex; flex-direction: column; min-height: 196mm; max-height: 196mm; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
+  .romaneio-print { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; margin: 0 !important; max-width: none !important; height: 287mm !important; max-height: 287mm !important; overflow: hidden !important; }
+  .romaneio-page { display: flex; flex-direction: column; min-height: 283mm; max-height: 283mm; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
   .romaneio-page .romaneio-table-wrap { flex: 0 0 auto; }
   .romaneio-page .romaneio-obs { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
   .romaneio-page .romaneio-obs-box { flex: 1 1 auto; min-height: 20mm; }
@@ -103,18 +103,19 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 287mm;
-    max-width: 287mm;
-    padding: 4mm !important;
+    width: 200mm;
+    max-width: 200mm;
+    padding: 3mm !important;
     margin: 0 !important;
-    height: 200mm !important;
-    max-height: 200mm !important;
+    height: 287mm !important;
+    max-height: 287mm !important;
     overflow: hidden !important;
     box-sizing: border-box;
-    zoom: 0.82;
   }
   .ordem-producao-print .border-2 { border: 2px solid #000 !important; padding: 3mm !important; }
   .ordem-producao-print table { width: 100%; border-collapse: collapse; }
   .ordem-producao-print td, .ordem-producao-print th { border: 1px solid #000 !important; padding: 1px 2px !important; line-height: 1.1 !important; }
   .ordem-producao-print .no-print { display: none !important; }
+  /* Em retrato, empilha as duas colunas de tabela verticalmente */
+  .ordem-producao-print .flex.gap-4.mb-4 { flex-direction: column !important; gap: 2mm !important; }
 }
