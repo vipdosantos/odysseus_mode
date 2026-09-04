@@ -107,13 +107,18 @@
     max-width: 200mm;
     padding: 0 !important;
     margin: 0 !important;
+    height: 289mm !important;
+    max-height: 289mm !important;
     box-sizing: border-box;
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  .ordem-producao-print .border-2 { border: 2px solid #000 !important; padding: 3mm !important; }
+  .ordem-producao-print .border-2 { border: 2px solid #000 !important; padding: 3mm !important; height: 100% !important; display: flex !important; flex-direction: column !important; }
   .ordem-producao-print table { width: 100%; border-collapse: collapse; }
-  .ordem-producao-print td, .ordem-producao-print th { border: 1px solid #000 !important; padding: 0 1px !important; line-height: 1 !important; height: 4mm !important; }
+  .ordem-producao-print td, .ordem-producao-print th { border: 1px solid #000 !important; padding: 0 1px !important; line-height: 1 !important; height: 5mm !important; }
   .ordem-producao-print .no-print { display: none !important; }
-  .ordem-producao-print .flex.gap-4.mb-3 { flex-direction: column !important; gap: 2mm !important; }
+  .ordem-producao-print .flex.gap-4.mb-3 { flex-direction: column !important; gap: 2mm !important; flex: 1 1 0 !important; min-height: 0 !important; }
+  .ordem-producao-print .flex.gap-4.mb-3 > div { flex: 1 1 0 !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; }
+  .ordem-producao-print .flex.gap-4.mb-3 > div > table { flex: 1 1 0 !important; height: 100% !important; }
+  .ordem-producao-print .grid.grid-cols-2.gap-8 { flex: 0 0 auto !important; }
 }

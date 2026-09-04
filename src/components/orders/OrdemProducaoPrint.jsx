@@ -6,7 +6,7 @@ import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const ROWS_PER_COL = 10;
+const ROWS_PER_COL = 14;
 
 function fmtDate(d) {
   if (!d) return '';
