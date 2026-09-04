@@ -105,14 +105,16 @@
     top: 0;
     width: 287mm;
     max-width: 287mm;
-    padding: 0 !important;
+    padding: 4mm !important;
     margin: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
+    height: 200mm !important;
+    max-height: 200mm !important;
+    overflow: hidden !important;
     box-sizing: border-box;
+    zoom: 0.82;
   }
-  .ordem-producao-print .border-2 { border: 2px solid #000 !important; }
+  .ordem-producao-print .border-2 { border: 2px solid #000 !important; padding: 3mm !important; }
   .ordem-producao-print table { width: 100%; border-collapse: collapse; }
-  .ordem-producao-print td, .ordem-producao-print th { border: 1px solid #000 !important; }
+  .ordem-producao-print td, .ordem-producao-print th { border: 1px solid #000 !important; padding: 1px 2px !important; line-height: 1.1 !important; }
+  .ordem-producao-print .no-print { display: none !important; }
 }
