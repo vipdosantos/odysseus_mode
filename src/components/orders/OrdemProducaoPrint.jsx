@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
@@ -15,15 +15,23 @@ function fmtDate(d) {
 
 export default function OrdemProducaoPrint({ order, onClose }) {
   const docRef = useRef(null);
+  // Preenchimento automático: TELA se o pedido tem telas, EPS/LAJOTA conforme tipo_enchimento
+  const autoMat = useMemo(() => {
+    if (!order) return { tela: false, eps: false, lajota: false };
+    const temTelas = Array.isArray(order.telas) && order.telas.some(t => (t.quantity || 0) > 0);
+    const ench = order.tipo_enchimento;
+    return {
+      tela: temTelas,
+      eps: ench === 'EPS',
+      lajota: ench === 'Lajota',
+    };
+  }, [order]);
+
   const [qtdeA, setQtdeA] = useState('');
   const [qtdeB, setQtdeB] = useState('');
-  const [matA, setMatA] = useState({ tela: false, eps: false });
-  const [matB, setMatB] = useState({ tela: false, eps: false });
+  const [matA, setMatA] = useState(autoMat);
+  const [matB, setMatB] = useState(autoMat);
 
-  const handleQtdeWheel = (val, setVal, dir) => {
-    const cur = parseInt(val) || 0;
-    setVal(String(Math.max(0, cur + dir)));
-  };
   if (!order) return null;
 
   const handlePrint = () => {
@@ -165,6 +173,15 @@ export default function OrdemProducaoPrint({ order, onClose }) {
             type="checkbox"
             checked={mat.eps}
             onChange={(e) => setMat({ ...mat, eps: e.target.checked })}
+            className="w-3.5 h-3.5 accent-black print:accent-black"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">LAJOTA:</span>
+          <input
+            type="checkbox"
+            checked={mat.lajota}
+            onChange={(e) => setMat({ ...mat, lajota: e.target.checked })}
             className="w-3.5 h-3.5 accent-black print:accent-black"
           />
         </div>
