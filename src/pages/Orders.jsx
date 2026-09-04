@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useOutletContext } from 'react-router-dom';
@@ -201,6 +201,22 @@ export default function Orders() {
 
   const canEdit = ['admin', 'operador'].includes(user?.role);
 
+  const kanbanRef = useRef(null);
+
+  // Scroll horizontal do Kanban com a roda do mouse (vertical → horizontal)
+  useEffect(() => {
+    const el = kanbanRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [activeTab]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -260,13 +276,8 @@ export default function Orders() {
 
       {/* Content */}
       <div
+        ref={kanbanRef}
         className="flex-1 overflow-x-auto p-4 md:p-6 pt-4"
-        onWheel={(e) => {
-          // Converte scroll vertical do mouse em scroll horizontal do Kanban
-          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-            e.currentTarget.scrollLeft += e.deltaY;
-          }
-        }}
       >
         {activeTab === 'pedidos' ? (
           // Full Kanban view
