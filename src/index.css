@@ -99,5 +99,20 @@
   .romaneio-page .romaneio-obs { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
   .romaneio-page .romaneio-obs-box { flex: 1 1 auto; min-height: 20mm; }
   .ordem-producao-print, .ordem-producao-print * { visibility: visible; }
-  .ordem-producao-print { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; margin: 0 !important; max-width: none !important; height: auto !important; max-height: none !important; overflow: visible !important; }
+  .ordem-producao-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 287mm;
+    max-width: 287mm;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-sizing: border-box;
+  }
+  .ordem-producao-print .border-2 { border: 2px solid #000 !important; }
+  .ordem-producao-print table { width: 100%; border-collapse: collapse; }
+  .ordem-producao-print td, .ordem-producao-print th { border: 1px solid #000 !important; }
 }

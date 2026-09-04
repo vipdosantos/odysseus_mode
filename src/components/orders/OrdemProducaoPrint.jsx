@@ -35,49 +35,9 @@ export default function OrdemProducaoPrint({ order, onClose }) {
   if (!order) return null;
 
   const handlePrint = () => {
-    const node = docRef.current;
-    if (!node) return;
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;top:0;';
-    document.body.appendChild(iframe);
-    iframe.onload = () => {
-      setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        setTimeout(() => document.body.removeChild(iframe), 1000);
-      }, 500);
-    };
-    const doc = iframe.contentDocument;
-    doc.open();
-    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ordem de Produção ${order.order_number}</title>
-      <style>
-        @page { size: A4 landscape; margin: 5mm; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, Helvetica, sans-serif; background: #fff; color: #000; }
-        table { width: 100%; border-collapse: collapse; font-size: 10px; }
-        td, th { border: 1px solid #000; padding: 2px 4px; text-align: center; }
-        th { background: #f0f0f0; font-weight: bold; }
-        .border-2 { border: 2px solid #000; padding: 20px; }
-        .header { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
-        .header img { height: 48px; }
-        .header .title { flex: 1; text-align: center; font-weight: bold; font-size: 18px; }
-        .header .num { text-align: right; font-size: 12px; font-weight: bold; }
-        .dados { margin-bottom: 16px; font-size: 12px; line-height: 1.8; }
-        .dados .row { display: flex; gap: 32px; }
-        .dados .field { flex: 1; }
-        .dados .label { font-weight: bold; }
-        .dados .value { border-bottom: 1px solid #000; display: inline-block; min-width: 180px; }
-        .cols { display: flex; gap: 16px; margin-bottom: 16px; }
-        .col { flex: 1; }
-        .resumo { display: flex; gap: 24px; margin-top: 8px; font-size: 11px; }
-        .resumo .qtd { font-weight: bold; }
-        .total { display: flex; justify-content: flex-end; margin-bottom: 16px; font-size: 12px; gap: 8px; align-items: center; }
-        .total .val { border: 2px solid #000; padding: 2px 12px; font-weight: bold; min-width: 60px; text-align: center; }
-        .assinaturas { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding-top: 16px; border-top: 2px solid #000; font-size: 11px; }
-        .assinaturas .campo { margin-bottom: 16px; }
-        .assinaturas .linha { border-bottom: 1px solid #000; margin-top: 4px; height: 24px; }
-      </style></head><body>${node.innerHTML}</body></html>`);
-    doc.close();
+    // Usa window.print() direto — o @media print do index.css já isola .ordem-producao-print
+    // e mantém os estilos Tailwind intactos (iframe isolado perde o Tailwind e quebra o layout).
+    window.print();
   };
 
   const items = order.items || [];
