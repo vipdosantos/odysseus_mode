@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import { LOGO_URL } from '@/components/layout/ModelajesLogo';
@@ -15,6 +15,15 @@ function fmtDate(d) {
 
 export default function OrdemProducaoPrint({ order, onClose }) {
   const docRef = useRef(null);
+  const [qtdeA, setQtdeA] = useState('');
+  const [qtdeB, setQtdeB] = useState('');
+  const [matA, setMatA] = useState({ tela: false, eps: false });
+  const [matB, setMatB] = useState({ tela: false, eps: false });
+
+  const handleQtdeWheel = (val, setVal, dir) => {
+    const cur = parseInt(val) || 0;
+    setVal(String(Math.max(0, cur + dir)));
+  };
   if (!order) return null;
 
   const handlePrint = () => {
@@ -107,7 +116,7 @@ export default function OrdemProducaoPrint({ order, onClose }) {
     );
   };
 
-  const renderColumn = (rows) => (
+  const renderColumn = (rows, qtde, setQtde, mat, setMat) => (
     <div className="flex-1">
       <table className="w-full border-collapse text-[10px]">
         <thead>
@@ -125,16 +134,45 @@ export default function OrdemProducaoPrint({ order, onClose }) {
           {rows.map((item, idx) => renderRow(item, idx))}
         </tbody>
       </table>
-      <div className="flex items-center gap-6 mt-2 text-[11px]">
+      <div className="flex items-center gap-4 mt-2 text-[11px]">
         <div className="flex items-center gap-1">
           <span className="font-semibold">QTDE:</span>
-          <span className="border-b border-black inline-block min-w-[50px]">&nbsp;</span>
+          <input
+            type="number"
+            value={qtde}
+            onChange={(e) => setQtde(e.target.value)}
+            onWheel={(e) => {
+              const dir = e.deltaY < 0 ? 1 : -1;
+              const cur = parseInt(qtde) || 0;
+              setQtde(String(Math.max(0, cur + dir)));
+            }}
+            className="border-b border-black bg-transparent text-center font-semibold w-12 outline-none focus:bg-yellow-50 print:bg-transparent"
+            style={{ WebkitAppearance: 'none', margin: 0 }}
+          />
         </div>
-        <div className="flex items-center gap-3">
-          <span className="font-semibold">CARREGAR:</span>
-          <label className="flex items-center gap-1">SIM: <span className="inline-block w-3 h-3 border border-black"></span></label>
-          <label className="flex items-center gap-1">NÃO: <span className="inline-block w-3 h-3 border border-black"></span></label>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">TELA:</span>
+          <input
+            type="checkbox"
+            checked={mat.tela}
+            onChange={(e) => setMat({ ...mat, tela: e.target.checked })}
+            className="w-3.5 h-3.5 accent-black print:accent-black"
+          />
         </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">EPS:</span>
+          <input
+            type="checkbox"
+            checked={mat.eps}
+            onChange={(e) => setMat({ ...mat, eps: e.target.checked })}
+            className="w-3.5 h-3.5 accent-black print:accent-black"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mt-1 text-[11px]">
+        <span className="font-semibold">CARREGAR:</span>
+        <label className="flex items-center gap-1">SIM: <span className="inline-block w-3 h-3 border border-black"></span></label>
+        <label className="flex items-center gap-1">NÃO: <span className="inline-block w-3 h-3 border border-black"></span></label>
       </div>
     </div>
   );
@@ -188,8 +226,8 @@ export default function OrdemProducaoPrint({ order, onClose }) {
             </div>
 
             <div className="flex gap-4 mb-4">
-              {renderColumn(colARows)}
-              {renderColumn(colBRows)}
+              {renderColumn(colARows, qtdeA, setQtdeA, matA, setMatA)}
+              {renderColumn(colBRows, qtdeB, setQtdeB, matB, setMatB)}
             </div>
 
             <div className="flex justify-end mb-4 text-[12px]">
