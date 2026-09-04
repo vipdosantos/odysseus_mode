@@ -6,7 +6,7 @@ import { TRUSS_TYPE_LABEL, FERRO_LABEL } from '@/lib/trussTypes';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const ROWS_PER_COL = 30;
+const ROWS_PER_COL = 12;
 
 function fmtDate(d) {
   if (!d) return '';
@@ -60,7 +60,7 @@ export default function OrdemProducaoPrint({ order, onClose }) {
     if (!item) {
       return (
         <tr key={idx}>
-          <td className="border border-black h-6"></td>
+          <td className="border border-black h-5"></td>
           <td className="border border-black"></td>
           <td className="border border-black"></td>
           <td className="border border-black"></td>
@@ -73,7 +73,7 @@ export default function OrdemProducaoPrint({ order, onClose }) {
     const ad = item.adicionais || [];
     return (
       <tr key={idx}>
-        <td className="border border-black text-center h-6 font-semibold">{item.quantity || ''}</td>
+        <td className="border border-black text-center h-5 font-semibold">{item.quantity || ''}</td>
         <td className="border border-black text-center">{item.truss_type ? TRUSS_TYPE_LABEL(item.truss_type) : ''}</td>
         <td className="border border-black text-center">{item.size || ''}</td>
         <td className="border border-black text-center">{ad[0]?.quantity > 0 ? ad[0].quantity : ''}</td>
@@ -86,7 +86,7 @@ export default function OrdemProducaoPrint({ order, onClose }) {
 
   const renderColumn = (rows, qtde, setQtde, mat, setMat) => (
     <div className="flex-1">
-      <table className="w-full border-collapse text-[10px]">
+      <table className="w-full border-collapse text-[9px]">
         <thead>
           <tr className="bg-gray-100">
             <th className="border border-black px-1 py-1 w-12">Quant.<br/>Viga</th>
@@ -102,7 +102,7 @@ export default function OrdemProducaoPrint({ order, onClose }) {
           {rows.map((item, idx) => renderRow(item, idx))}
         </tbody>
       </table>
-      <div className="flex items-center gap-4 mt-2 text-[11px]">
+      <div className="flex items-center gap-3 mt-1.5 text-[10px]">
         <div className="flex items-center gap-1">
           <span className="font-semibold">QTDE:</span>
           <input
@@ -146,7 +146,7 @@ export default function OrdemProducaoPrint({ order, onClose }) {
           />
         </div>
       </div>
-      <div className="flex items-center gap-3 mt-1 text-[11px]">
+      <div className="flex items-center gap-3 mt-1 text-[10px]">
         <span className="font-semibold">CARREGAR:</span>
         <label className="flex items-center gap-1">SIM: <span className="inline-block w-3 h-3 border border-black"></span></label>
         <label className="flex items-center gap-1">NÃO: <span className="inline-block w-3 h-3 border border-black"></span></label>
@@ -156,7 +156,7 @@ export default function OrdemProducaoPrint({ order, onClose }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[200] bg-black/50 overflow-y-auto p-4" style={{ pointerEvents: 'auto' }} onClick={onClose}>
-      <div className="max-w-[280mm] mx-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="max-w-[210mm] mx-auto" onClick={(e) => e.stopPropagation()}>
         <div className="no-print sticky top-0 z-10 flex items-center justify-between p-3 bg-white rounded-t-lg shadow-lg border-b">
           <h2 className="font-bold text-lg">Ordem de Produção — #{order.order_number}</h2>
           <div className="flex gap-2">
@@ -168,79 +168,79 @@ export default function OrdemProducaoPrint({ order, onClose }) {
         </div>
 
         <div ref={docRef} className="ordem-producao-print bg-white rounded-b-lg shadow-2xl p-6">
-          <div className="border-2 border-black p-5 text-black" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+          <div className="border-2 border-black p-4 text-black" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
             <div className="flex items-center gap-3 border-b-2 border-black pb-2 mb-3">
-              <img src={LOGO_URL} alt="Modelajes" className="h-12 w-auto object-contain" />
-              <div className="flex-1 text-center font-bold text-lg">ORDEM DE PRODUÇÃO</div>
+              <img src={LOGO_URL} alt="Modelajes" className="h-10 w-auto object-contain" />
+              <div className="flex-1 text-center font-bold text-base">ORDEM DE PRODUÇÃO</div>
               <div className="text-right text-xs font-semibold">Nº {order.order_number}</div>
             </div>
 
-            <div className="space-y-1.5 mb-4 text-[12px]">
-              <div className="flex gap-8">
+            <div className="space-y-1 mb-3 text-[11px]">
+              <div className="flex gap-4">
                 <div className="flex-1">
                   <span className="font-semibold">CLIENTE: </span>
-                  <span className="border-b border-black inline-block min-w-[200px]">{order.client_name || ''}</span>
+                  <span className="border-b border-black inline-block min-w-[150px]">{order.client_name || ''}</span>
                 </div>
                 <div className="flex-1">
                   <span className="font-semibold">VENDEDOR: </span>
-                  <span className="border-b border-black inline-block min-w-[180px]">{order.seller_name || ''}</span>
+                  <span className="border-b border-black inline-block min-w-[130px]">{order.seller_name || ''}</span>
                 </div>
               </div>
               <div>
                 <span className="font-semibold">END. DA ENTREGA: </span>
-                <span className="border-b border-black inline-block min-w-[440px]">{order.delivery_address || ''}</span>
+                <span className="border-b border-black inline-block min-w-[330px]">{order.delivery_address || ''}</span>
               </div>
-              <div className="flex gap-8">
+              <div className="flex gap-4">
                 <div className="flex-1">
                   <span className="font-semibold">DATA DO PEDIDO: </span>
-                  <span className="border-b border-black inline-block min-w-[200px]">{fmtDate(order.created_date?.slice(0, 10))}</span>
+                  <span className="border-b border-black inline-block min-w-[150px]">{fmtDate(order.created_date?.slice(0, 10))}</span>
                 </div>
                 <div className="flex-1">
                   <span className="font-semibold">DATA DA ENTREGA: </span>
-                  <span className="border-b border-black inline-block min-w-[180px]">{fmtDate(order.delivery_date)}</span>
+                  <span className="border-b border-black inline-block min-w-[130px]">{fmtDate(order.delivery_date)}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-4 mb-4">
+            <div className="flex gap-4 mb-3">
               {renderColumn(colARows, qtdeA, setQtdeA, matA, setMatA)}
               {renderColumn(colBRows, qtdeB, setQtdeB, matB, setMatB)}
             </div>
 
-            <div className="flex justify-end mb-4 text-[12px]">
+            <div className="flex justify-end mb-3 text-[11px]">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">QTDE TOTAL DE VIGAS:</span>
                 <span className="border-2 border-black px-3 py-0.5 font-bold min-w-[60px] text-center">{totalQty}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 pt-4 border-t-2 border-black text-[11px]">
-              <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-8 pt-3 border-t-2 border-black text-[10px]">
+              <div className="space-y-2">
                 <div>
                   <span className="font-semibold">Ordem de Produção:</span>
-                  <div className="border-b border-black mt-1 h-6"></div>
+                  <div className="border-b border-black mt-1 h-5"></div>
                 </div>
                 <div>
                   <span className="font-semibold">Etiqueta:</span>
-                  <div className="border-b border-black mt-1 h-6"></div>
+                  <div className="border-b border-black mt-1 h-5"></div>
                 </div>
                 <div>
                   <span className="font-semibold">Entregue por:</span>
-                  <div className="border-b border-black mt-1 h-6"></div>
+                  <div className="border-b border-black mt-1 h-5"></div>
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <div>
                   <span className="font-semibold">Recebido por:</span>
-                  <div className="border-b border-black mt-1 h-6"></div>
+                  <div className="border-b border-black mt-1 h-5"></div>
                 </div>
                 <div>
                   <span className="font-semibold">RG / CPF:</span>
-                  <div className="border-b border-black mt-1 h-6"></div>
+                  <div className="border-b border-black mt-1 h-5"></div>
                 </div>
                 <div>
                   <span className="font-semibold">Data de Recebimento:</span>
-                  <div className="border-b border-black mt-1 h-6"></div>
+                  <div className="border-b border-black mt-1 h-5"></div>
                 </div>
               </div>
             </div>

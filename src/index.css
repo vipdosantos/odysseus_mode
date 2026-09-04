@@ -105,17 +105,18 @@
     top: 0;
     width: 200mm;
     max-width: 200mm;
-    padding: 3mm !important;
+    padding: 0 !important;
     margin: 0 !important;
     height: 287mm !important;
     max-height: 287mm !important;
     overflow: hidden !important;
     box-sizing: border-box;
+    zoom: 0.92;
   }
   .ordem-producao-print .border-2 { border: 2px solid #000 !important; padding: 3mm !important; }
   .ordem-producao-print table { width: 100%; border-collapse: collapse; }
-  .ordem-producao-print td, .ordem-producao-print th { border: 1px solid #000 !important; padding: 1px 2px !important; line-height: 1.1 !important; }
+  .ordem-producao-print td, .ordem-producao-print th { border: 1px solid #000 !important; padding: 0 1px !important; line-height: 1 !important; height: 4mm !important; }
   .ordem-producao-print .no-print { display: none !important; }
   /* Em retrato, empilha as duas colunas de tabela verticalmente */
-  .ordem-producao-print .flex.gap-4.mb-4 { flex-direction: column !important; gap: 2mm !important; }
+  .ordem-producao-print .flex.gap-4.mb-3 { flex-direction: column !important; gap: 2mm !important; }
 }
