@@ -61,7 +61,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
               <div class="seller-phone">${sellerPhone}</div>
             </div>
             <div class="qr-row">
-              <span class="local-mont">${localMontagem ? 'L:' + localMontagem : 'L' + (i + 1)}</span>
+              <span class="local-mont">${localMontagem ? 'L' + localMontagem : 'L' + (i + 1)}</span>
               <img src="${qrUrl}" class="qr" />
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         margin-bottom: 1mm; word-break: break-word; line-height: 1.1;
       }
       .size {
-        font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
+        font-size: 14mm; font-weight: 800; line-height: 1; text-align: center;
         margin-bottom: 2mm;
       }
       .client {
