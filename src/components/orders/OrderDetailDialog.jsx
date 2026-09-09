@@ -60,12 +60,16 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
               <img src="${qrUrl}" class="qr" />
             </div>
           </div>
-          <div class="spec-row">
-            <span class="spec">${specLabel}</span>
-            <span class="adicionais">${adics}</span>
+          <div class="spacer"></div>
+          <div class="footer">
+            <div class="spec-row">
+              <span class="spec">${specLabel}</span>
+              <span class="adicionais">${adics}</span>
+            </div>
+            <div class="size">${item.size || ''}</div>
+            <div class="seller">${seller}</div>
+            <div class="qty-vigota">QTDE VIGOTA: ${item.quantity || ''}</div>
           </div>
-          <div class="size">${item.size || ''}</div>
-          <div class="seller">${seller}</div>
         </div>`;
       });
     }).join('');
@@ -100,6 +104,8 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         font-size: 10mm; font-weight: 800; line-height: 1; text-align: center;
       }
       .qr { width: 18mm; height: 18mm; display: block; }
+      .spacer { flex: 1; }
+      .footer { flex: 0 0 auto; width: 100%; }
       .spec-row {
         width: 100%; display: flex; align-items: baseline; justify-content: center; gap: 2mm;
         border-bottom: 0.3mm solid #000; padding-bottom: 0.5mm;
@@ -114,6 +120,10 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .seller {
         font-size: 4mm; font-weight: 600; text-align: center;
         border-bottom: 0.3mm solid #000; padding-bottom: 0.5mm;
+        margin-bottom: 1mm;
+      }
+      .qty-vigota {
+        font-size: 4mm; font-weight: 700; text-align: center;
       }
       @media print { body { margin: 0; } }
     </style></head>
