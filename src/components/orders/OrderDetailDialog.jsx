@@ -121,8 +121,8 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         margin-bottom: 1mm;
       }
       .adicionais {
-        width: 100%; font-size: 3.5mm; font-weight: 600; text-align: center;
-        margin-bottom: 2mm;
+        width: 100%; font-size: 2.8mm; font-weight: 600; text-align: center;
+        margin-bottom: 1mm;
       }
       .size {
         font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
