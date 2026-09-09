@@ -51,16 +51,17 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const adics = (item.adicionais || []).filter(a => a.quantity > 0).map(a => `${FERRO_LABEL(a.diametro)} ×${a.quantity}`).join('   ');
         return `
         <div class="label">
-          <div class="logo-section">
-            <img src="${LOGO_URL}" class="brand-logo" />
-          </div>
-          <div class="qr-row">
-            <span class="local-mont">${localMontagem}</span>
-            <img src="${qrUrl}" class="qr" />
+          <div class="top-section">
+            <div class="logo-section">
+              <img src="${LOGO_URL}" class="brand-logo" />
+            </div>
+            <div class="qr-row">
+              <span class="local-mont">${localMontagem}</span>
+              <img src="${qrUrl}" class="qr" />
+            </div>
           </div>
           <div class="spec-row">
             <span class="spec">${specLabel}</span>
-            <span class="size-inline">${item.size || ''}</span>
             <span class="adicionais">${adics}</span>
           </div>
           <div class="size">${item.size || ''}</div>
@@ -82,6 +83,10 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         align-items: center;
         padding: 3mm 2mm;
       }
+      .top-section {
+        flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%;
+        transform: rotate(180deg);
+      }
       .logo-section {
         width: 100%; display: flex; justify-content: center;
         margin-bottom: 2mm;
@@ -100,7 +105,6 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         margin-bottom: 2mm;
       }
       .spec { font-size: 4mm; font-weight: 700; }
-      .size-inline { font-size: 4mm; font-weight: 800; }
       .adicionais { font-size: 3.5mm; font-weight: 600; }
       .size {
         font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
