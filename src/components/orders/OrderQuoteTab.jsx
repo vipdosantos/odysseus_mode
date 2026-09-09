@@ -154,39 +154,39 @@ export default function OrderQuoteTab({ order, onConverted }) {
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento #${order.order_number}</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Inter', Arial, sans-serif; color: #1e293b; font-size: 12px; padding: 12mm; }
-      .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f59e0b; padding-bottom: 10px; margin-bottom: 14px; }
-      .brand { display: flex; align-items: center; gap: 10px; }
-      .brand img { height: 42px; }
-      .brand .name { font-size: 16px; font-weight: 800; letter-spacing: 1px; color: #1e293b; }
-      .brand .sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+      body { font-family: 'Inter', Arial, sans-serif; color: #1e293b; font-size: 15px; padding: 22mm 20mm; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #f59e0b; padding-bottom: 14px; margin-bottom: 18px; }
+      .brand { display: flex; align-items: center; gap: 12px; }
+      .brand img { height: 52px; }
+      .brand .name { font-size: 20px; font-weight: 800; letter-spacing: 1px; color: #1e293b; }
+      .brand .sub { font-size: 12px; color: #64748b; margin-top: 3px; }
       .doc-title { text-align: right; }
-      .doc-title h1 { font-size: 20px; color: #f59e0b; }
-      .doc-title .num { font-size: 13px; font-weight: 700; margin-top: 2px; }
-      .doc-title .dates { font-size: 10px; color: #64748b; margin-top: 4px; }
-      .section { margin-bottom: 12px; }
-      .section h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #f59e0b; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-bottom: 6px; }
-      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-      .box { background: #f8fafc; border-radius: 6px; padding: 8px 10px; }
-      .box p { margin: 1px 0; font-size: 11px; }
-      .box .lbl { font-size: 9px; text-transform: uppercase; color: #94a3b8; font-weight: 600; }
-      table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-      th { background: #1e293b; color: #fff; font-size: 10px; padding: 5px 7px; text-align: left; }
+      .doc-title h1 { font-size: 26px; color: #f59e0b; }
+      .doc-title .num { font-size: 16px; font-weight: 700; margin-top: 3px; }
+      .doc-title .dates { font-size: 12px; color: #64748b; margin-top: 5px; }
+      .section { margin-bottom: 16px; }
+      .section h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #f59e0b; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-bottom: 8px; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .box { background: #f8fafc; border-radius: 6px; padding: 10px 12px; }
+      .box p { margin: 2px 0; font-size: 14px; }
+      .box .lbl { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      th { background: #1e293b; color: #fff; font-size: 13px; padding: 8px 10px; text-align: left; }
       th.center, td.center { text-align: center; }
       th.right, td.right { text-align: right; }
-      td { padding: 5px 7px; border-bottom: 1px solid #e5e7eb; font-size: 11px; vertical-align: top; }
-      .muted { color: #94a3b8; font-size: 10px; }
-      .totals { margin-top: 10px; display: flex; justify-content: flex-end; }
-      .totals .row { min-width: 260px; }
-      .totals .row div { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
-      .totals .row .grand { border-top: 2px solid #1e293b; margin-top: 4px; padding-top: 6px; font-size: 15px; font-weight: 800; }
-      .cond { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 10px; margin-top: 10px; }
-      .cond p { font-size: 11px; margin: 2px 0; }
+      td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 14px; vertical-align: top; }
+      .muted { color: #94a3b8; font-size: 12px; }
+      .totals { margin-top: 14px; display: flex; justify-content: flex-end; }
+      .totals .row { min-width: 300px; }
+      .totals .row div { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
+      .totals .row .grand { border-top: 2px solid #1e293b; margin-top: 6px; padding-top: 8px; font-size: 19px; font-weight: 800; }
+      .cond { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 14px; }
+      .cond p { font-size: 14px; margin: 3px 0; }
       .cond .lbl { font-weight: 700; color: #b45309; }
-      .obs { margin-top: 8px; font-size: 11px; color: #475569; white-space: pre-wrap; }
-      .footer { margin-top: 18px; border-top: 1px solid #e5e7eb; padding-top: 8px; display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; }
-      .sign { margin-top: 24px; text-align: center; }
-      .sign .line { border-top: 1px solid #1e293b; width: 280px; margin: 0 auto; padding-top: 4px; font-size: 10px; color: #64748b; }
+      .obs { margin-top: 10px; font-size: 14px; color: #475569; white-space: pre-wrap; }
+      .footer { margin-top: 22px; border-top: 1px solid #e5e7eb; padding-top: 10px; display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; }
+      .sign { margin-top: 30px; text-align: center; }
+      .sign .line { border-top: 1px solid #1e293b; width: 320px; margin: 0 auto; padding-top: 5px; font-size: 12px; color: #64748b; }
     </style></head>
     <body>
       <div class="header">
