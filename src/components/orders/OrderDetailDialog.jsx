@@ -84,21 +84,22 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         padding: 3mm 2mm;
       }
       .top-section {
-        flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%;
+        flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; width: 100%;
         transform: rotate(180deg);
+        margin-bottom: 2mm;
       }
       .logo-section {
         width: 100%; display: flex; justify-content: center;
-        margin-bottom: 2mm;
+        margin-bottom: 1mm;
       }
-      .brand-logo { height: 8mm; width: auto; }
+      .brand-logo { height: 6mm; width: auto; }
       .qr-row {
-        flex: 1; display: flex; align-items: center; justify-content: center; gap: 3mm; width: 100%;
+        display: flex; align-items: center; justify-content: center; gap: 2mm; width: 100%;
       }
       .local-mont {
-        font-size: 14mm; font-weight: 800; line-height: 1; text-align: center;
+        font-size: 10mm; font-weight: 800; line-height: 1; text-align: center;
       }
-      .qr { width: 24mm; height: 24mm; display: block; }
+      .qr { width: 18mm; height: 18mm; display: block; }
       .spec-row {
         width: 100%; display: flex; align-items: baseline; justify-content: center; gap: 2mm;
         border-bottom: 0.3mm solid #000; padding-bottom: 0.5mm;
