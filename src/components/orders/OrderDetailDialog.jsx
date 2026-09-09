@@ -49,7 +49,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const trussLabel = item.truss_type ? TRUSS_TYPE_LABEL(item.truss_type) : '';
         const specLabel = `Laje ${trussLabel}${enchLabel}`;
         const localMontagem = item.local_montagem || '';
-        const adics = (item.adicionais || []).filter(a => a.quantity > 0).map(a => `${a.quantity}${FERRO_LABEL(a.diametro)}/`).join('');
+        const adics = (item.adicionais || []).filter(a => a.quantity > 0).map(a => `${a.quantity}${FERRO_LABEL(a.diametro)}/ `).join('');
         return `
         <div class="label">
           <div class="top-section">
@@ -122,7 +122,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       }
       .adicionais {
         width: 100%; font-size: 2.8mm; font-weight: 600; text-align: center;
-        margin-bottom: 1mm;
+        margin-bottom: 1mm; word-break: break-word; line-height: 1.1;
       }
       .size {
         font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
