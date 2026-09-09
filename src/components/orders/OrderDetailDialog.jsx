@@ -44,6 +44,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         });
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=000000&bgcolor=ffffff&margin=0&data=${encodeURIComponent(qrData)}`;
         const seller = order.seller_name || '';
+        const sellerPhone = order.seller_phone || '';
         const enchLabel = order.tipo_enchimento && order.tipo_enchimento !== 'Nenhum' ? ` - ${order.tipo_enchimento}` : '';
         const trussLabel = item.truss_type ? TRUSS_TYPE_LABEL(item.truss_type) : '';
         const specLabel = `Laje ${trussLabel}${enchLabel}`;
@@ -54,6 +55,10 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           <div class="top-section">
             <div class="logo-section">
               <img src="${LOGO_URL}" class="brand-logo" />
+            </div>
+            <div class="seller-info">
+              <div class="seller-name">${seller}</div>
+              <div class="seller-phone">${sellerPhone}</div>
             </div>
             <div class="qr-row">
               <span class="local-mont">${localMontagem}</span>
@@ -67,8 +72,8 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
               <span class="adicionais">${adics}</span>
             </div>
             <div class="size">${item.size || ''}</div>
-            <div class="seller">${seller}</div>
-            <div class="qty-vigota">QTDE VIGOTA: ${item.quantity || ''}</div>
+            <div class="client">${order.client_name || ''}</div>
+            <div class="qty-vigota">QTDE VIGOTA: ${i + 1}/${qty}</div>
           </div>
         </div>`;
       });
@@ -104,6 +109,12 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         font-size: 10mm; font-weight: 800; line-height: 1; text-align: center;
       }
       .qr { width: 18mm; height: 18mm; display: block; }
+      .seller-info {
+        width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.5mm;
+        margin-bottom: 1mm;
+      }
+      .seller-name { font-size: 4mm; font-weight: 700; text-align: center; line-height: 1; }
+      .seller-phone { font-size: 3.5mm; font-weight: 600; text-align: center; line-height: 1; }
       .spacer { flex: 1; }
       .footer { flex: 0 0 auto; width: 100%; }
       .spec-row {
@@ -117,7 +128,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
         margin-bottom: 2mm;
       }
-      .seller {
+      .client {
         font-size: 4mm; font-weight: 600; text-align: center;
         border-bottom: 0.3mm solid #000; padding-bottom: 0.5mm;
         margin-bottom: 1mm;
