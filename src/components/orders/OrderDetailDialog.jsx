@@ -47,21 +47,21 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const enchLabel = order.tipo_enchimento && order.tipo_enchimento !== 'Nenhum' ? ` - ${order.tipo_enchimento}` : '';
         const trussLabel = item.truss_type ? TRUSS_TYPE_LABEL(item.truss_type) : '';
         const specLabel = `Laje ${trussLabel}${enchLabel}`;
+        const localMontagem = item.local_montagem || '';
+        const adics = (item.adicionais || []).filter(a => a.quantity > 0).map(a => `${FERRO_LABEL(a.diametro)} ×${a.quantity}`).join('   ');
         return `
         <div class="label">
-          <div class="unit-num">${i + 1}</div>
-          <div class="brand-section">
-            <div class="brand-line"></div>
-            <svg class="brand-zigzag" viewBox="0 0 100 8" preserveAspectRatio="none"><polygon points="0,0 4,8 8,0 12,8 16,0 20,8 24,0 28,8 32,0 36,8 40,0 44,8 48,0 52,8 56,0 60,8 64,0 68,8 72,0 76,8 80,0 84,8 88,0 92,8 96,0 100,8 100,0" fill="#000"/></svg>
-            <div class="brand-rotated">
-              <img src="${LOGO_URL}" class="brand-logo" />
-              <span class="brand-text">MODELAJES</span>
-            </div>
+          <div class="logo-section">
+            <img src="${LOGO_URL}" class="brand-logo" />
           </div>
-          <div class="qr-section">
+          <div class="qr-row">
+            <span class="local-mont">${localMontagem}</span>
             <img src="${qrUrl}" class="qr" />
           </div>
-          <div class="spec">${specLabel}</div>
+          <div class="spec-row">
+            <span class="spec">${specLabel}</span>
+            <span class="adicionais">${adics}</span>
+          </div>
           <div class="size">${item.size || ''}</div>
           <div class="seller">${seller}</div>
         </div>`;
@@ -81,30 +81,25 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         align-items: center;
         padding: 3mm 2mm;
       }
-      .unit-num {
-        font-size: 16mm; font-weight: 800; line-height: 1; text-align: center;
+      .logo-section {
+        width: 100%; display: flex; justify-content: center;
+        margin-bottom: 2mm;
       }
-      .brand-section {
-        width: 100%; display: flex; flex-direction: column; align-items: center;
-        margin-top: 2mm;
+      .brand-logo { height: 8mm; width: auto; }
+      .qr-row {
+        flex: 1; display: flex; align-items: center; justify-content: center; gap: 3mm; width: 100%;
       }
-      .brand-line { width: 100%; height: 0.4mm; background: #000; }
-      .brand-zigzag { width: 100%; height: 2.5mm; display: block; }
-      .brand-rotated {
-        display: flex; align-items: center; justify-content: center; gap: 1.5mm;
-        margin-top: 1mm; transform: rotate(180deg);
+      .local-mont {
+        font-size: 14mm; font-weight: 800; line-height: 1; text-align: center;
       }
-      .brand-text { font-size: 4mm; font-weight: 700; letter-spacing: 0.5mm; }
-      .brand-logo { height: 5mm; width: auto; }
-      .qr-section {
-        flex: 1; display: flex; align-items: center; justify-content: center; width: 100%;
-      }
-      .qr { width: 28mm; height: 28mm; display: block; }
-      .spec {
-        font-size: 4mm; font-weight: 700; text-align: center;
+      .qr { width: 24mm; height: 24mm; display: block; }
+      .spec-row {
+        width: 100%; display: flex; align-items: baseline; justify-content: center; gap: 2mm;
         border-bottom: 0.3mm solid #000; padding-bottom: 0.5mm;
         margin-bottom: 2mm;
       }
+      .spec { font-size: 4mm; font-weight: 700; }
+      .adicionais { font-size: 3.5mm; font-weight: 600; }
       .size {
         font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
         margin-bottom: 2mm;
