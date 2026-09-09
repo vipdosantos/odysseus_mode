@@ -43,66 +43,76 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           id: unitId,
         });
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=000000&bgcolor=ffffff&margin=0&data=${encodeURIComponent(qrData)}`;
-        const phone = order.seller_phone || '';
         const seller = order.seller_name || '';
-        const extras = [];
-        if (item.truss_type) extras.push(TRUSS_TYPE_LABEL(item.truss_type));
-        (item.adicionais || []).forEach(a => { if (a.quantity > 0) extras.push(`${FERRO_LABEL(a.diametro)} ×${a.quantity}`); });
-        const specs = extras.join('   ·   ');
+        const enchLabel = order.tipo_enchimento && order.tipo_enchimento !== 'Nenhum' ? ` - ${order.tipo_enchimento}` : '';
+        const trussLabel = item.truss_type ? TRUSS_TYPE_LABEL(item.truss_type) : '';
+        const specLabel = `Laje ${trussLabel}${enchLabel}`;
         return `
         <div class="label">
-          <div class="accent"></div>
-          <div class="body">
-            <div class="main">
-              <div class="top">
-                <img src="${LOGO_URL}" class="logo" />
-                <span class="meta">Pedido ${order.order_number}</span>
-              </div>
-              <div class="client">${order.client_name}</div>
-              <div class="specs">${specs}</div>
-              <div class="footer">
-                <div class="unit"><span class="u-label">Unidade</span><span class="u-val">${i + 1} / ${qty}</span></div>
-                <span class="dot">·</span>
-                <span class="seller">${seller}${phone ? ' · ' + phone : ''}</span>
-              </div>
-            </div>
-            <div class="side">
-              <img src="${qrUrl}" class="qr" />
-              <span class="badge">${item.size}</span>
+          <div class="unit-num">${i + 1}</div>
+          <div class="brand-section">
+            <div class="brand-line"></div>
+            <svg class="brand-zigzag" viewBox="0 0 100 8" preserveAspectRatio="none"><polygon points="0,0 4,8 8,0 12,8 16,0 20,8 24,0 28,8 32,0 36,8 40,0 44,8 48,0 52,8 56,0 60,8 64,0 68,8 72,0 76,8 80,0 84,8 88,0 92,8 96,0 100,8 100,0" fill="#000"/></svg>
+            <div class="brand-rotated">
+              <img src="${LOGO_URL}" class="brand-logo" />
+              <span class="brand-text">MODELAJES</span>
             </div>
           </div>
+          <div class="qr-section">
+            <img src="${qrUrl}" class="qr" />
+          </div>
+          <div class="spec">${specLabel}</div>
+          <div class="size">${item.size || ''}</div>
+          <div class="seller">${seller}</div>
         </div>`;
       });
     }).join('');
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Etiquetas #${order.order_number}</title>
     <style>
-      @page { size: 100mm 50mm; margin: 0; }
+      @page { size: 50mm 100mm; margin: 0; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #111; }
+      body { font-family: 'Inter', Arial, Helvetica, sans-serif; background: #fff; color: #000; }
       .label {
-        width: 100mm; height: 50mm;
+        width: 50mm; height: 100mm;
         page-break-after: always; overflow: hidden;
         background: #fff; position: relative;
-        border: 0.2mm solid #e5e7eb;
+        display: flex; flex-direction: column;
+        align-items: center;
+        padding: 3mm 2mm;
       }
-      .accent { position: absolute; top: 0; left: 0; right: 0; height: 1.6mm; background: #f59e0b; }
-      .body { position: absolute; top: 1.6mm; left: 0; right: 0; bottom: 0; display: flex; flex-direction: row; }
-      .main { flex: 1; padding: 2.4mm 3.2mm; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
-      .top { display: flex; align-items: center; gap: 2mm; }
-      .logo { height: 4.2mm; width: auto; }
-      .meta { font-size: 2.4mm; font-weight: 600; color: #9ca3af; letter-spacing: 0.3mm; text-transform: uppercase; margin-left: auto; }
-      .client { font-size: 6mm; font-weight: 700; color: #111; line-height: 1.05; word-break: break-word; }
-      .specs { font-size: 2.8mm; font-weight: 600; color: #6b7280; margin-top: 0.6mm; }
-      .footer { display: flex; align-items: baseline; gap: 2mm; margin-top: auto; }
-      .unit { display: flex; align-items: baseline; gap: 1.2mm; }
-      .u-label { font-size: 2.2mm; font-weight: 700; color: #9ca3af; letter-spacing: 0.3mm; text-transform: uppercase; }
-      .u-val { font-size: 3.6mm; font-weight: 800; color: #111; }
-      .dot { color: #d1d5db; font-size: 2.6mm; }
-      .seller { font-size: 2.6mm; font-weight: 600; color: #6b7280; }
-      .side { width: 30mm; padding: 2.4mm 3mm 2.4mm 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4mm; }
-      .qr { width: 22mm; height: 22mm; display: block; }
-      .badge { font-size: 4.6mm; font-weight: 800; color: #111; background: #f3f4f6; border-radius: 1.4mm; padding: 0.3mm 2.2mm; letter-spacing: 0.1mm; }
+      .unit-num {
+        font-size: 16mm; font-weight: 800; line-height: 1; text-align: center;
+      }
+      .brand-section {
+        width: 100%; display: flex; flex-direction: column; align-items: center;
+        margin-top: 2mm;
+      }
+      .brand-line { width: 100%; height: 0.4mm; background: #000; }
+      .brand-zigzag { width: 100%; height: 2.5mm; display: block; }
+      .brand-rotated {
+        display: flex; align-items: center; justify-content: center; gap: 1.5mm;
+        margin-top: 1mm; transform: rotate(180deg);
+      }
+      .brand-text { font-size: 4mm; font-weight: 700; letter-spacing: 0.5mm; }
+      .brand-logo { height: 5mm; width: auto; }
+      .qr-section {
+        flex: 1; display: flex; align-items: center; justify-content: center; width: 100%;
+      }
+      .qr { width: 28mm; height: 28mm; display: block; }
+      .spec {
+        font-size: 4mm; font-weight: 700; text-align: center;
+        border-bottom: 0.3mm solid #000; padding-bottom: 0.5mm;
+        margin-bottom: 2mm;
+      }
+      .size {
+        font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
+        margin-bottom: 2mm;
+      }
+      .seller {
+        font-size: 4mm; font-weight: 600; text-align: center;
+        border-bottom: 0.3mm solid #000; padding-bottom: 0.5mm;
+      }
       @media print { body { margin: 0; } }
     </style></head>
     <body>${labels}</body></html>`;
