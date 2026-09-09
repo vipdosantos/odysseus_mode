@@ -61,7 +61,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
               <div class="seller-phone">${sellerPhone}</div>
             </div>
             <div class="qr-row">
-              <span class="local-mont">${localMontagem}</span>
+              <span class="local-mont">${localMontagem ? 'L:' + localMontagem : 'L' + (i + 1)}</span>
               <img src="${qrUrl}" class="qr" />
             </div>
           </div>
