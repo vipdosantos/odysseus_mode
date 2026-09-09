@@ -49,7 +49,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         const trussLabel = item.truss_type ? TRUSS_TYPE_LABEL(item.truss_type) : '';
         const specLabel = `Laje ${trussLabel}${enchLabel}`;
         const localMontagem = item.local_montagem || '';
-        const adics = (item.adicionais || []).filter(a => a.quantity > 0).map(a => `${FERRO_LABEL(a.diametro)} ×${a.quantity}`).join('   ');
+        const adics = (item.adicionais || []).filter(a => a.quantity > 0).map(a => `${a.quantity}${FERRO_LABEL(a.diametro)}/`).join('');
         return `
         <div class="label">
           <div class="top-section">
@@ -67,10 +67,8 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           </div>
           <div class="spacer"></div>
           <div class="footer">
-            <div class="spec-row">
-              <span class="spec">${specLabel}</span>
-              <span class="adicionais">${adics}</span>
-            </div>
+            <div class="spec-title">${specLabel}</div>
+            <div class="adicionais">${adics}</div>
             <div class="size">${item.size || ''}</div>
             <div class="client">${order.client_name || ''}</div>
             <div class="qty-vigota">QTDE VIGOTA: ${i + 1}/${qty}</div>
@@ -117,13 +115,15 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
       .seller-phone { font-size: 3.5mm; font-weight: 600; text-align: center; line-height: 1; }
       .spacer { flex: 1; }
       .footer { flex: 0 0 auto; width: 100%; }
-      .spec-row {
-        width: 100%; display: flex; align-items: baseline; justify-content: center; gap: 2mm;
+      .spec-title {
+        width: 100%; font-size: 5mm; font-weight: 800; text-align: center;
         border-bottom: 0.3mm solid #000; padding-bottom: 0.5mm;
+        margin-bottom: 1mm;
+      }
+      .adicionais {
+        width: 100%; font-size: 3.5mm; font-weight: 600; text-align: center;
         margin-bottom: 2mm;
       }
-      .spec { font-size: 4mm; font-weight: 700; }
-      .adicionais { font-size: 3.5mm; font-weight: 600; }
       .size {
         font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
         margin-bottom: 2mm;
