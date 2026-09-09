@@ -60,6 +60,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
           </div>
           <div class="spec-row">
             <span class="spec">${specLabel}</span>
+            <span class="size-inline">${item.size || ''}</span>
             <span class="adicionais">${adics}</span>
           </div>
           <div class="size">${item.size || ''}</div>
@@ -99,6 +100,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order, onEdit, c
         margin-bottom: 2mm;
       }
       .spec { font-size: 4mm; font-weight: 700; }
+      .size-inline { font-size: 4mm; font-weight: 800; }
       .adicionais { font-size: 3.5mm; font-weight: 600; }
       .size {
         font-size: 18mm; font-weight: 800; line-height: 1; text-align: center;
