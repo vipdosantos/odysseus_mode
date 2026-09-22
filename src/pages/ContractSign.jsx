@@ -164,6 +164,26 @@ export default function ContractSign() {
               </div>
             </div>
 
+            {/* Condições Gerais de Fornecimento */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <h3 className="text-sm font-bold text-slate-800 mb-3">CONDIÇÕES GERAIS DE FORNECIMENTO</h3>
+              <div className="space-y-2.5 text-xs text-slate-600 max-h-72 overflow-y-auto pr-2">
+                <p><strong className="text-slate-800">1. REFORÇOS E ESCOPO:</strong> Estão inclusos os reforços adicionais positivos expressamente descritos no pedido, conforme dimensionamento estrutural. Materiais, reforços ou alterações não especificados serão cobrados à parte.</p>
+                <p><strong className="text-slate-800">2. PROJETO DE MONTAGEM, CONFERÊNCIA E APROVAÇÃO:</strong> Antes da fabricação, a Modelajes fornecerá ao Contratante o projeto de montagem/modulação das lajes para conferência e aprovação. O Contratante ou responsável pela obra deverá conferir medidas, vãos, apoios, posicionamento e demais informações referentes à obra. A aprovação do projeto autoriza a fabricação das lajes conforme as informações nele constantes. Uma cópia do projeto aprovado será entregue juntamente com o material para orientação da montagem. Eventuais alterações realizadas na obra após a aprovação deverão ser comunicadas à Modelajes e poderão exigir revisão do projeto, alteração dos materiais, custos e prazo de entrega.</p>
+                <p><strong className="text-slate-800">3. ART E VISTORIA:</strong> Quando contratada ou necessária dentro do escopo da Modelajes, a ART será emitida pelo responsável técnico. Se necessária vistoria antes da concretagem, deverá ser solicitada previamente. Taxas e boletos da ART serão de responsabilidade do cliente quando assim estiver estabelecido.</p>
+                <p><strong className="text-slate-800">4. ALTERAÇÕES:</strong> Mudanças de medidas, vãos, apoios, cargas, uso ou demais condições da obra deverão ser comunicadas antes da fabricação/execução. Alterações posteriores poderão gerar revisão técnica, cobrança adicional e novo prazo.</p>
+                <p><strong className="text-slate-800">5. ENTREGA, FRETE E MUNCK:</strong> Prazo e frete serão os definidos no fechamento do pedido. Serviço de munck somente estará incluso quando indicado. O cliente deverá garantir acesso e condições seguras para descarga; impossibilidade imputável à obra poderá gerar cobrança de retorno, novo frete, munck ou estadia.</p>
+                <p><strong className="text-slate-800">6. PAGAMENTO:</strong> O pagamento seguirá a forma e parcelas aprovadas. O inadimplemento poderá acarretar encargos legais/contratuais e suspensão da produção ou de entregas ainda não realizadas.</p>
+                <p><strong className="text-slate-800">7. RECEBIMENTO:</strong> Quantidades, especificações e danos aparentes deverão ser conferidos no ato da descarga e eventual divergência registrada no comprovante. A conferência não afasta direitos relativos a vícios não aparentes previstos em lei.</p>
+                <p><strong className="text-slate-800">8. LIMITES DO FORNECIMENTO E RESPONSABILIDADE:</strong> A atuação da Modelajes limita-se à fabricação e entrega das lajes e demais materiais expressamente descritos no pedido, conforme as especificações contratadas. A Modelajes não executa nem assume responsabilidade pela montagem, escoramento, nivelamento, instalação de armaduras em obra, concretagem, adensamento, cura, retirada de escoramento, armazenamento, movimentação ou demais serviços de execução da estrutura, os quais são de responsabilidade do Contratante e dos profissionais responsáveis pela obra. Eventuais orientações, projeto de montagem ou informações técnicas fornecidas pela Modelajes não caracterizam execução, gerenciamento ou fiscalização da obra. A responsabilidade da Modelajes permanece restrita à conformidade dos produtos por ela fabricados e fornecidos dentro do escopo contratado e das obrigações legalmente aplicáveis.</p>
+                <p><strong className="text-slate-800">9. VALIDADE E ACEITE:</strong> O orçamento é válido pelo prazo nele indicado. A assinatura, pedido de compra ou manifestação inequívoca de aceite confirma ciência das medidas, quantidades, especificações, preços e condições e autoriza a fabricação conforme o pedido/projeto aprovado.</p>
+              </div>
+              <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3">
+                <p className="text-xs font-bold text-amber-800 mb-1">APROVAÇÃO DO CONTRATANTE / RESPONSÁVEL PELA OBRA</p>
+                <p className="text-xs text-amber-700">Declaro ter conferido e aprovado as medidas, vãos, quantidades, especificações e condições deste pedido e do respectivo projeto de montagem, autorizando a fabricação dos materiais e declarando ciência das condições acima.</p>
+              </div>
+            </div>
+
             {done ? (
               <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
                 <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />

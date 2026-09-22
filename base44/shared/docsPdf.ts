@@ -101,25 +101,61 @@ export function buildContractPdf(order: any, sig: { rg: string; cpf: string; sig
   doc.text("Valor Total: " + fmtBRL(order.total_value || 0), M, y);
   y += 8;
 
-  // Cláusulas
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  const clausulas = [
-    "1. A Contratada fabricará e entregará as treliças descadas acima, conforme especificações do pedido.",
-    "2. O prazo de entrega está sujeito a confirmação de produção e condições climáticas.",
-    "3. O pagamento será realizado conforme forma e parcelas acordadas, sob pena de juros e multa em caso de atraso.",
-    "4. A Contratante declara estar ciente das dimensões e características dos produtos contratados.",
-    "5. Em caso de divergência, prevalece o pedido arquivado no sistema da Contratada.",
+  // Condições Gerais de Fornecimento
+  y += 2;
+  if (y > 60) { doc.addPage(); y = M; }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("CONDIÇÕES GERAIS DE FORNECIMENTO", M, y);
+  y += 6;
+  doc.setDrawColor(...PRIMARY);
+  doc.setLineWidth(0.4);
+  doc.line(M, y, W - M, y);
+  y += 5;
+
+  const termos: { t: string; d: string }[] = [
+    { t: "1. REFORÇOS E ESCOPO", d: "Estão inclusos os reforços adicionais positivos expressamente descritos no pedido, conforme dimensionamento estrutural. Materiais, reforços ou alterações não especificados serão cobrados à parte." },
+    { t: "2. PROJETO DE MONTAGEM, CONFERÊNCIA E APROVAÇÃO", d: "Antes da fabricação, a Modelajes fornecerá ao Contratante o projeto de montagem/modulação das lajes para conferência e aprovação. O Contratante ou responsável pela obra deverá conferir medidas, vãos, apoios, posicionamento e demais informações referentes à obra. A aprovação do projeto autoriza a fabricação das lajes conforme as informações nele constantes. Uma cópia do projeto aprovado será entregue juntamente com o material para orientação da montagem. Eventuais alterações realizadas na obra após a aprovação deverão ser comunicadas à Modelajes e poderão exigir revisão do projeto, alteração dos materiais, custos e prazo de entrega." },
+    { t: "3. ART E VISTORIA", d: "Quando contratada ou necessária dentro do escopo da Modelajes, a ART será emitida pelo responsável técnico. Se necessária vistoria antes da concretagem, deverá ser solicitada previamente. Taxas e boletos da ART serão de responsabilidade do cliente quando assim estiver estabelecido." },
+    { t: "4. ALTERAÇÕES", d: "Mudanças de medidas, vãos, apoios, cargas, uso ou demais condições da obra deverão ser comunicadas antes da fabricação/execução. Alterações posteriores poderão gerar revisão técnica, cobrança adicional e novo prazo." },
+    { t: "5. ENTREGA, FRETE E MUNCK", d: "Prazo e frete serão os definidos no fechamento do pedido. Serviço de munck somente estará incluso quando indicado. O cliente deverá garantir acesso e condições seguras para descarga; impossibilidade imputável à obra poderá gerar cobrança de retorno, novo frete, munck ou estadia." },
+    { t: "6. PAGAMENTO", d: "O pagamento seguirá a forma e parcelas aprovadas. O inadimplemento poderá acarretar encargos legais/contratuais e suspensão da produção ou de entregas ainda não realizadas." },
+    { t: "7. RECEBIMENTO", d: "Quantidades, especificações e danos aparentes deverão ser conferidos no ato da descarga e eventual divergência registrada no comprovante. A conferência não afasta direitos relativos a vícios não aparentes previstos em lei." },
+    { t: "8. LIMITES DO FORNECIMENTO E RESPONSABILIDADE", d: "A atuação da Modelajes limita-se à fabricação e entrega das lajes e demais materiais expressamente descritos no pedido, conforme as especificações contratadas. A Modelajes não executa nem assume responsabilidade pela montagem, escoramento, nivelamento, instalação de armaduras em obra, concretagem, adensamento, cura, retirada de escoramento, armazenamento, movimentação ou demais serviços de execução da estrutura, os quais são de responsabilidade do Contratante e dos profissionais responsáveis pela obra. Eventuais orientações, projeto de montagem ou informações técnicas fornecidas pela Modelajes não caracterizam execução, gerenciamento ou fiscalização da obra. A responsabilidade da Modelajes permanece restrita à conformidade dos produtos por ela fabricados e fornecidos dentro do escopo contratado e das obrigações legalmente aplicáveis." },
+    { t: "9. VALIDADE E ACEITE", d: "O orçamento é válido pelo prazo nele indicado. A assinatura, pedido de compra ou manifestação inequívoca de aceite confirma ciência das medidas, quantidades, especificações, preços e condições e autoriza a fabricação conforme o pedido/projeto aprovado." },
   ];
-  clausulas.forEach((c) => {
-    const lines = doc.splitTextToSize(c, W - 2 * M);
-    if (y + lines.length * 4 > 250) { doc.addPage(); y = M; }
-    doc.text(lines, M, y);
-    y += lines.length * 4 + 1;
+  doc.setFontSize(8);
+  termos.forEach((termo) => {
+    const titleLines = doc.splitTextToSize(termo.t, W - 2 * M);
+    const descLines = doc.splitTextToSize(termo.d, W - 2 * M);
+    const totalH = titleLines.length * 3.5 + descLines.length * 3.2 + 2;
+    if (y + totalH > 285) { doc.addPage(); y = M; }
+    doc.setFont("helvetica", "bold");
+    doc.text(titleLines, M, y);
+    y += titleLines.length * 3.5;
+    doc.setFont("helvetica", "normal");
+    doc.text(descLines, M, y);
+    y += descLines.length * 3.2 + 2;
   });
 
+  // Aprovação do Contratante
+  y += 3;
+  if (y > 250) { doc.addPage(); y = M; }
+  doc.setFillColor(255, 251, 235);
+  doc.setDrawColor(...PRIMARY);
+  doc.setLineWidth(0.3);
+  doc.rect(M, y - 4, W - 2 * M, 16, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("APROVAÇÃO DO CONTRATANTE / RESPONSÁVEL PELA OBRA", M + 2, y);
+  y += 4;
+  doc.setFont("helvetica", "normal");
+  const aprovLines = doc.splitTextToSize("Declaro ter conferido e aprovado as medidas, vãos, quantidades, especificações e condições deste pedido e do respectivo projeto de montagem, autorizando a fabricação dos materiais e declarando ciência das condições acima.", W - 2 * M - 4);
+  doc.text(aprovLines, M + 2, y);
+  y += aprovLines.length * 3.2 + 4;
+
   // Assinatura
-  y += 6;
+  y += 4;
   if (y > 240) { doc.addPage(); y = M; }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
