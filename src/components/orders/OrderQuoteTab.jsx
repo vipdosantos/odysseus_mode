@@ -184,6 +184,13 @@ export default function OrderQuoteTab({ order, onConverted }) {
       .cond p { font-size: 14px; margin: 3px 0; }
       .cond .lbl { font-weight: 700; color: #b45309; }
       .obs { margin-top: 10px; font-size: 14px; color: #475569; white-space: pre-wrap; }
+      .termos { margin-top: 16px; border-top: 2px solid #f59e0b; padding-top: 12px; }
+      .termos h3 { font-size: 14px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-bottom: 8px; }
+      .termos p { font-size: 11px; line-height: 1.5; color: #475569; margin-bottom: 6px; }
+      .termos p strong { color: #1e293b; }
+      .aprov-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 10px; }
+      .aprov-box .aprov-title { font-size: 12px; font-weight: 800; color: #b45309; margin-bottom: 4px; }
+      .aprov-box p { font-size: 11px; color: #92400e; margin: 0; }
       .footer { margin-top: 22px; border-top: 1px solid #e5e7eb; padding-top: 10px; display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; }
       .sign { margin-top: 30px; text-align: center; }
       .sign .line { border-top: 1px solid #1e293b; width: 320px; margin: 0 auto; padding-top: 5px; font-size: 12px; color: #64748b; }
@@ -241,6 +248,23 @@ export default function OrderQuoteTab({ order, onConverted }) {
       </div>
 
       ${obs ? `<div class="obs">${obs.replace(/</g, '&lt;')}</div>` : ''}
+
+      <div class="termos">
+        <h3>CONDIÇÕES GERAIS DE FORNECIMENTO</h3>
+        <p><strong>1. REFORÇOS E ESCOPO:</strong> Estão inclusos os reforços adicionais positivos expressamente descritos no pedido, conforme dimensionamento estrutural. Materiais, reforços ou alterações não especificados serão cobrados à parte.</p>
+        <p><strong>2. PROJETO DE MONTAGEM, CONFERÊNCIA E APROVAÇÃO:</strong> Antes da fabricação, a Modelajes fornecerá ao Contratante o projeto de montagem/modulação das lajes para conferência e aprovação. O Contratante ou responsável pela obra deverá conferir medidas, vãos, apoios, posicionamento e demais informações referentes à obra. A aprovação do projeto autoriza a fabricação das lajes conforme as informações nele constantes. Uma cópia do projeto aprovado será entregue juntamente com o material para orientação da montagem. Eventuais alterações realizadas na obra após a aprovação deverão ser comunicadas à Modelajes e poderão exigir revisão do projeto, alteração dos materiais, custos e prazo de entrega.</p>
+        <p><strong>3. ART E VISTORIA:</strong> Quando contratada ou necessária dentro do escopo da Modelajes, a ART será emitida pelo responsável técnico. Se necessária vistoria antes da concretagem, deverá ser solicitada previamente. Taxas e boletos da ART serão de responsabilidade do cliente quando assim estiver estabelecido.</p>
+        <p><strong>4. ALTERAÇÕES:</strong> Mudanças de medidas, vãos, apoios, cargas, uso ou demais condições da obra deverão ser comunicadas antes da fabricação/execução. Alterações posteriores poderão gerar revisão técnica, cobrança adicional e novo prazo.</p>
+        <p><strong>5. ENTREGA, FRETE E MUNCK:</strong> Prazo e frete serão os definidos no fechamento do pedido. Serviço de munck somente estará incluso quando indicado. O cliente deverá garantir acesso e condições seguras para descarga; impossibilidade imputável à obra poderá gerar cobrança de retorno, novo frete, munck ou estadia.</p>
+        <p><strong>6. PAGAMENTO:</strong> O pagamento seguirá a forma e parcelas aprovadas. O inadimplemento poderá acarretar encargos legais/contratuais e suspensão da produção ou de entregas ainda não realizadas.</p>
+        <p><strong>7. RECEBIMENTO:</strong> Quantidades, especificações e danos aparentes deverão ser conferidos no ato da descarga e eventual divergência registrada no comprovante. A conferência não afasta direitos relativos a vícios não aparentes previstos em lei.</p>
+        <p><strong>8. LIMITES DO FORNECIMENTO E RESPONSABILIDADE:</strong> A atuação da Modelajes limita-se à fabricação e entrega das lajes e demais materiais expressamente descritos no pedido, conforme as especificações contratadas. A Modelajes não executa nem assume responsabilidade pela montagem, escoramento, nivelamento, instalação de armaduras em obra, concretagem, adensamento, cura, retirada de escoramento, armazenamento, movimentação ou demais serviços de execução da estrutura, os quais são de responsabilidade do Contratante e dos profissionais responsáveis pela obra. Eventuais orientações, projeto de montagem ou informações técnicas fornecidas pela Modelajes não caracterizam execução, gerenciamento ou fiscalização da obra. A responsabilidade da Modelajes permanece restrita à conformidade dos produtos por ela fabricados e fornecidos dentro do escopo contratado e das obrigações legalmente aplicáveis.</p>
+        <p><strong>9. VALIDADE E ACEITE:</strong> O orçamento é válido pelo prazo nele indicado. A assinatura, pedido de compra ou manifestação inequívoca de aceite confirma ciência das medidas, quantidades, especificações, preços e condições e autoriza a fabricação conforme o pedido/projeto aprovado.</p>
+        <div class="aprov-box">
+          <p class="aprov-title">APROVAÇÃO DO CONTRATANTE / RESPONSÁVEL PELA OBRA</p>
+          <p>Declaro ter conferido e aprovado as medidas, vãos, quantidades, especificações e condições deste pedido e do respectivo projeto de montagem, autorizando a fabricação dos materiais e declarando ciência das condições acima.</p>
+        </div>
+      </div>
 
       <div class="sign">
         <div class="line">Modelajes — ${format(today, 'dd/MM/yyyy')}</div>
