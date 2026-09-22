@@ -184,7 +184,11 @@ export default function OrderQuoteTab({ order, onConverted }) {
       .cond p { font-size: 14px; margin: 3px 0; }
       .cond .lbl { font-weight: 700; color: #b45309; }
       .obs { margin-top: 10px; font-size: 14px; color: #475569; white-space: pre-wrap; }
-      .termos { margin-top: 16px; border-top: 2px solid #f59e0b; padding-top: 12px; }
+      .termos { margin-top: 16px; border-top: 2px solid #f59e0b; padding-top: 12px; padding: 22mm 20mm; }
+      .termos-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; border-bottom: 2px solid #f59e0b; padding-bottom: 10px; }
+      .termos-header img { height: 40px; }
+      .termos-header .th-title { font-size: 18px; font-weight: 800; color: #1e293b; }
+      .termos-header .th-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
       .termos h3 { font-size: 14px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-bottom: 8px; }
       .termos p { font-size: 11px; line-height: 1.5; color: #475569; margin-bottom: 6px; }
       .termos p strong { color: #1e293b; }
@@ -249,7 +253,14 @@ export default function OrderQuoteTab({ order, onConverted }) {
 
       ${obs ? `<div class="obs">${obs.replace(/</g, '&lt;')}</div>` : ''}
 
-      <div class="termos">
+      <div class="termos" id="termos-block">
+        <div class="termos-header">
+          <img src="${LOGO_URL}" alt="Modelajes" />
+          <div>
+            <div class="th-title">MODELAJES</div>
+            <div class="th-sub">Orçamento Nº ${order.order_number} — Condições Gerais de Fornecimento</div>
+          </div>
+        </div>
         <h3>CONDIÇÕES GERAIS DE FORNECIMENTO</h3>
         <p><strong>1. REFORÇOS E ESCOPO:</strong> Estão inclusos os reforços adicionais positivos expressamente descritos no pedido, conforme dimensionamento estrutural. Materiais, reforços ou alterações não especificados serão cobrados à parte.</p>
         <p><strong>2. PROJETO DE MONTAGEM, CONFERÊNCIA E APROVAÇÃO:</strong> Antes da fabricação, a Modelajes fornecerá ao Contratante o projeto de montagem/modulação das lajes para conferência e aprovação. O Contratante ou responsável pela obra deverá conferir medidas, vãos, apoios, posicionamento e demais informações referentes à obra. A aprovação do projeto autoriza a fabricação das lajes conforme as informações nele constantes. Uma cópia do projeto aprovado será entregue juntamente com o material para orientação da montagem. Eventuais alterações realizadas na obra após a aprovação deverão ser comunicadas à Modelajes e poderão exigir revisão do projeto, alteração dos materiais, custos e prazo de entrega.</p>
@@ -284,38 +295,57 @@ export default function OrderQuoteTab({ order, onConverted }) {
       const bodyMatch = fullHtml.match(/<body>([\s\S]*)<\/body>/);
       const headMatch = fullHtml.match(/<style>([\s\S]*)<\/style>/);
 
-      const container = document.createElement('div');
-      container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#ffffff;';
-      container.innerHTML = `<style>${headMatch ? headMatch[1] : ''}</style>${bodyMatch ? bodyMatch[1] : fullHtml}`;
-      document.body.appendChild(container);
+      const styleHtml = headMatch ? headMatch[1] : '';
+      const bodyHtml = bodyMatch ? bodyMatch[1] : fullHtml;
 
-      // Wait for images to load
-      const imgs = container.querySelectorAll('img');
-      await Promise.all(Array.from(imgs).map(img =>
-        img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
-      ));
+      // Split body into main content and termos block (rendered on separate page to avoid cutting)
+      const termosMatch = bodyHtml.match(/<div class="termos" id="termos-block">[\s\S]*?<\/div>\s*<\/div>\s*<div class="sign">/);
+      const termosHtml = termosMatch ? termosMatch[0].replace(/<div class="sign">$/, '') : '';
+      const mainHtml = termosMatch ? bodyHtml.replace(termosMatch[0], '<div class="sign">') : bodyHtml;
 
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      document.body.removeChild(container);
+      const renderCanvas = async (html) => {
+        const c = document.createElement('div');
+        c.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#ffffff;';
+        c.innerHTML = `<style>${styleHtml}</style>${html}`;
+        document.body.appendChild(c);
+        const imgs = c.querySelectorAll('img');
+        await Promise.all(Array.from(imgs).map(img =>
+          img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
+        ));
+        const cv = await html2canvas(c, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        document.body.removeChild(c);
+        return cv;
+      };
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = 210;
       const pdfHeight = 297;
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 0;
-      const imgData = canvas.toDataURL('image/png');
+      const addCanvasPages = (canvas, isFirst) => {
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+        const imgData = canvas.toDataURL('image/png');
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
+        if (!isFirst) pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pdfHeight;
+        }
+      };
+
+      const mainCanvas = await renderCanvas(mainHtml);
+      addCanvasPages(mainCanvas, true);
+
+      if (termosHtml) {
+        const termosCanvas = await renderCanvas(termosHtml);
+        addCanvasPages(termosCanvas, false);
       }
 
       pdf.save(`Orcamento_${order.order_number}.pdf`);
